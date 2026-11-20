@@ -1,4 +1,6 @@
+import { hashPin } from '../security/pinCrypto'
 import {
+  DEFAULT_PIN,
   DEFAULT_ROUTINE_PREFS,
   DEFAULT_SETTINGS,
   emptyProgress,
@@ -30,6 +32,31 @@ function cloneDefaults(): ParentSettings {
     })),
     interestChecklist: DEFAULT_SETTINGS.interestChecklist.map((c) => ({ ...c })),
   }
+}
+
+/** Migrate legacy plaintext PIN → salted PBKDF2 hash. Never leave PIN in localStorage. */
+export async function ensurePinHashed(settings: ParentSettings): Promise<ParentSettings> {
+  if (settings.pinHash && settings.pinSalt) {
+    if (settings.pin) {
+      const cleared = { ...settings, pin: '' }
+      saveSettings(cleared)
+      return cleared
+    }
+    return settings
+  }
+
+  const legacyPin =
+    settings.pin && /^\d{4,6}$/.test(settings.pin) ? settings.pin : DEFAULT_PIN
+  const secrets = await hashPin(legacyPin, legacyPin === DEFAULT_PIN)
+  const next: ParentSettings = {
+    ...settings,
+    pin: '',
+    pinHash: secrets.pinHash,
+    pinSalt: secrets.pinSalt,
+    pinIsDefault: secrets.pinIsDefault,
+  }
+  saveSettings(next)
+  return next
 }
 
 function migrateLegacySchedule(parsed: Partial<ParentSettings>, base: ParentSettings): Routine[] {
@@ -90,6 +117,13 @@ export function loadSettings(): ParentSettings {
     return {
       ...base,
       ...parsed,
+      pin: typeof parsed.pin === 'string' ? parsed.pin : '',
+      pinHash: typeof parsed.pinHash === 'string' ? parsed.pinHash : '',
+      pinSalt: typeof parsed.pinSalt === 'string' ? parsed.pinSalt : '',
+      pinIsDefault:
+        typeof parsed.pinIsDefault === 'boolean'
+          ? parsed.pinIsDefault
+          : !parsed.pinHash,
       enabledModules: { ...base.enabledModules, ...parsed.enabledModules },
       enabledCareModules: { ...base.enabledCareModules, ...parsed.enabledCareModules },
       enabledOnlineActivities: {

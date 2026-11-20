@@ -1549,6 +1549,23 @@ html[data-no-sudden='true'] .breathe-orb {
   gap: 0.65rem;
 }
 
+.security-card .security-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--ink-soft);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.security-card .btn {
+  margin-top: 0.75rem;
+  width: fit-content;
+}
+
+.security-status {
+  margin-top: 1rem;
+}
+
 .builder-step-main {
   display: flex;
   gap: 0.65rem;

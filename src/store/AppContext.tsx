@@ -14,8 +14,10 @@ import type {
   ParentSettings,
   ProgressState,
 } from '../types'
+import { hashPin, verifyPin } from '../security/pinCrypto'
 import {
   clearSessionStarted,
+  ensurePinHashed,
   loadProgress,
   loadSettings,
   markSessionStarted,
@@ -29,13 +31,15 @@ type AppContextValue = {
   settings: ParentSettings
   progress: ProgressState
   online: boolean
+  pinReady: boolean
   updateSettings: (patch: Partial<ParentSettings>) => void
   setEnabledModule: (id: ModuleId, enabled: boolean) => void
   setEnabledCareModule: (id: CareModuleId, enabled: boolean) => void
   setEnabledOnlineActivity: (id: OnlineActivityId, enabled: boolean) => void
   recordAnswer: (id: ModuleId, correct: boolean, streak: number) => void
   resetProgress: () => void
-  changePin: (pin: string) => void
+  changePin: (pin: string) => Promise<void>
+  checkPin: (pin: string) => Promise<boolean>
   sessionExpired: boolean
   minutesLeft: number | null
 }
@@ -47,15 +51,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress())
   const [online, setOnline] = useState(() => navigator.onLine)
   const [now, setNow] = useState(Date.now())
+  const [pinReady, setPinReady] = useState(false)
 
   useEffect(() => {
     markSessionStarted()
+    let cancelled = false
+    void ensurePinHashed(loadSettings()).then((next) => {
+      if (!cancelled) {
+        setSettings(next)
+        setPinReady(true)
+      }
+    })
     const onOnline = () => setOnline(true)
     const onOffline = () => setOnline(false)
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
     const tick = window.setInterval(() => setNow(Date.now()), 15_000)
     return () => {
+      cancelled = true
       window.removeEventListener('online', onOnline)
       window.removeEventListener('offline', onOffline)
       window.clearInterval(tick)
@@ -151,11 +164,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProgress(resetStoredProgress())
   }, [])
 
-  const changePin = useCallback(
-    (pin: string) => {
-      updateSettings({ pin })
+  const changePin = useCallback(async (pin: string) => {
+    const secrets = await hashPin(pin, false)
+    setSettings((prev) => {
+      const next: ParentSettings = {
+        ...prev,
+        pin: '',
+        pinHash: secrets.pinHash,
+        pinSalt: secrets.pinSalt,
+        pinIsDefault: false,
+      }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const checkPin = useCallback(
+    async (pin: string) => {
+      if (!settings.pinHash || !settings.pinSalt) return false
+      return verifyPin(pin, {
+        pinHash: settings.pinHash,
+        pinSalt: settings.pinSalt,
+      })
     },
-    [updateSettings],
+    [settings.pinHash, settings.pinSalt],
   )
 
   const sessionStarted = getSessionStarted()
@@ -173,6 +205,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       settings,
       progress,
       online,
+      pinReady,
       updateSettings,
       setEnabledModule,
       setEnabledCareModule,
@@ -180,6 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recordAnswer,
       resetProgress,
       changePin,
+      checkPin,
       sessionExpired,
       minutesLeft,
     }),
@@ -187,6 +221,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       settings,
       progress,
       online,
+      pinReady,
       updateSettings,
       setEnabledModule,
       setEnabledCareModule,
@@ -194,6 +229,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recordAnswer,
       resetProgress,
       changePin,
+      checkPin,
       sessionExpired,
       minutesLeft,
     ],

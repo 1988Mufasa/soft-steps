@@ -1,10 +1,35 @@
 import react from '@vitejs/plugin-react'
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+function securityHeaders(): Plugin {
+  const apply = (_req: unknown, res: { setHeader: (k: string, v: string) => void }, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(self), microphone=(self), geolocation=(), payment=()',
+    )
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
+    next()
+  }
+  return {
+    name: 'soft-steps-security-headers',
+    configureServer(server) {
+      server.middlewares.use(apply)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(apply)
+    },
+  }
+}
 
 export default defineConfig({
   plugins: [
     react(),
+    securityHeaders(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png', 'icons/*.svg'],
@@ -13,7 +38,7 @@ export default defineConfig({
         short_name: 'Soft Steps',
         description: 'Calm ABC, shapes, colors, and numbers practice for kids.',
         theme_color: '#3661B0',
-        background_color: '#E8F0E9',
+        background_color: '#F7F7F2',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -61,9 +86,21 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     host: '127.0.0.1',
     port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+      },
+    },
   },
 })

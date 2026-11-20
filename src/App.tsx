@@ -22,6 +22,7 @@ import { SocialCues } from './pages/care/SocialCues'
 import { InterestRewards } from './pages/care/InterestRewards'
 import { ParentGate } from './pages/ParentGate'
 import { ParentDashboard } from './pages/ParentDashboard'
+import { ParentBilling } from './pages/ParentBilling'
 import { useApp } from './store/AppContext'
 import type { CareModuleId, ModuleId } from './types'
 
@@ -181,6 +182,7 @@ export default function App() {
         />
         <Route path="/parent" element={<ParentGate />} />
         <Route path="/parent/dashboard" element={<ParentDashboard />} />
+        <Route path="/parent/billing" element={<ParentBilling />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

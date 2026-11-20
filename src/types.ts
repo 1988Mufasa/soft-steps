@@ -87,7 +87,11 @@ export type Story = {
 }
 
 export type ParentSettings = {
+  /** @deprecated plaintext removed — kept empty after hash migration */
   pin: string
+  pinHash: string
+  pinSalt: string
+  pinIsDefault: boolean
   ageBand: AgeBand
   enabledModules: Record<ModuleId, boolean>
   enabledCareModules: Record<CareModuleId, boolean>
@@ -197,7 +201,10 @@ export const DEFAULT_INTEREST_CHECKLIST = [
 ]
 
 export const DEFAULT_SETTINGS: ParentSettings = {
-  pin: DEFAULT_PIN,
+  pin: '',
+  pinHash: '',
+  pinSalt: '',
+  pinIsDefault: true,
   ageBand: '3-6',
   enabledModules: {
     abc: true,

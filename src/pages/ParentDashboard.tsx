@@ -54,7 +54,7 @@ export function ParentDashboard() {
     resetProgress,
     changePin,
   } = useApp()
-  const [newPin, setNewPin] = useState(settings.pin)
+  const [newPin, setNewPin] = useState('')
   const [saved, setSaved] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
 
@@ -64,14 +64,15 @@ export function ParentDashboard() {
     }
   }, [navigate])
 
-  const onSavePin = (e: FormEvent) => {
+  const onSavePin = async (e: FormEvent) => {
     e.preventDefault()
     if (newPin.length < 4) {
       setSaved('PIN needs at least 4 digits.')
       return
     }
-    changePin(newPin)
-    setSaved('PIN updated.')
+    await changePin(newPin)
+    setNewPin('')
+    setSaved('PIN updated and stored as a salted hash on this device.')
   }
 
   return (
@@ -336,7 +337,12 @@ export function ParentDashboard() {
 
         <article className="dash-card">
           <h2>Change PIN</h2>
-          <form onSubmit={onSavePin} className="pin-form inline">
+          {settings.pinIsDefault ? (
+            <p className="form-error">Still using the first-time default — change it now.</p>
+          ) : (
+            <p>PIN is hashed with PBKDF2. Soft Steps never stores the digits in plain text.</p>
+          )}
+          <form onSubmit={(e) => void onSavePin(e)} className="pin-form inline">
             <input
               className="pin-input"
               inputMode="numeric"
@@ -345,11 +351,22 @@ export function ParentDashboard() {
               value={newPin}
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
               aria-label="New PIN"
+              autoComplete="new-password"
             />
             <button type="submit" className="btn btn-secondary">
               Save PIN
             </button>
           </form>
+        </article>
+
+        <article className="dash-card security-card">
+          <h2>Security & payments</h2>
+          <p>
+            Card numbers never touch Soft Steps. Support payments use Stripe-hosted Checkout only.
+          </p>
+          <Link to="/parent/billing" className="btn btn-primary">
+            Open secure billing
+          </Link>
         </article>
       </div>
 
