@@ -24,15 +24,17 @@ export function SignsModule() {
   const [round, setRound] = useState(() => makeRound())
   const [streak, setStreak] = useState(0)
   const [tone, setTone] = useState<'idle' | 'good' | 'try'>('idle')
-  const [message, setMessage] = useState('Look at the sign, then pick the matching word.')
+  const [message, setMessage] = useState('Watch the live hand sign, then pick the matching word.')
   const [locked, setLocked] = useState(false)
+  const [replay, setReplay] = useState(0)
 
   useEffect(() => {
     const next = makeRound(pool)
     setRound(next)
     setTone('idle')
-    setMessage('Look at the sign, then pick the matching word.')
+    setMessage('Watch the live hand sign, then pick the matching word.')
     setLocked(false)
+    setReplay((n) => n + 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pool, settings.ageBand, count])
 
@@ -40,8 +42,9 @@ export function SignsModule() {
     const next = makeRound()
     setRound(next)
     setTone('idle')
-    setMessage('Look at the sign, then pick the matching word.')
+    setMessage('Watch the live hand sign, then pick the matching word.')
     setLocked(false)
+    setReplay((n) => n + 1)
   }
 
   const onPick = (id: string) => {
@@ -70,21 +73,35 @@ export function SignsModule() {
   return (
     <ActivityShell
       title="Sign language"
-      prompt="ASL-inspired practice. Match the hand sign to the word."
+      prompt="Watch the live hand move, hear a kid-friendly voice, then match the word."
       feedbackTone={tone}
       feedbackMessage={message}
       streak={streak}
       badge={
         <div className="target-card sign-target">
-          <SignHand pose={round.target.pose} title={`Sign for ${round.target.word}`} />
+          <SignHand
+            pose={round.target.pose}
+            title={`Live sign for ${round.target.word}`}
+            replayKey={replay}
+            live
+          />
           <p className="sign-how">{round.target.how}</p>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => speakText(round.target.word, settings.sensory.soundOn)}
-          >
-            Hear the word
-          </button>
+          <div className="confirm-row sign-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setReplay((n) => n + 1)}
+            >
+              Replay sign
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => speakText(round.target.word, settings.sensory.soundOn)}
+            >
+              Hear kid voice
+            </button>
+          </div>
         </div>
       }
     >
