@@ -55,7 +55,9 @@ export function Home() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Practice offline</h2>
+          <h2>
+            <span className="eyebrow offline-tag">Offline</span> Practice offline
+          </h2>
           <p>Works without Wi‑Fi after you open the app once.</p>
         </div>
         <div className="module-grid">
@@ -79,14 +81,20 @@ export function Home() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Online extras</h2>
-          <p>Needs a connection for bonus games and sync tips.</p>
+          <h2>
+            <span className="eyebrow online-tag">Online</span> Network activities
+          </h2>
+          <p>Needs Wi‑Fi for mix quizzes, gentle timed rounds, and multi-step paths.</p>
         </div>
         {settings.onlineExtrasEnabled ? (
           <Link to="/online" className={`online-card ${online ? '' : 'is-disabled'}`}>
             <div>
-              <strong>Bonus practice</strong>
-              <p>{online ? 'More games and gentle challenges' : 'Connect to the internet to open'}</p>
+              <strong>Open online hub</strong>
+              <p>
+                {online
+                  ? 'Mix quiz · Gentle timer · Multi-step match'
+                  : 'You’re offline — open for a clear message, or use Offline practice above'}
+              </p>
             </div>
             <span className="chev">→</span>
           </Link>

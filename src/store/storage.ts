@@ -9,19 +9,32 @@ const SETTINGS_KEY = 'soft-steps-settings'
 const PROGRESS_KEY = 'soft-steps-progress'
 const SESSION_KEY = 'soft-steps-session-started'
 
+function cloneDefaults(): ParentSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    enabledModules: { ...DEFAULT_SETTINGS.enabledModules },
+    enabledOnlineActivities: { ...DEFAULT_SETTINGS.enabledOnlineActivities },
+    sensory: { ...DEFAULT_SETTINGS.sensory },
+  }
+}
+
 export function loadSettings(): ParentSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
-    if (!raw) return { ...DEFAULT_SETTINGS, enabledModules: { ...DEFAULT_SETTINGS.enabledModules }, sensory: { ...DEFAULT_SETTINGS.sensory } }
+    if (!raw) return cloneDefaults()
     const parsed = JSON.parse(raw) as Partial<ParentSettings>
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
       enabledModules: { ...DEFAULT_SETTINGS.enabledModules, ...parsed.enabledModules },
+      enabledOnlineActivities: {
+        ...DEFAULT_SETTINGS.enabledOnlineActivities,
+        ...parsed.enabledOnlineActivities,
+      },
       sensory: { ...DEFAULT_SETTINGS.sensory, ...parsed.sensory },
     }
   } catch {
-    return { ...DEFAULT_SETTINGS, enabledModules: { ...DEFAULT_SETTINGS.enabledModules }, sensory: { ...DEFAULT_SETTINGS.sensory } }
+    return cloneDefaults()
   }
 }
 

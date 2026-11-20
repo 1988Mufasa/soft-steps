@@ -1,13 +1,20 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp, unlockNewSession } from '../store/AppContext'
-import type { AgeBand, ModuleId } from '../types'
+import type { AgeBand, ModuleId, OnlineActivityId } from '../types'
 
 const MODULE_LABELS: { id: ModuleId; label: string }[] = [
   { id: 'abc', label: 'ABCs' },
   { id: 'shapes', label: 'Shapes' },
   { id: 'colors', label: 'Colors' },
   { id: 'numbers', label: 'Numbers' },
+]
+
+const ONLINE_LABELS: { id: OnlineActivityId; label: string }[] = [
+  { id: 'mix-quiz', label: 'Mix quiz' },
+  { id: 'gentle-timer', label: 'Gentle timer' },
+  { id: 'multi-match', label: 'Multi-step match' },
+  { id: 'sync-demo', label: 'Progress sync demo' },
 ]
 
 export function ParentDashboard() {
@@ -17,6 +24,7 @@ export function ParentDashboard() {
     progress,
     updateSettings,
     setEnabledModule,
+    setEnabledOnlineActivity,
     resetProgress,
     changePin,
   } = useApp()
@@ -101,14 +109,34 @@ export function ParentDashboard() {
               </li>
             ))}
           </ul>
+        </article>
+
+        <article className="dash-card">
+          <h2>Online features</h2>
           <label className="check-line">
             <input
               type="checkbox"
               checked={settings.onlineExtrasEnabled}
               onChange={(e) => updateSettings({ onlineExtrasEnabled: e.target.checked })}
             />
-            Enable online extras
+            Enable all online extras
           </label>
+          <ul className="module-toggles">
+            {ONLINE_LABELS.map((a) => (
+              <li key={a.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.enabledOnlineActivities[a.id]}
+                    disabled={!settings.onlineExtrasEnabled}
+                    onChange={(e) => setEnabledOnlineActivity(a.id, e.target.checked)}
+                  />
+                  {a.label}
+                </label>
+              </li>
+            ))}
+          </ul>
+          <p className="fine-print">Online activities need a network connection. Offline modules stay separate.</p>
         </article>
 
         <article className="dash-card">

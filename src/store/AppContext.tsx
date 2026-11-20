@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { ModuleId, ParentSettings, ProgressState } from '../types'
+import type { ModuleId, OnlineActivityId, ParentSettings, ProgressState } from '../types'
 import {
   clearSessionStarted,
   loadProgress,
@@ -25,6 +25,7 @@ type AppContextValue = {
   online: boolean
   updateSettings: (patch: Partial<ParentSettings>) => void
   setEnabledModule: (id: ModuleId, enabled: boolean) => void
+  setEnabledOnlineActivity: (id: OnlineActivityId, enabled: boolean) => void
   recordAnswer: (id: ModuleId, correct: boolean, streak: number) => void
   resetProgress: () => void
   changePin: (pin: string) => void
@@ -68,6 +69,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         enabledModules: patch.enabledModules
           ? { ...prev.enabledModules, ...patch.enabledModules }
           : prev.enabledModules,
+        enabledOnlineActivities: patch.enabledOnlineActivities
+          ? { ...prev.enabledOnlineActivities, ...patch.enabledOnlineActivities }
+          : prev.enabledOnlineActivities,
         sensory: patch.sensory ? { ...prev.sensory, ...patch.sensory } : prev.sensory,
       }
       saveSettings(next)
@@ -80,6 +84,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const next = {
         ...prev,
         enabledModules: { ...prev.enabledModules, [id]: enabled },
+      }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const setEnabledOnlineActivity = useCallback((id: OnlineActivityId, enabled: boolean) => {
+    setSettings((prev) => {
+      const next = {
+        ...prev,
+        enabledOnlineActivities: { ...prev.enabledOnlineActivities, [id]: enabled },
       }
       saveSettings(next)
       return next
@@ -132,6 +147,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       online,
       updateSettings,
       setEnabledModule,
+      setEnabledOnlineActivity,
       recordAnswer,
       resetProgress,
       changePin,
@@ -144,6 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       online,
       updateSettings,
       setEnabledModule,
+      setEnabledOnlineActivity,
       recordAnswer,
       resetProgress,
       changePin,

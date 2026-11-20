@@ -1,90 +1,72 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  OnlineDisabledFallback,
+  OnlineOfflineFallback,
+} from '../components/OnlineShell'
 import { useApp } from '../store/AppContext'
-import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
-import { shuffle } from '../utils/quiz'
+import type { OnlineActivityId } from '../types'
 
-type WordRound = { prompt: string; answer: string; choices: string[] }
-
-const WORD_BANK: WordRound[] = [
-  { prompt: 'Which word starts with S?', answer: 'Sun', choices: ['Sun', 'Moon', 'Tree', 'Ball'] },
-  { prompt: 'Which word rhymes with cat?', answer: 'Hat', choices: ['Hat', 'Dog', 'Cup', 'Leaf'] },
-  { prompt: 'Which is a color?', answer: 'Green', choices: ['Green', 'Chair', 'Shoe', 'Door'] },
-  { prompt: 'Which is a shape?', answer: 'Circle', choices: ['Circle', 'Water', 'Music', 'Happy'] },
-  { prompt: 'Count: 2 + 2 =', answer: '4', choices: ['4', '3', '5', '6'] },
-  { prompt: 'Which comes after 7?', answer: '8', choices: ['8', '6', '9', '5'] },
+const ACTIVITIES: {
+  id: OnlineActivityId
+  title: string
+  blurb: string
+  path: string
+}[] = [
+  {
+    id: 'mix-quiz',
+    title: 'Mix quiz',
+    blurb: 'Letters, numbers, and words mixed together',
+    path: '/online/mix-quiz',
+  },
+  {
+    id: 'gentle-timer',
+    title: 'Gentle timer',
+    blurb: 'Calm timed round with a soft progress bar',
+    path: '/online/gentle-timer',
+  },
+  {
+    id: 'multi-match',
+    title: 'Multi-step match',
+    blurb: 'Finish a path of steps in order',
+    path: '/online/multi-match',
+  },
+  {
+    id: 'sync-demo',
+    title: 'Progress sync',
+    blurb: 'Demo sync tip (network sample)',
+    path: '/online#sync',
+  },
 ]
 
 export function OnlineHub() {
   const { online, settings } = useApp()
   const [synced, setSynced] = useState(false)
-  const [syncNote, setSyncNote] = useState('Progress stays on this device. Online sync is a gentle demo.')
-  const [round, setRound] = useState(() => {
-    const base = shuffle(WORD_BANK)[0]
-    return { ...base, choices: shuffle(base.choices) }
-  })
-  const [message, setMessage] = useState('Pick the best answer.')
-  const [tone, setTone] = useState<'idle' | 'good' | 'try'>('idle')
-  const [streak, setStreak] = useState(0)
-
-  const canPlay = online && settings.onlineExtrasEnabled
-
-  useEffect(() => {
-    if (!online) {
-      setSynced(false)
-      setSyncNote('You are offline. Bonus games need a connection.')
-    }
-  }, [online])
-
-  const next = () => {
-    const base = shuffle(WORD_BANK)[0]
-    setRound({ ...base, choices: shuffle(base.choices) })
-    setTone('idle')
-    setMessage('Pick the best answer.')
-  }
-
-  const demoSync = async () => {
-    if (!online) return
-    setSyncNote('Syncing sample progress…')
-    await new Promise((r) => setTimeout(r, 700))
-    setSynced(true)
-    setSyncNote('Demo sync complete. Local progress is still the source of truth.')
-  }
-
-  const narrationHint = useMemo(
-    () =>
-      online
-        ? 'Optional narration would load from a CDN when enabled. Soft Steps uses gentle device tones offline.'
-        : 'Connect online to unlock CDN narration demos.',
-    [online],
+  const [syncNote, setSyncNote] = useState(
+    'Progress stays on this device. Online sync is a gentle network demo.',
   )
 
   if (!settings.onlineExtrasEnabled) {
-    return (
-      <section className="online-hub">
-        <Link to="/" className="back-link">
-          ← Home
-        </Link>
-        <h1>Online extras off</h1>
-        <p>A grown-up can turn these on in Parent tools.</p>
-      </section>
-    )
+    return <OnlineDisabledFallback />
   }
 
-  if (!canPlay) {
-    return (
-      <section className="online-hub">
-        <Link to="/" className="back-link">
-          ← Home
-        </Link>
-        <p className="eyebrow online-tag">Online</p>
-        <h1>Needs a connection</h1>
-        <p>Bonus games and sync tips work when you are online. Offline practice is still ready on Home.</p>
-        <Link className="btn btn-primary" to="/">
-          Back to offline practice
-        </Link>
-      </section>
-    )
+  if (!online) {
+    return <OnlineOfflineFallback title="Online hub" />
+  }
+
+  const enabled = ACTIVITIES.filter((a) => settings.enabledOnlineActivities[a.id])
+
+  const demoSync = async () => {
+    if (!settings.enabledOnlineActivities['sync-demo']) return
+    setSyncNote('Syncing sample progress…')
+    await new Promise((r) => setTimeout(r, 700))
+    if (!navigator.onLine) {
+      setSynced(false)
+      setSyncNote('Connection dropped. Sync paused — offline practice still works on Home.')
+      return
+    }
+    setSynced(true)
+    setSyncNote('Demo sync complete. Local progress is still the source of truth.')
   }
 
   return (
@@ -95,51 +77,54 @@ export function OnlineHub() {
         </Link>
         <div className="activity-meta">
           <p className="eyebrow online-tag">Online</p>
-          <h1>Bonus practice</h1>
+          <h1>Online activities</h1>
         </div>
-        <div className="streak-pill">★ {streak}</div>
+        <span className="net-badge is-online">Connected</span>
       </header>
 
-      <div className="online-panel">
-        <h2>Word & number challenge</h2>
-        <p className="prompt">{round.prompt}</p>
-        <div className="choice-grid cols-2">
-          {round.choices.map((choice) => (
-            <button
-              key={choice}
-              type="button"
-              className="choice-btn"
-              onClick={() => {
-                playTap(settings.sensory.soundOn)
-                if (choice === round.answer) {
-                  const s = streak + 1
-                  setStreak(s)
-                  setTone('good')
-                  setMessage('Wonderful!')
-                  playCorrect(settings.sensory.soundOn)
-                  window.setTimeout(next, settings.sensory.reducedMotion ? 500 : 900)
-                } else {
-                  setStreak(0)
-                  setTone('try')
-                  setMessage('Keep going — another try.')
-                  playGentleNudge(settings.sensory.soundOn)
-                }
-              }}
-            >
-              {choice}
-            </button>
+      <p className="prompt">
+        These activities load practice packs over the network. Offline modules on Home stay
+        unchanged.
+      </p>
+
+      <div className="online-activity-grid">
+        {enabled
+          .filter((a) => a.id !== 'sync-demo')
+          .map((activity) => (
+            <Link key={activity.id} to={activity.path} className="online-activity-card">
+              <span className="eyebrow online-tag">Online</span>
+              <strong>{activity.title}</strong>
+              <p>{activity.blurb}</p>
+              <span className="chev">→</span>
+            </Link>
           ))}
-        </div>
-        <div className={`feedback feedback-${tone}`}>{message}</div>
+        {enabled.filter((a) => a.id !== 'sync-demo').length === 0 ? (
+          <p className="empty-note">
+            No online games are enabled. A grown-up can turn them on in Parent tools.
+          </p>
+        ) : null}
       </div>
 
-      <div className="online-panel">
-        <h2>Progress sync (demo)</h2>
-        <p>{syncNote}</p>
-        <button type="button" className="btn btn-secondary" onClick={demoSync}>
-          {synced ? 'Synced' : 'Try demo sync'}
-        </button>
-        <p className="fine-print">{narrationHint}</p>
+      {settings.enabledOnlineActivities['sync-demo'] ? (
+        <div className="online-panel" id="sync">
+          <h2>Progress sync (demo)</h2>
+          <p>{syncNote}</p>
+          <button type="button" className="btn btn-secondary" onClick={demoSync}>
+            {synced ? 'Synced' : 'Try demo sync'}
+          </button>
+          <p className="fine-print">
+            Optional CDN narration would load here when online. Soft Steps keeps gentle device
+            tones for offline practice.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="online-panel soft-panel">
+        <h2>Offline still ready</h2>
+        <p>ABCs, shapes, colors, and numbers work without Wi‑Fi after the first visit.</p>
+        <Link className="btn btn-primary" to="/">
+          Go to offline practice
+        </Link>
       </div>
     </section>
   )

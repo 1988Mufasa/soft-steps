@@ -7,6 +7,9 @@ import { ShapesModule } from './pages/ShapesModule'
 import { ColorsModule } from './pages/ColorsModule'
 import { NumbersModule } from './pages/NumbersModule'
 import { OnlineHub } from './pages/OnlineHub'
+import { MixQuiz } from './pages/online/MixQuiz'
+import { GentleTimer } from './pages/online/GentleTimer'
+import { MultiMatch } from './pages/online/MultiMatch'
 import { ParentGate } from './pages/ParentGate'
 import { ParentDashboard } from './pages/ParentDashboard'
 import { useApp } from './store/AppContext'
@@ -62,6 +65,30 @@ export default function App() {
           element={
             <SessionGate>
               <OnlineHub />
+            </SessionGate>
+          }
+        />
+        <Route
+          path="/online/mix-quiz"
+          element={
+            <SessionGate>
+              <MixQuiz />
+            </SessionGate>
+          }
+        />
+        <Route
+          path="/online/gentle-timer"
+          element={
+            <SessionGate>
+              <GentleTimer />
+            </SessionGate>
+          }
+        />
+        <Route
+          path="/online/multi-match"
+          element={
+            <SessionGate>
+              <MultiMatch />
             </SessionGate>
           }
         />
