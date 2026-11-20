@@ -35,7 +35,7 @@ const MODULES: {
   {
     id: 'signs',
     title: 'Sign language',
-    blurb: 'Full live-sign learning games',
+    blurb: 'Short sign-clip learning games',
     path: '/signs',
     accent: 'mod-signs',
   },

@@ -161,14 +161,14 @@ export function SignsModule() {
           </div>
           <span className="age-badge">Ages {settings.ageBand}</span>
         </header>
-        <p className="prompt">Pick a fun game. Watch live hand signs, then play!</p>
+        <p className="prompt">Pick a fun game. Watch short sign clips, then play!</p>
         <div className="sign-mode-grid">
           <button type="button" className="sign-mode-card" onClick={() => startMode('learn')}>
             <span className="sign-mode-emoji" aria-hidden="true">
               🎥
             </span>
             <strong>Watch & learn</strong>
-            <span>See each live sign step by step</span>
+            <span>Play each short sign clip</span>
           </button>
           <button type="button" className="sign-mode-card" onClick={() => startMode('match')}>
             <span className="sign-mode-emoji" aria-hidden="true">
@@ -182,7 +182,7 @@ export function SignsModule() {
               ✋
             </span>
             <strong>Find the sign</strong>
-            <span>See the word → pick the live sign</span>
+            <span>See the word → pick the matching clip</span>
           </button>
           <button type="button" className="sign-mode-card" onClick={() => startMode('memory')}>
             <span className="sign-mode-emoji" aria-hidden="true">
@@ -262,7 +262,7 @@ export function SignsModule() {
           />
           <div className="confirm-row sign-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setReplay((n) => n + 1)}>
-              Replay live sign
+              Replay clip
             </button>
             <button
               type="button"
@@ -392,7 +392,7 @@ export function SignsModule() {
           />
           <div className="confirm-row sign-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setReplay((n) => n + 1)}>
-              Replay live sign
+              Replay clip
             </button>
             <button
               type="button"
@@ -408,7 +408,7 @@ export function SignsModule() {
           <p className="big-letter" style={{ fontSize: '2.6rem' }}>
             {matchRound.target.emoji} {matchRound.target.word}
           </p>
-          <p className="sign-how">Which live sign matches this word?</p>
+          <p className="sign-how">Which sign clip matches this word?</p>
           <button
             type="button"
             className="btn btn-primary"
