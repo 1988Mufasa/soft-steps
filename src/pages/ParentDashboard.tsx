@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { loadCheckInHistory } from '../data/checkIn'
 import { useApp, unlockNewSession } from '../store/AppContext'
 import type {
   AgeBand,
@@ -19,7 +20,8 @@ const MODULE_LABELS: { id: ModuleId; label: string }[] = [
 
 const CARE_LABELS: { id: CareModuleId; label: string }[] = [
   { id: 'calm', label: 'Calm toolkit / Meltdown Mode' },
-  { id: 'feelings', label: 'Feelings check-in' },
+  { id: 'checkin', label: 'AAC Communication & Emotion Check-Ins' },
+  { id: 'feelings', label: 'Feelings check-in (quick)' },
   { id: 'schedule', label: 'First / Then routines' },
   { id: 'stories', label: 'Social stories' },
   { id: 'talk', label: 'Talk board (AAC)' },
@@ -57,6 +59,7 @@ export function ParentDashboard() {
   const [newPin, setNewPin] = useState('')
   const [saved, setSaved] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [checkIns] = useState(() => loadCheckInHistory())
 
   useEffect(() => {
     if (sessionStorage.getItem('soft-steps-parent-ok') !== '1') {
@@ -98,6 +101,32 @@ export function ParentDashboard() {
       </header>
 
       <div className="dash-grid">
+        <article className="dash-card">
+          <h2>Recent AAC check-ins</h2>
+          {checkIns.length === 0 ? (
+            <p>No check-ins yet. Kids can use Home → AAC &amp; check-in.</p>
+          ) : (
+            <ul className="checkin-history">
+              {checkIns.slice(0, 5).map((c) => (
+                <li key={c.at}>
+                  <strong>
+                    {c.feelingLabel} · {c.needLabel}
+                  </strong>
+                  <span className="fine-print">
+                    {new Date(c.at).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                  <p>{c.sentence}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+
         <article className="dash-card">
           <h2>Age band & difficulty</h2>
           <div className="toggle-row">

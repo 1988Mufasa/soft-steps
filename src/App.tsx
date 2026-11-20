@@ -13,6 +13,7 @@ import { MultiMatch } from './pages/online/MultiMatch'
 import { MeltdownMode } from './pages/care/MeltdownMode'
 import { CalmToolkit } from './pages/care/CalmToolkit'
 import { FeelingsCheckIn } from './pages/care/FeelingsCheckIn'
+import { AacEmotionCheckIn } from './pages/care/AacEmotionCheckIn'
 import { RoutineActive } from './pages/care/RoutineActive'
 import { FirstThenBoard } from './pages/care/FirstThenBoard'
 import { RoutineBuilder } from './pages/care/RoutineBuilder'
@@ -49,6 +50,14 @@ export default function App() {
           element={
             <GuardedCare id="calm">
               <CalmToolkit />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/check-in"
+          element={
+            <GuardedCare id="checkin">
+              <AacEmotionCheckIn />
             </GuardedCare>
           }
         />

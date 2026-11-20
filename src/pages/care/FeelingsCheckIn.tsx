@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { speakText } from '../../audio/calmAudio'
 import { useApp } from '../../store/AppContext'
 
 const BODY = [
@@ -70,7 +71,10 @@ export function FeelingsCheckIn() {
         </span>
       </header>
 
-      <p className="prompt">How does your body feel? Then pick a matching emotion.</p>
+      <p className="prompt">
+        How does your body feel? Then pick a matching emotion. For full AAC + needs, open{' '}
+        <Link to="/check-in">AAC &amp; check-in</Link>.
+      </p>
 
       <div className="tool-picker wrap">
         {BODY.map((b) => (
@@ -108,7 +112,10 @@ export function FeelingsCheckIn() {
             key={f.id}
             type="button"
             className={`aac-card ${feeling === f.id ? 'is-selected' : ''}`}
-            onClick={() => setFeeling(f.id)}
+            onClick={() => {
+              setFeeling(f.id)
+              speakText(`I feel ${f.label}.`, settings.sensory.soundOn)
+            }}
           >
             <span className="aac-emoji">{f.emoji}</span>
             <span>{f.label}</span>

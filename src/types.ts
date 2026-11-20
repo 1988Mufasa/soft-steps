@@ -4,6 +4,7 @@ export type ModuleId = 'abc' | 'shapes' | 'colors' | 'numbers'
 
 export type CareModuleId =
   | 'calm'
+  | 'checkin'
   | 'feelings'
   | 'schedule'
   | 'stories'
@@ -128,6 +129,7 @@ export const DEFAULT_ONLINE_ACTIVITIES: Record<OnlineActivityId, boolean> = {
 
 export const DEFAULT_CARE_MODULES: Record<CareModuleId, boolean> = {
   calm: true,
+  checkin: true,
   feelings: true,
   schedule: true,
   stories: true,
