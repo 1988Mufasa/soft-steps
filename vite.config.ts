@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'Soft Steps',
         short_name: 'Soft Steps',
         description: 'Calm ABC, shapes, colors, and numbers practice for kids.',
-        theme_color: '#3D8FD4',
+        theme_color: '#3661B0',
         background_color: '#E8F0E9',
         display: 'standalone',
         orientation: 'portrait',

@@ -36,9 +36,9 @@ function rgba(r, g, b, a = 255) {
 }
 
 function writePng(size, outPath) {
-  const bg = rgba(61, 143, 212)
-  const light = rgba(247, 251, 254)
-  const mid = rgba(183, 218, 245)
+  const bg = rgba(54, 97, 176)
+  const light = rgba(255, 255, 255)
+  const mid = rgba(116, 184, 210)
   const pixels = Buffer.alloc(size * size * 4)
 
   const set = (x, y, color) => {

@@ -43,7 +43,7 @@ export function Home() {
           <span className="brand-ribbon" aria-hidden="true" />
           <h1>Learn gently, one step at a time</h1>
           <p className="hero-sub">
-            Soft blues, sensory colors, calm tools — made for kids on the spectrum, ages 3–12.
+            Smart, kind, brave colors — calm tools for kids on the spectrum, ages 3–12.
           </p>
           <div className="status-row">
             <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
@@ -55,40 +55,53 @@ export function Home() {
         <div className="hero-art" aria-hidden="true">
           <svg viewBox="0 0 320 240" className="hero-svg">
             <defs>
-              <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#B7DAF5" />
-                <stop offset="100%" stopColor="#6BB8E8" />
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F7F7F2" />
+                <stop offset="100%" stopColor="#E7EEF6" />
               </linearGradient>
               <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#E87A7A" />
-                <stop offset="20%" stopColor="#E8906A" />
-                <stop offset="40%" stopColor="#E8C05C" />
-                <stop offset="60%" stopColor="#5CB8A8" />
-                <stop offset="80%" stopColor="#3D8FD4" />
-                <stop offset="100%" stopColor="#7B9FE0" />
+                <stop offset="0%" stopColor="#C7303A" />
+                <stop offset="16%" stopColor="#C45137" />
+                <stop offset="33%" stopColor="#E0B84A" />
+                <stop offset="50%" stopColor="#6BA84E" />
+                <stop offset="66%" stopColor="#5AADC8" />
+                <stop offset="83%" stopColor="#3661B0" />
+                <stop offset="100%" stopColor="#8B3A6B" />
+              </linearGradient>
+              <linearGradient id="pencil" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#74B8D2" />
+                <stop offset="70%" stopColor="#5AADC8" />
+                <stop offset="100%" stopColor="#E0B84A" />
               </linearGradient>
             </defs>
             <rect width="320" height="240" rx="32" fill="url(#sky)" />
-            <circle cx="248" cy="52" r="30" fill="#F6E7A1" opacity="0.95" />
+            {/* notebook lines */}
+            <g stroke="#74B8D2" strokeWidth="1.5" opacity="0.35">
+              <line x1="24" y1="56" x2="296" y2="56" />
+              <line x1="24" y1="88" x2="296" y2="88" />
+              <line x1="24" y1="120" x2="296" y2="120" />
+              <line x1="24" y1="152" x2="296" y2="152" />
+              <line x1="24" y1="184" x2="296" y2="184" />
+            </g>
             <path
-              d="M28 168 C70 120, 120 210, 160 150 C200 90, 250 190, 292 130"
+              d="M24 204 C70 160, 120 230, 160 170 C200 110, 250 220, 296 150"
               fill="none"
               stroke="url(#ribbon)"
               strokeWidth="14"
               strokeLinecap="round"
-              opacity="0.92"
+              opacity="0.95"
             />
-            <ellipse cx="70" cy="200" rx="48" ry="16" fill="#FFFFFF" opacity="0.35" />
-            <ellipse cx="210" cy="205" rx="70" ry="18" fill="#FFFFFF" opacity="0.28" />
-            <rect x="118" y="88" width="84" height="84" rx="22" fill="#F7FBFE" />
+            <rect x="98" y="70" width="124" height="36" rx="10" fill="url(#pencil)" />
+            <polygon points="222,70 250,88 222,106" fill="#E0B84A" />
+            <rect x="118" y="118" width="84" height="84" rx="22" fill="#FFFFFF" stroke="#3661B0" strokeWidth="4" />
             <text
               x="160"
-              y="148"
+              y="178"
               textAnchor="middle"
               fontSize="48"
               fontWeight="800"
               fontFamily="Nunito, sans-serif"
-              fill="#2266A8"
+              fill="#C7303A"
             >
               A
             </text>

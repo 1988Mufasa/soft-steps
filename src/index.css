@@ -1,24 +1,25 @@
 :root {
-  /* Autism awareness blue + soft sensory accents (calm, not neon) */
-  --bg-top: #e8f4fc;
-  --bg-bottom: #cfe4f6;
-  --surface: #f7fbfe;
-  --surface-soft: rgba(247, 251, 254, 0.84);
-  --ink: #1f3a52;
-  --ink-soft: #4a6780;
-  --accent: #3d8fd4;
-  --accent-deep: #2266a8;
-  --accent-soft: #b7daf5;
-  --sky: #6bb8e8;
-  --good: #5cb88a;
-  --try: #e8a45c;
-  --sense-red: #e87a7a;
-  --sense-orange: #e8906a;
-  --sense-yellow: #e8c05c;
-  --sense-green: #5cb8a8;
-  --sense-blue: #3d8fd4;
-  --sense-indigo: #7b9fe0;
-  --shadow: 0 12px 32px rgba(34, 102, 168, 0.1);
+  /* Palette from Daniel's affirmation backpack photo */
+  --bg-top: #f7f7f2;
+  --bg-bottom: #e7eef6;
+  --surface: #ffffff;
+  --surface-soft: rgba(255, 255, 255, 0.88);
+  --ink: #2a2f3a;
+  --ink-soft: #5a6270;
+  --accent: #3661b0; /* SMART blue */
+  --accent-deep: #275297;
+  --accent-soft: #c5daf5;
+  --sky: #74b8d2; /* pencil / GRATEFUL teal-blue */
+  --good: #6ba84e; /* KIND green */
+  --try: #e0b84a; /* BRAVE yellow */
+  --sense-red: #c7303a; /* DANIEL / LOVED */
+  --sense-orange: #c45137;
+  --sense-yellow: #e0b84a;
+  --sense-green: #6ba84e;
+  --sense-blue: #3661b0;
+  --sense-indigo: #8b3a6b; /* CAPABLE magenta */
+  --sense-teal: #5aadc8;
+  --shadow: 0 12px 32px rgba(39, 82, 151, 0.12);
   --radius: 26px;
   --tap: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -59,10 +60,16 @@ body {
   overflow-x: hidden;
   overscroll-behavior-y: none;
   background:
-    radial-gradient(circle at 10% 12%, rgba(255, 255, 255, 0.7), transparent 42%),
-    radial-gradient(circle at 88% 6%, rgba(107, 184, 232, 0.28), transparent 38%),
-    radial-gradient(circle at 72% 78%, rgba(232, 192, 92, 0.14), transparent 36%),
-    radial-gradient(circle at 18% 82%, rgba(123, 159, 224, 0.16), transparent 40%),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 27px,
+      rgba(116, 184, 210, 0.18) 27px,
+      rgba(116, 184, 210, 0.18) 28px
+    ),
+    radial-gradient(circle at 88% 8%, rgba(224, 184, 74, 0.16), transparent 36%),
+    radial-gradient(circle at 12% 86%, rgba(107, 168, 78, 0.12), transparent 40%),
+    radial-gradient(circle at 78% 72%, rgba(199, 48, 58, 0.08), transparent 38%),
     linear-gradient(165deg, var(--bg-top), var(--bg-bottom));
   background-attachment: fixed;
   padding:
@@ -127,20 +134,21 @@ a {
 
 .brand-ribbon {
   display: block;
-  width: min(100%, 220px);
-  height: 10px;
+  width: min(100%, 240px);
+  height: 12px;
   margin: 0.55rem 0 0.35rem;
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    var(--sense-red),
-    var(--sense-orange),
-    var(--sense-yellow),
-    var(--sense-green),
-    var(--sense-blue),
-    var(--sense-indigo)
+    var(--sense-red) 0%,
+    var(--sense-orange) 16%,
+    var(--sense-yellow) 33%,
+    var(--sense-green) 50%,
+    var(--sense-teal) 66%,
+    var(--sense-blue) 83%,
+    var(--sense-indigo) 100%
   );
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .hero {
@@ -298,19 +306,19 @@ html[data-reduced-motion='true'] .feedback-good {
 
 .mod-abc {
   border-left: 8px solid var(--sense-blue);
-  background: linear-gradient(145deg, #eef7fd, var(--surface));
+  background: linear-gradient(145deg, #e8eef8, var(--surface));
 }
 .mod-shapes {
   border-left: 8px solid var(--sense-green);
-  background: linear-gradient(145deg, #eaf8f5, var(--surface));
+  background: linear-gradient(145deg, #eef6e8, var(--surface));
 }
 .mod-colors {
-  border-left: 8px solid var(--sense-orange);
-  background: linear-gradient(145deg, #fdf1eb, var(--surface));
+  border-left: 8px solid var(--sense-red);
+  background: linear-gradient(145deg, #f9e9ea, var(--surface));
 }
 .mod-numbers {
   border-left: 8px solid var(--sense-yellow);
-  background: linear-gradient(145deg, #fdf8e8, var(--surface));
+  background: linear-gradient(145deg, #fbf5e4, var(--surface));
 }
 
 .online-card {
@@ -320,9 +328,9 @@ html[data-reduced-motion='true'] .feedback-good {
   gap: 1rem;
   padding: 1.1rem 1.2rem;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, rgba(107, 184, 232, 0.28), rgba(247, 251, 254, 0.95));
+  background: linear-gradient(135deg, rgba(116, 184, 210, 0.28), rgba(255, 255, 255, 0.95));
   box-shadow: var(--shadow);
-  border: 2px solid rgba(61, 143, 212, 0.18);
+  border: 2px solid rgba(54, 97, 176, 0.2);
 }
 
 .online-card p {
@@ -669,7 +677,15 @@ html[data-reduced-motion='true'] .feedback-good {
 .gentle-timer-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--sense-green), var(--sense-blue), var(--sense-indigo));
+  background: linear-gradient(
+    90deg,
+    var(--sense-red),
+    var(--sense-yellow),
+    var(--sense-green),
+    var(--sense-teal),
+    var(--sense-blue),
+    var(--sense-indigo)
+  );
   transition: width 900ms linear;
 }
 
@@ -924,7 +940,7 @@ html[data-no-sudden='true'] .breathe-orb {
 
 .mod-care {
   border-left: 8px solid var(--sense-indigo);
-  background: linear-gradient(145deg, #eef2fb, var(--surface));
+  background: linear-gradient(145deg, #f4e9f0, var(--surface));
 }
 
 .meltdown-home-btn {
@@ -934,8 +950,8 @@ html[data-no-sudden='true'] .breathe-orb {
   min-height: 72px;
   padding: 0.85rem 1.1rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #1e4f7a, #2a6aa8);
-  color: #f7fbfe;
+  background: linear-gradient(135deg, #275297, #3661b0);
+  color: #ffffff;
   font-weight: 800;
   font-size: 1.15rem;
   box-shadow: var(--shadow);
@@ -945,7 +961,7 @@ html[data-no-sudden='true'] .breathe-orb {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #c5e4f8, #3d8fd4);
+  background: radial-gradient(circle at 35% 35%, #c5daf5, #3661b0);
 }
 
 .care-page {
@@ -988,7 +1004,7 @@ html[data-no-sudden='true'] .breathe-orb {
   width: min(46vw, 180px);
   height: min(46vw, 180px);
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #d6ecfb, #3d8fd4);
+  background: radial-gradient(circle at 30% 30%, #d6e8f7, #3661b0);
   transition: transform 3.8s ease-in-out;
 }
 
@@ -1001,10 +1017,10 @@ html[data-no-sudden='true'] .breathe-orb {
   height: 100%;
   min-height: 280px;
   background:
-    radial-gradient(circle at 20% 40%, rgba(107, 184, 232, 0.5), transparent 40%),
-    radial-gradient(circle at 70% 60%, rgba(123, 159, 224, 0.42), transparent 42%),
-    radial-gradient(circle at 50% 80%, rgba(92, 184, 168, 0.28), transparent 45%),
-    linear-gradient(160deg, #d6ebf9, #9fc4e6);
+    radial-gradient(circle at 20% 40%, rgba(116, 184, 210, 0.55), transparent 40%),
+    radial-gradient(circle at 70% 60%, rgba(54, 97, 176, 0.35), transparent 42%),
+    radial-gradient(circle at 50% 80%, rgba(107, 168, 78, 0.22), transparent 45%),
+    linear-gradient(160deg, #d9ebf4, #8eb8d6);
   animation: liquidShift 10s ease-in-out infinite alternate;
 }
 
@@ -1027,7 +1043,7 @@ html[data-no-sudden='true'] .breathe-orb {
   position: relative;
   width: 100%;
   min-height: 280px;
-  background: linear-gradient(180deg, #d6ebf9, #a8cceb);
+  background: linear-gradient(180deg, #e7eef6, #a8c8de);
 }
 
 .bubble {
