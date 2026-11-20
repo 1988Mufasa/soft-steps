@@ -14,6 +14,7 @@ import type {
   ParentSettings,
   ProgressState,
 } from '../types'
+import { setSpeechPrefs } from '../audio/voices'
 import { hashPin, verifyPin } from '../security/pinCrypto'
 import {
   clearSessionStarted,
@@ -83,6 +84,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : 'false'
     root.dataset.dimColors = settings.sensory.dimColors ? 'true' : 'false'
     root.dataset.noSudden = settings.sensory.disableSuddenAnimations ? 'true' : 'false'
+    setSpeechPrefs({
+      voiceURI: settings.sensory.voiceURI || '',
+      style: settings.sensory.voiceStyle || 'child',
+    })
   }, [settings.sensory])
 
   const updateSettings = useCallback((patch: Partial<ParentSettings>) => {

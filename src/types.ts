@@ -18,11 +18,16 @@ export type InterestTheme = 'trains' | 'dinosaurs' | 'space' | 'patterns' | 'ani
 
 export type RewardTheme = 'trains' | 'space' | 'animals'
 
+export type VoiceStyle = 'child' | 'gentle' | 'clear'
+
 export type SensoryPrefs = {
   soundOn: boolean
   reducedMotion: boolean
   dimColors: boolean
   disableSuddenAnimations: boolean
+  /** System speechSynthesis voiceURI; empty = auto-pick best quality */
+  voiceURI: string
+  voiceStyle: VoiceStyle
 }
 
 export type RoutineStep = {
@@ -222,6 +227,8 @@ export const DEFAULT_SETTINGS: ParentSettings = {
     reducedMotion: false,
     dimColors: false,
     disableSuddenAnimations: false,
+    voiceURI: '',
+    voiceStyle: 'child',
   },
   sessionLimitMinutes: null,
   onlineExtrasEnabled: true,

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { VoicePicker } from '../components/VoicePicker'
 import { loadCheckInHistory } from '../data/checkIn'
 import { useApp, unlockNewSession } from '../store/AppContext'
 import type {
@@ -256,6 +257,20 @@ export function ParentDashboard() {
             />
             Disable sudden animations
           </label>
+        </article>
+
+        <article className="dash-card">
+          <h2>Speaking voice</h2>
+          <VoicePicker
+            voiceURI={settings.sensory.voiceURI}
+            voiceStyle={settings.sensory.voiceStyle}
+            onChange={({ voiceURI, voiceStyle }) => {
+              updateSettings({
+                sensory: { ...settings.sensory, voiceURI, voiceStyle },
+              })
+              setSaved('Voice updated — tap Preview to hear it.')
+            }}
+          />
         </article>
 
         <article className="dash-card">

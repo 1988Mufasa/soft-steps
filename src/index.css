@@ -2069,6 +2069,28 @@ html[data-no-sudden='true'] .breathe-orb {
   font-size: 0.95rem;
 }
 
+.voice-picker {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.voice-select-label {
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.voice-select {
+  min-height: var(--tap);
+  width: 100%;
+  border-radius: 16px;
+  border: 2px solid rgba(54, 97, 176, 0.25);
+  padding: 0.65rem 0.85rem;
+  background: var(--surface);
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .builder-step-main {
   display: flex;
   gap: 0.65rem;
