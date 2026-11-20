@@ -1,6 +1,6 @@
 /**
  * Generate simple PNG app icons for PWA + Capacitor without external image tools.
- * Soft teal square with two light circles (matches Soft Steps mark).
+ * Soft awareness-blue square with two light circles (matches Soft Steps mark).
  */
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -36,9 +36,9 @@ function rgba(r, g, b, a = 255) {
 }
 
 function writePng(size, outPath) {
-  const bg = rgba(58, 143, 125)
-  const light = rgba(244, 251, 247)
-  const mid = rgba(184, 224, 210)
+  const bg = rgba(61, 143, 212)
+  const light = rgba(247, 251, 254)
+  const mid = rgba(183, 218, 245)
   const pixels = Buffer.alloc(size * size * 4)
 
   const set = (x, y, color) => {

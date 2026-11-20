@@ -40,9 +40,10 @@ export function Home() {
       <header className="hero">
         <div className="hero-copy">
           <p className="brand">Soft Steps</p>
+          <span className="brand-ribbon" aria-hidden="true" />
           <h1>Learn gently, one step at a time</h1>
           <p className="hero-sub">
-            Calm tools, schedules, talk boards, and practice — for ages 3–12.
+            Soft blues, sensory colors, calm tools — made for kids on the spectrum, ages 3–12.
           </p>
           <div className="status-row">
             <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
@@ -55,22 +56,39 @@ export function Home() {
           <svg viewBox="0 0 320 240" className="hero-svg">
             <defs>
               <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#B8D9C8" />
-                <stop offset="100%" stopColor="#7EB8A8" />
+                <stop offset="0%" stopColor="#B7DAF5" />
+                <stop offset="100%" stopColor="#6BB8E8" />
+              </linearGradient>
+              <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#E87A7A" />
+                <stop offset="20%" stopColor="#E8906A" />
+                <stop offset="40%" stopColor="#E8C05C" />
+                <stop offset="60%" stopColor="#5CB8A8" />
+                <stop offset="80%" stopColor="#3D8FD4" />
+                <stop offset="100%" stopColor="#7B9FE0" />
               </linearGradient>
             </defs>
-            <rect width="320" height="240" rx="28" fill="url(#sky)" />
-            <circle cx="250" cy="56" r="28" fill="#F6E7A1" opacity="0.9" />
-            <ellipse cx="90" cy="170" rx="70" ry="28" fill="#5F9E88" opacity="0.55" />
-            <ellipse cx="180" cy="190" rx="90" ry="30" fill="#4F8F7A" opacity="0.45" />
-            <rect x="120" y="100" width="70" height="70" rx="14" fill="#F4FBF7" />
+            <rect width="320" height="240" rx="32" fill="url(#sky)" />
+            <circle cx="248" cy="52" r="30" fill="#F6E7A1" opacity="0.95" />
+            <path
+              d="M28 168 C70 120, 120 210, 160 150 C200 90, 250 190, 292 130"
+              fill="none"
+              stroke="url(#ribbon)"
+              strokeWidth="14"
+              strokeLinecap="round"
+              opacity="0.92"
+            />
+            <ellipse cx="70" cy="200" rx="48" ry="16" fill="#FFFFFF" opacity="0.35" />
+            <ellipse cx="210" cy="205" rx="70" ry="18" fill="#FFFFFF" opacity="0.28" />
+            <rect x="118" y="88" width="84" height="84" rx="22" fill="#F7FBFE" />
             <text
-              x="155"
+              x="160"
               y="148"
               textAnchor="middle"
-              fontSize="42"
+              fontSize="48"
+              fontWeight="800"
               fontFamily="Nunito, sans-serif"
-              fill="#2C4A42"
+              fill="#2266A8"
             >
               A
             </text>

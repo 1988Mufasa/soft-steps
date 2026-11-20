@@ -6,7 +6,7 @@ import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
 import { useApp } from '../store/AppContext'
 import { choiceCount, pickChoices, shuffle } from '../utils/quiz'
 
-function ShapeSvg({ shape, fill = '#3A8F7D' }: { shape: ShapeItem; fill?: string }) {
+function ShapeSvg({ shape, fill = '#3D8FD4' }: { shape: ShapeItem; fill?: string }) {
   return (
     <svg viewBox="0 0 100 100" className="shape-svg" aria-hidden="true">
       <path d={shape.path} fill={fill} />
