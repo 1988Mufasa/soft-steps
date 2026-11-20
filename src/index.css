@@ -320,6 +320,37 @@ html[data-reduced-motion='true'] .feedback-good {
   border-left: 8px solid var(--sense-yellow);
   background: linear-gradient(145deg, #fbf5e4, var(--surface));
 }
+.mod-signs {
+  border-left: 8px solid var(--sense-indigo);
+  background: linear-gradient(145deg, #f4e9f0, var(--surface));
+}
+
+.sign-target {
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.sign-hand-svg {
+  width: min(220px, 70vw);
+  height: auto;
+}
+
+.sign-how {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.sign-choice {
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 1.15rem;
+}
+
+.sign-choice-emoji {
+  font-size: 1.6rem;
+}
 
 .online-card {
   display: flex;

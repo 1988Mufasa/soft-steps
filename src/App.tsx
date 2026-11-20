@@ -6,6 +6,7 @@ import { AbcModule } from './pages/AbcModule'
 import { ShapesModule } from './pages/ShapesModule'
 import { ColorsModule } from './pages/ColorsModule'
 import { NumbersModule } from './pages/NumbersModule'
+import { SignsModule } from './pages/SignsModule'
 import { OnlineHub } from './pages/OnlineHub'
 import { MixQuiz } from './pages/online/MixQuiz'
 import { GentleTimer } from './pages/online/GentleTimer'
@@ -154,6 +155,14 @@ export default function App() {
           element={
             <GuardedModule id="numbers">
               <NumbersModule />
+            </GuardedModule>
+          }
+        />
+        <Route
+          path="/signs"
+          element={
+            <GuardedModule id="signs">
+              <SignsModule />
             </GuardedModule>
           }
         />

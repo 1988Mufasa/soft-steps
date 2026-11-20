@@ -14,6 +14,13 @@ const MODULES: {
   { id: 'shapes', title: 'Shapes', blurb: 'Match the shape', path: '/shapes', accent: 'mod-shapes' },
   { id: 'colors', title: 'Colors', blurb: 'Name the color', path: '/colors', accent: 'mod-colors' },
   { id: 'numbers', title: 'Numbers', blurb: 'Count and choose', path: '/numbers', accent: 'mod-numbers' },
+  {
+    id: 'signs',
+    title: 'Sign language',
+    blurb: 'Match ASL-inspired signs',
+    path: '/signs',
+    accent: 'mod-signs',
+  },
 ]
 
 const CARE: {
@@ -151,7 +158,7 @@ export function Home() {
           <h2>
             <span className="eyebrow offline-tag">Offline</span> Practice
           </h2>
-          <p>ABCs, shapes, colors, and numbers.</p>
+          <p>ABCs, shapes, colors, numbers, and sign language.</p>
         </div>
         <div className="module-grid">
           {enabled.map((mod) => {

@@ -1,6 +1,6 @@
 export type AgeBand = '3-6' | '7-12'
 
-export type ModuleId = 'abc' | 'shapes' | 'colors' | 'numbers'
+export type ModuleId = 'abc' | 'shapes' | 'colors' | 'numbers' | 'signs'
 
 export type CareModuleId =
   | 'calm'
@@ -213,6 +213,7 @@ export const DEFAULT_SETTINGS: ParentSettings = {
     shapes: true,
     colors: true,
     numbers: true,
+    signs: true,
   },
   enabledCareModules: { ...DEFAULT_CARE_MODULES },
   enabledOnlineActivities: { ...DEFAULT_ONLINE_ACTIVITIES },
@@ -247,5 +248,6 @@ export function emptyProgress(): ProgressState {
     shapes: { attempts: 0, correct: 0, bestStreak: 0, lastPlayedAt: null },
     colors: { attempts: 0, correct: 0, bestStreak: 0, lastPlayedAt: null },
     numbers: { attempts: 0, correct: 0, bestStreak: 0, lastPlayedAt: null },
+    signs: { attempts: 0, correct: 0, bestStreak: 0, lastPlayedAt: null },
   }
 }

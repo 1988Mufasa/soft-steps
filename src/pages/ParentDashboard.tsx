@@ -16,6 +16,7 @@ const MODULE_LABELS: { id: ModuleId; label: string }[] = [
   { id: 'shapes', label: 'Shapes' },
   { id: 'colors', label: 'Colors' },
   { id: 'numbers', label: 'Numbers' },
+  { id: 'signs', label: 'Sign language' },
 ]
 
 const CARE_LABELS: { id: CareModuleId; label: string }[] = [
