@@ -16,7 +16,7 @@ const WORD_BANK: WordRound[] = [
 ]
 
 export function OnlineHub() {
-  const { online, settings, recordAnswer } = useApp()
+  const { online, settings } = useApp()
   const [synced, setSynced] = useState(false)
   const [syncNote, setSyncNote] = useState('Progress stays on this device. Online sync is a gentle demo.')
   const [round, setRound] = useState(() => {
@@ -117,7 +117,6 @@ export function OnlineHub() {
                   setTone('good')
                   setMessage('Wonderful!')
                   playCorrect(settings.sensory.soundOn)
-                  recordAnswer('abc', true, s)
                   window.setTimeout(next, settings.sensory.reducedMotion ? 500 : 900)
                 } else {
                   setStreak(0)
