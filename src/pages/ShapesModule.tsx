@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ActivityShell } from '../components/ActivityShell'
 import { ChoiceGrid } from '../components/ChoiceGrid'
+import { GameHUD } from '../components/GameHUD'
 import { shapePool, type ShapeItem } from '../data/shapes'
-import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
+import { speakText } from '../audio/calmAudio'
+import { useLearningGame } from '../hooks/useLearningGame'
 import { useApp } from '../store/AppContext'
 import { choiceCount, pickChoices, shuffle } from '../utils/quiz'
 
@@ -24,72 +27,121 @@ export function ShapesModule() {
     return { target: next, choices: pickChoices(pool, next, count, (s) => s.id) }
   }
 
-  const [round, setRound] = useState(makeRound)
-  const [streak, setStreak] = useState(0)
-  const [tone, setTone] = useState<'idle' | 'good' | 'try'>('idle')
-  const [message, setMessage] = useState('Tap the matching shape.')
-  const [locked, setLocked] = useState(false)
+  const [board, setBoard] = useState(makeRound)
+  const game = useLearningGame({
+    moduleId: 'shapes',
+    totalRounds: 8,
+    soundOn: settings.sensory.soundOn,
+    reducedMotion: settings.sensory.reducedMotion,
+    recordAnswer,
+  })
 
-  const nextRound = () => {
-    setRound(makeRound())
-    setTone('idle')
-    setMessage('Tap the matching shape.')
-    setLocked(false)
-  }
+  useEffect(() => {
+    setBoard(makeRound())
+    game.resetGame()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pool, settings.ageBand, count])
 
-  const onPick = (id: string) => {
-    if (locked) return
-    playTap(settings.sensory.soundOn)
-    const correct = id === round.target.id
-    if (correct) {
-      const nextStreak = streak + 1
-      setStreak(nextStreak)
-      setTone('good')
-      setMessage(`Yes — that is a ${round.target.name}.`)
-      playCorrect(settings.sensory.soundOn)
-      recordAnswer('shapes', true, nextStreak)
-      setLocked(true)
-      window.setTimeout(nextRound, settings.sensory.reducedMotion ? 500 : 900)
-    } else {
-      setStreak(0)
-      setTone('try')
-      setMessage('Not quite. Look again.')
-      playGentleNudge(settings.sensory.soundOn)
-      recordAnswer('shapes', false, 0)
-    }
+  if (game.finished) {
+    return (
+      <section className="activity-shell">
+        <header className="activity-header">
+          <Link to="/" className="back-link">
+            ← Home
+          </Link>
+          <div className="activity-meta">
+            <p className="eyebrow offline-tag">Shapes complete</p>
+            <h1>Shape star!</h1>
+          </div>
+          <span className="streak-pill">★ {game.stars}</span>
+        </header>
+        <div className="sign-win">
+          <p className="sign-win-stars">{'★'.repeat(Math.min(game.stars, 8))}</p>
+          <div className="confirm-row">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                game.resetGame()
+                setBoard(makeRound())
+              }}
+            >
+              Play again
+            </button>
+            <Link to="/" className="btn btn-secondary">
+              Home
+            </Link>
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
     <ActivityShell
       title="Shapes"
-      prompt={settings.ageBand === '3-6' ? 'Find the same shape.' : `Which one is the ${round.target.name}?`}
-      feedbackTone={tone}
-      feedbackMessage={message}
-      streak={streak}
+      prompt="Shape hunt — find the matching shape each round."
+      feedbackTone={game.tone}
+      feedbackMessage={
+        game.message ||
+        (settings.ageBand === '3-6'
+          ? 'Find the same shape.'
+          : `Which one is the ${board.target.name}?`)
+      }
+      streak={game.streak}
       badge={
-        settings.ageBand === '3-6' ? (
-          <div className="target-card shape-target">
-            <ShapeSvg shape={round.target} fill="#2C6B5C" />
-            <span className="target-word">{round.target.name}</span>
-          </div>
-        ) : (
-          <div className="target-card shape-target word-only">
-            <span className="target-word big">{round.target.name}</span>
-          </div>
-        )
+        <>
+          <GameHUD
+            round={game.round}
+            total={game.totalRounds}
+            stars={game.stars}
+            level={game.level}
+          />
+          {settings.ageBand === '3-6' ? (
+            <div className="target-card shape-target">
+              <ShapeSvg shape={board.target} fill="#3661B0" />
+              <span className="target-word">{board.target.name}</span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => speakText(board.target.name, settings.sensory.soundOn)}
+              >
+                Hear it
+              </button>
+            </div>
+          ) : (
+            <div className="target-card shape-target word-only">
+              <span className="target-word big">{board.target.name}</span>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => speakText(board.target.name, settings.sensory.soundOn)}
+              >
+                Hear it
+              </button>
+            </div>
+          )}
+        </>
       }
     >
       <ChoiceGrid columns={2}>
-        {round.choices.map((shape) => (
+        {board.choices.map((shape) => (
           <button
             key={shape.id}
             type="button"
             className="choice-btn shape-choice"
-            onClick={() => onPick(shape.id)}
-            disabled={locked}
+            onClick={() =>
+              game.resolve(
+                shape.id === board.target.id,
+                `Yes — that is a ${board.target.name}.`,
+                'Not quite. Look again.',
+                () => setBoard(makeRound()),
+              )
+            }
+            disabled={game.locked}
             aria-label={shape.name}
           >
-            <ShapeSvg shape={shape} fill="#4F8F7A" />
+            <ShapeSvg shape={shape} fill="#5AADC8" />
           </button>
         ))}
       </ChoiceGrid>

@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ActivityShell } from '../components/ActivityShell'
 import { ChoiceGrid } from '../components/ChoiceGrid'
+import { GameHUD } from '../components/GameHUD'
 import { numberPool } from '../data/numbers'
-import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
+import { speakText } from '../audio/calmAudio'
+import { useLearningGame } from '../hooks/useLearningGame'
 import { useApp } from '../store/AppContext'
 import { choiceCount, pickChoices, shuffle } from '../utils/quiz'
 
@@ -16,72 +19,114 @@ export function NumbersModule() {
     return { target: next, choices: pickChoices(pool, next, count, (n) => String(n)) }
   }
 
-  const [round, setRound] = useState(makeRound)
-  const [streak, setStreak] = useState(0)
-  const [tone, setTone] = useState<'idle' | 'good' | 'try'>('idle')
-  const [message, setMessage] = useState('How many dots?')
-  const [locked, setLocked] = useState(false)
+  const [board, setBoard] = useState(makeRound)
+  const game = useLearningGame({
+    moduleId: 'numbers',
+    totalRounds: 8,
+    soundOn: settings.sensory.soundOn,
+    reducedMotion: settings.sensory.reducedMotion,
+    recordAnswer,
+  })
 
-  const nextRound = () => {
-    setRound(makeRound())
-    setTone('idle')
-    setMessage(settings.ageBand === '3-6' ? 'How many dots?' : 'Choose the number.')
-    setLocked(false)
+  useEffect(() => {
+    setBoard(makeRound())
+    game.resetGame()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pool, settings.ageBand, count])
+
+  const dots = Array.from({ length: board.target }, (_, i) => i)
+
+  if (game.finished) {
+    return (
+      <section className="activity-shell">
+        <header className="activity-header">
+          <Link to="/" className="back-link">
+            ← Home
+          </Link>
+          <div className="activity-meta">
+            <p className="eyebrow offline-tag">Numbers complete</p>
+            <h1>Counting star!</h1>
+          </div>
+          <span className="streak-pill">★ {game.stars}</span>
+        </header>
+        <div className="sign-win">
+          <p className="sign-win-stars">{'★'.repeat(Math.min(game.stars, 8))}</p>
+          <div className="confirm-row">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                game.resetGame()
+                setBoard(makeRound())
+              }}
+            >
+              Play again
+            </button>
+            <Link to="/" className="btn btn-secondary">
+              Home
+            </Link>
+          </div>
+        </div>
+      </section>
+    )
   }
-
-  const onPick = (n: number) => {
-    if (locked) return
-    playTap(settings.sensory.soundOn)
-    const correct = n === round.target
-    if (correct) {
-      const nextStreak = streak + 1
-      setStreak(nextStreak)
-      setTone('good')
-      setMessage(`Yes — ${round.target}!`)
-      playCorrect(settings.sensory.soundOn)
-      recordAnswer('numbers', true, nextStreak)
-      setLocked(true)
-      window.setTimeout(nextRound, settings.sensory.reducedMotion ? 500 : 900)
-    } else {
-      setStreak(0)
-      setTone('try')
-      setMessage('Count again carefully.')
-      playGentleNudge(settings.sensory.soundOn)
-      recordAnswer('numbers', false, 0)
-    }
-  }
-
-  const dots = Array.from({ length: round.target }, (_, i) => i)
 
   return (
     <ActivityShell
       title="Numbers"
-      prompt={settings.ageBand === '3-6' ? 'Count the dots, then tap the number.' : 'What number do you see?'}
-      feedbackTone={tone}
-      feedbackMessage={message}
-      streak={streak}
+      prompt="Counting game — how many do you see?"
+      feedbackTone={game.tone}
+      feedbackMessage={
+        game.message ||
+        (settings.ageBand === '3-6'
+          ? 'Count the dots, then tap the number.'
+          : 'What number do you see?')
+      }
+      streak={game.streak}
       badge={
-        <div className="target-card number-target" aria-label={`${round.target} dots`}>
-          {settings.ageBand === '3-6' || round.target <= 10 ? (
-            <div className="dot-grid">
-              {dots.map((d) => (
-                <span key={d} className="dot" />
-              ))}
-            </div>
-          ) : (
-            <span className="big-number">{round.target}</span>
-          )}
-        </div>
+        <>
+          <GameHUD
+            round={game.round}
+            total={game.totalRounds}
+            stars={game.stars}
+            level={game.level}
+          />
+          <div className="target-card number-target" aria-label={`${board.target} dots`}>
+            {settings.ageBand === '3-6' || board.target <= 10 ? (
+              <div className="dot-grid">
+                {dots.map((d) => (
+                  <span key={d} className="dot" />
+                ))}
+              </div>
+            ) : (
+              <span className="big-number">{board.target}</span>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => speakText(String(board.target), settings.sensory.soundOn)}
+            >
+              Hear it
+            </button>
+          </div>
+        </>
       }
     >
       <ChoiceGrid columns={2}>
-        {round.choices.map((n) => (
+        {board.choices.map((n) => (
           <button
             key={n}
             type="button"
             className="choice-btn number-choice"
-            onClick={() => onPick(n)}
-            disabled={locked}
+            onClick={() =>
+              game.resolve(
+                n === board.target,
+                `Yes — ${board.target}!`,
+                'Count again carefully.',
+                () => setBoard(makeRound()),
+              )
+            }
+            disabled={game.locked}
           >
             {n}
           </button>

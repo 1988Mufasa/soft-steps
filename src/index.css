@@ -330,31 +330,215 @@ html[data-reduced-motion='true'] .feedback-good {
   text-align: center;
 }
 
-.sign-live {
+.sign-live-hq {
   position: relative;
-  width: min(240px, 78vw);
+  width: min(260px, 82vw);
+  margin: 0 auto;
 }
 
-.sign-live-stage {
-  position: relative;
+.sign-live-hq.is-large {
+  width: min(300px, 88vw);
 }
 
 .sign-hand-svg {
   width: 100%;
   height: auto;
   display: block;
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+}
+
+.sign-live-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+  align-items: center;
 }
 
 .sign-live-badge {
-  position: absolute;
-  top: 0.55rem;
-  left: 0.55rem;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   background: rgba(54, 97, 176, 0.92);
   color: #fff;
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.sign-frame-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.sign-frame-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.sign-frame-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(54, 97, 176, 0.25);
+}
+
+.sign-frame-dots span.is-on {
+  background: var(--sense-blue);
+}
+
+.game-hud {
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.game-hud-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.game-pill {
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(54, 97, 176, 0.12);
+  color: var(--accent-deep);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.game-stars {
+  background: rgba(224, 184, 74, 0.28);
+  color: #8a5520;
+  letter-spacing: 0.08em;
+}
+
+.game-hud-bar {
+  height: 10px;
+}
+
+.sign-mode-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sign-mode-card {
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  min-height: 88px;
+}
+
+.sign-mode-card strong {
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+
+.sign-mode-card span:last-child {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.sign-mode-emoji {
+  font-size: 1.6rem;
+}
+
+.sign-mode-challenge {
+  background: linear-gradient(145deg, #fbf5e4, #ffffff);
+  border: 2px solid rgba(224, 184, 74, 0.45);
+}
+
+.sign-win {
+  display: grid;
+  gap: 0.85rem;
+  place-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.sign-win-stars {
+  margin: 0;
+  font-size: 2.2rem;
+  letter-spacing: 0.12em;
+  color: #c9a227;
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.memory-card {
+  min-height: 120px;
+  border: none;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+}
+
+.memory-card.is-up {
+  background: var(--surface);
+}
+
+.memory-card.is-matched {
+  outline: 3px solid var(--sense-green);
+}
+
+.memory-back {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--accent-deep);
+}
+
+.memory-word {
+  display: grid;
+  gap: 0.25rem;
+  place-items: center;
+  font-size: 1.4rem;
+}
+
+.sign-choice-live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.sign-live-choice {
+  border: none;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 0.4rem;
+  cursor: pointer;
+}
+
+.sign-live-choice .sign-live-hq {
+  width: 100%;
+}
+
+.sign-live-choice .sign-live-meta,
+.sign-live-choice .sign-frame-dots {
+  display: none;
 }
 
 .sign-how {

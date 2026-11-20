@@ -10,14 +10,32 @@ const MODULES: {
   path: string
   accent: string
 }[] = [
-  { id: 'abc', title: 'ABCs', blurb: 'Find the letter', path: '/abc', accent: 'mod-abc' },
-  { id: 'shapes', title: 'Shapes', blurb: 'Match the shape', path: '/shapes', accent: 'mod-shapes' },
-  { id: 'colors', title: 'Colors', blurb: 'Name the color', path: '/colors', accent: 'mod-colors' },
-  { id: 'numbers', title: 'Numbers', blurb: 'Count and choose', path: '/numbers', accent: 'mod-numbers' },
+  { id: 'abc', title: 'ABCs', blurb: '8-round letter adventure', path: '/abc', accent: 'mod-abc' },
+  {
+    id: 'shapes',
+    title: 'Shapes',
+    blurb: 'Shape hunt game',
+    path: '/shapes',
+    accent: 'mod-shapes',
+  },
+  {
+    id: 'colors',
+    title: 'Colors',
+    blurb: 'Color quest game',
+    path: '/colors',
+    accent: 'mod-colors',
+  },
+  {
+    id: 'numbers',
+    title: 'Numbers',
+    blurb: 'Counting star game',
+    path: '/numbers',
+    accent: 'mod-numbers',
+  },
   {
     id: 'signs',
     title: 'Sign language',
-    blurb: 'Match ASL-inspired signs',
+    blurb: 'Full live-sign learning games',
     path: '/signs',
     accent: 'mod-signs',
   },

@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ActivityShell } from '../components/ActivityShell'
 import { ChoiceGrid } from '../components/ChoiceGrid'
+import { GameHUD } from '../components/GameHUD'
 import { colorPool } from '../data/colors'
-import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
+import { speakText } from '../audio/calmAudio'
+import { useLearningGame } from '../hooks/useLearningGame'
 import { useApp } from '../store/AppContext'
 import { choiceCount, pickChoices, shuffle } from '../utils/quiz'
 
@@ -16,73 +19,111 @@ export function ColorsModule() {
     return { target: next, choices: pickChoices(pool, next, count, (c) => c.id) }
   }
 
-  const [round, setRound] = useState(makeRound)
-  const [streak, setStreak] = useState(0)
-  const [tone, setTone] = useState<'idle' | 'good' | 'try'>('idle')
-  const [message, setMessage] = useState('Tap the color that matches.')
-  const [locked, setLocked] = useState(false)
+  const [board, setBoard] = useState(makeRound)
+  const game = useLearningGame({
+    moduleId: 'colors',
+    totalRounds: 8,
+    soundOn: settings.sensory.soundOn,
+    reducedMotion: settings.sensory.reducedMotion,
+    recordAnswer,
+  })
 
-  const nextRound = () => {
-    setRound(makeRound())
-    setTone('idle')
-    setMessage('Tap the color that matches.')
-    setLocked(false)
-  }
+  useEffect(() => {
+    setBoard(makeRound())
+    game.resetGame()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pool, settings.ageBand, count])
 
-  const onPick = (id: string) => {
-    if (locked) return
-    playTap(settings.sensory.soundOn)
-    const correct = id === round.target.id
-    if (correct) {
-      const nextStreak = streak + 1
-      setStreak(nextStreak)
-      setTone('good')
-      setMessage(`Great — ${round.target.name}!`)
-      playCorrect(settings.sensory.soundOn)
-      recordAnswer('colors', true, nextStreak)
-      setLocked(true)
-      window.setTimeout(nextRound, settings.sensory.reducedMotion ? 500 : 900)
-    } else {
-      setStreak(0)
-      setTone('try')
-      setMessage('Try a different color.')
-      playGentleNudge(settings.sensory.soundOn)
-      recordAnswer('colors', false, 0)
-    }
+  if (game.finished) {
+    return (
+      <section className="activity-shell">
+        <header className="activity-header">
+          <Link to="/" className="back-link">
+            ← Home
+          </Link>
+          <div className="activity-meta">
+            <p className="eyebrow offline-tag">Colors complete</p>
+            <h1>Color star!</h1>
+          </div>
+          <span className="streak-pill">★ {game.stars}</span>
+        </header>
+        <div className="sign-win">
+          <p className="sign-win-stars">{'★'.repeat(Math.min(game.stars, 8))}</p>
+          <div className="confirm-row">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                game.resetGame()
+                setBoard(makeRound())
+              }}
+            >
+              Play again
+            </button>
+            <Link to="/" className="btn btn-secondary">
+              Home
+            </Link>
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
     <ActivityShell
       title="Colors"
-      prompt={
-        settings.ageBand === '3-6'
+      prompt="Color quest — match the color each round."
+      feedbackTone={game.tone}
+      feedbackMessage={
+        game.message ||
+        (settings.ageBand === '3-6'
           ? 'Match the swatch.'
-          : `Find ${round.target.name.toLowerCase()}.`
+          : `Find ${board.target.name.toLowerCase()}.`)
       }
-      feedbackTone={tone}
-      feedbackMessage={message}
-      streak={streak}
+      streak={game.streak}
       badge={
-        <div className="target-card color-target">
-          <span
-            className="color-swatch large"
-            style={{ background: round.target.hex }}
-            aria-label={round.target.name}
+        <>
+          <GameHUD
+            round={game.round}
+            total={game.totalRounds}
+            stars={game.stars}
+            level={game.level}
           />
-          {settings.ageBand === '3-6' ? (
-            <span className="target-word">{round.target.name}</span>
-          ) : null}
-        </div>
+          <div className="target-card color-target">
+            <span
+              className="color-swatch large"
+              style={{ background: board.target.hex }}
+              aria-label={board.target.name}
+            />
+            {settings.ageBand === '3-6' ? (
+              <span className="target-word">{board.target.name}</span>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => speakText(board.target.name, settings.sensory.soundOn)}
+            >
+              Hear it
+            </button>
+          </div>
+        </>
       }
     >
       <ChoiceGrid columns={2}>
-        {round.choices.map((color) => (
+        {board.choices.map((color) => (
           <button
             key={color.id}
             type="button"
             className="choice-btn color-choice"
-            onClick={() => onPick(color.id)}
-            disabled={locked}
+            onClick={() =>
+              game.resolve(
+                color.id === board.target.id,
+                `Great — ${board.target.name}!`,
+                'Try a different color.',
+                () => setBoard(makeRound()),
+              )
+            }
+            disabled={game.locked}
             aria-label={color.name}
           >
             <span className="color-swatch" style={{ background: color.hex }} />

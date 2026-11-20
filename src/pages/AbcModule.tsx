@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ActivityShell } from '../components/ActivityShell'
 import { ChoiceGrid } from '../components/ChoiceGrid'
+import { GameHUD } from '../components/GameHUD'
 import { letterPool, type LetterItem } from '../data/letters'
-import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
+import { speakText } from '../audio/calmAudio'
+import { useLearningGame } from '../hooks/useLearningGame'
 import { useApp } from '../store/AppContext'
 import { choiceCount, pickChoices, shuffle } from '../utils/quiz'
 
@@ -19,86 +22,115 @@ export function AbcModule() {
     }
   }
 
-  const [round, setRound] = useState(() => makeRound())
-  const [streak, setStreak] = useState(0)
-  const [tone, setTone] = useState<'idle' | 'good' | 'try'>('idle')
-  const [message, setMessage] = useState('Tap the matching letter.')
-  const [locked, setLocked] = useState(false)
+  const [board, setBoard] = useState(() => makeRound())
+  const game = useLearningGame({
+    moduleId: 'abc',
+    totalRounds: 8,
+    soundOn: settings.sensory.soundOn,
+    reducedMotion: settings.sensory.reducedMotion,
+    recordAnswer,
+  })
 
   useEffect(() => {
-    const next = makeRound(pool)
-    setRound(next)
-    setTone('idle')
-    setMessage(
-      settings.ageBand === '3-6'
-        ? 'Find this letter.'
-        : `Find the letter for “${next.target.word}”.`,
-    )
+    setBoard(makeRound(pool))
+    game.resetGame()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pool, settings.ageBand, count])
 
-  const nextRound = () => {
-    const next = makeRound()
-    setRound(next)
-    setTone('idle')
-    setMessage(
-      settings.ageBand === '3-6'
-        ? 'Find this letter.'
-        : `Find the letter for “${next.target.word}”.`,
+  if (game.finished) {
+    return (
+      <section className="activity-shell">
+        <header className="activity-header">
+          <Link to="/" className="back-link">
+            ← Home
+          </Link>
+          <div className="activity-meta">
+            <p className="eyebrow offline-tag">ABCs complete</p>
+            <h1>Letter star!</h1>
+          </div>
+          <span className="streak-pill">★ {game.stars}</span>
+        </header>
+        <div className="sign-win">
+          <p className="sign-win-stars">{'★'.repeat(Math.min(game.stars, 8))}</p>
+          <p>You finished 8 letter rounds.</p>
+          <div className="confirm-row">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                game.resetGame()
+                setBoard(makeRound())
+              }}
+            >
+              Play again
+            </button>
+            <Link to="/" className="btn btn-secondary">
+              Home
+            </Link>
+          </div>
+        </div>
+      </section>
     )
-    setLocked(false)
-  }
-
-  const onPick = (letter: string) => {
-    if (locked) return
-    playTap(settings.sensory.soundOn)
-    const correct = letter === round.target.letter
-    if (correct) {
-      const nextStreak = streak + 1
-      setStreak(nextStreak)
-      setTone('good')
-      setMessage('Nice! You found it.')
-      playCorrect(settings.sensory.soundOn)
-      recordAnswer('abc', true, nextStreak)
-      setLocked(true)
-      window.setTimeout(nextRound, settings.sensory.reducedMotion ? 500 : 900)
-    } else {
-      setStreak(0)
-      setTone('try')
-      setMessage('Almost — try another one.')
-      playGentleNudge(settings.sensory.soundOn)
-      recordAnswer('abc', false, 0)
-    }
   }
 
   return (
     <ActivityShell
       title="ABCs"
-      prompt={
-        settings.ageBand === '3-6'
+      prompt="Letter adventure — find the matching letter each round."
+      feedbackTone={game.tone}
+      feedbackMessage={
+        game.message ||
+        (settings.ageBand === '3-6'
           ? 'Look at the big letter, then tap the same one.'
-          : 'Match the letter to the word.'
+          : 'Match the letter to the word.')
       }
-      feedbackTone={tone}
-      feedbackMessage={message}
-      streak={streak}
+      streak={game.streak}
       badge={
-        <div className="target-card letter-target" aria-label={`Letter ${round.target.letter}`}>
-          <span className="big-letter">{round.target.letter}</span>
-          {settings.ageBand === '7-12' ? (
-            <span className="target-word">{round.target.word}</span>
-          ) : null}
-        </div>
+        <>
+          <GameHUD
+            round={game.round}
+            total={game.totalRounds}
+            stars={game.stars}
+            level={game.level}
+          />
+          <div className="target-card letter-target" aria-label={`Letter ${board.target.letter}`}>
+            <span className="big-letter">{board.target.letter}</span>
+            {settings.ageBand === '7-12' ? (
+              <span className="target-word">{board.target.word}</span>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() =>
+                speakText(
+                  settings.ageBand === '7-12'
+                    ? `${board.target.letter} for ${board.target.word}`
+                    : board.target.letter,
+                  settings.sensory.soundOn,
+                )
+              }
+            >
+              Hear it
+            </button>
+          </div>
+        </>
       }
     >
       <ChoiceGrid columns={2}>
-        {round.choices.map((item) => (
+        {board.choices.map((item) => (
           <button
             key={item.letter}
             type="button"
             className="choice-btn letter-choice"
-            onClick={() => onPick(item.letter)}
-            disabled={locked}
+            onClick={() =>
+              game.resolve(
+                item.letter === board.target.letter,
+                'Nice! You found it.',
+                'Almost — try another one.',
+                () => setBoard(makeRound()),
+              )
+            }
+            disabled={game.locked}
           >
             {item.letter}
           </button>
