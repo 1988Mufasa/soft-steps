@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { HappyFaceHold } from '../components/HappyFaceHold'
 import { useApp } from '../store/AppContext'
 import type { CareModuleId, ModuleId } from '../types'
 
@@ -31,6 +32,7 @@ const CARE: {
 ]
 
 export function Home() {
+  const navigate = useNavigate()
   const { settings, online, progress } = useApp()
   const enabled = MODULES.filter((m) => settings.enabledModules[m.id])
   const care = CARE.filter((m) => settings.enabledCareModules[m.id])
@@ -188,10 +190,8 @@ export function Home() {
         )}
       </section>
 
-      <footer className="home-footer">
-        <Link to="/parent" className="parent-link">
-          Grown-ups
-        </Link>
+      <footer className="home-footer home-footer-secure">
+        <HappyFaceHold onUnlock={() => navigate('/parent')} />
       </footer>
     </div>
   )

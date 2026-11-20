@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { PurchaseCodeGate } from '../components/PurchaseCodeGate'
 import {
   openCheckoutUrl,
   startSecureCheckout,
@@ -9,11 +10,13 @@ import {
 /**
  * Billing UI — Soft Steps never shows card inputs.
  * Payment details are entered only on Stripe Checkout.
+ * Every purchase first requires a visible 4-digit grown-up code.
  */
 export function ParentBilling() {
   const navigate = useNavigate()
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState<CheckoutPlan | null>(null)
+  const [pendingPlan, setPendingPlan] = useState<CheckoutPlan | null>(null)
 
   useEffect(() => {
     if (sessionStorage.getItem('soft-steps-parent-ok') !== '1') {
@@ -26,6 +29,7 @@ export function ParentBilling() {
     setStatus('')
     const result = await startSecureCheckout(plan)
     setBusy(null)
+    setPendingPlan(null)
     if (!result.ok) {
       setStatus(result.error)
       return
@@ -37,6 +41,11 @@ export function ParentBilling() {
       return
     }
     openCheckoutUrl(result.url)
+  }
+
+  const requestPurchase = (plan: CheckoutPlan) => {
+    setStatus('')
+    setPendingPlan(plan)
   }
 
   return (
@@ -55,39 +64,48 @@ export function ParentBilling() {
       <article className="dash-card security-card">
         <h2>How your payment stays safe</h2>
         <ul className="security-list">
+          <li>Before every purchase, Soft Steps shows 4 random numbers you must type in.</li>
           <li>Soft Steps never asks for card numbers, CVV, or bank details.</li>
           <li>Checkout opens on Stripe’s secure page (PCI DSS SAQ A).</li>
           <li>Our API only creates a Checkout Session — it never stores PAN/CVV.</li>
-          <li>Webhook events are signature-verified; secrets stay on the server.</li>
         </ul>
       </article>
 
-      <div className="dash-grid">
+      {pendingPlan ? (
         <article className="dash-card">
-          <h2>One-time support</h2>
-          <p>Thank-you contribution. Card entry happens on Stripe, not here.</p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={busy !== null}
-            onClick={() => void checkout('supporter-once')}
-          >
-            {busy === 'supporter-once' ? 'Starting…' : 'Continue to Stripe'}
-          </button>
+          <PurchaseCodeGate
+            onCancel={() => setPendingPlan(null)}
+            onVerified={() => void checkout(pendingPlan)}
+          />
         </article>
-        <article className="dash-card">
-          <h2>Monthly support</h2>
-          <p>Optional subscription. Cancel anytime in Stripe’s customer portal later.</p>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={busy !== null}
-            onClick={() => void checkout('supporter-month')}
-          >
-            {busy === 'supporter-month' ? 'Starting…' : 'Continue to Stripe'}
-          </button>
-        </article>
-      </div>
+      ) : (
+        <div className="dash-grid">
+          <article className="dash-card">
+            <h2>One-time support</h2>
+            <p>Thank-you contribution. Card entry happens on Stripe, not here.</p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={busy !== null}
+              onClick={() => requestPurchase('supporter-once')}
+            >
+              {busy === 'supporter-once' ? 'Starting…' : 'Buy — verify grown-up first'}
+            </button>
+          </article>
+          <article className="dash-card">
+            <h2>Monthly support</h2>
+            <p>Optional subscription. Cancel anytime in Stripe’s customer portal later.</p>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={busy !== null}
+              onClick={() => requestPurchase('supporter-month')}
+            >
+              {busy === 'supporter-month' ? 'Starting…' : 'Subscribe — verify grown-up first'}
+            </button>
+          </article>
+        </div>
+      )}
 
       {status ? <p className="form-error security-status">{status}</p> : null}
     </section>
