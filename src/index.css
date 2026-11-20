@@ -330,33 +330,63 @@ html[data-reduced-motion='true'] .feedback-good {
   text-align: center;
 }
 
-.sign-live-hq {
-  position: relative;
-  width: min(260px, 82vw);
+.sign-storyboard {
+  width: min(320px, 92vw);
   margin: 0 auto;
+  display: grid;
+  gap: 0.65rem;
 }
 
-.sign-live-hq.is-large {
-  width: min(300px, 88vw);
+.sign-storyboard.is-large {
+  width: min(360px, 94vw);
 }
 
-.sign-hand-svg {
-  width: 100%;
-  height: auto;
-  display: block;
+.sign-storyboard-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 0.2rem;
+  min-height: 200px;
+  padding: 1rem 0.75rem 0.75rem;
   border-radius: 26px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.9), transparent 45%),
+    linear-gradient(165deg, #f7f7f2, #d6e6f6);
   box-shadow: var(--shadow);
+  color: var(--accent-deep);
+  overflow: hidden;
 }
 
-.sign-live-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.45rem;
-  align-items: center;
+.sign-storyboard-emoji {
+  font-size: clamp(3.2rem, 14vw, 4.4rem);
+  line-height: 1;
+  animation: signEmojiPulse 2.2s ease-in-out infinite;
+}
+
+.sign-storyboard-hand {
+  color: var(--accent-deep);
+  opacity: 0.92;
+}
+
+.sign-line-hand {
+  width: 88px;
+  height: 88px;
+}
+
+.sign-arrow {
+  width: min(180px, 70%);
+  height: 36px;
+  color: var(--sense-blue);
+}
+
+.sign-arrow-path {
+  animation: signArrowPulse 1.1s ease-in-out infinite;
 }
 
 .sign-live-badge {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   background: rgba(54, 97, 176, 0.92);
@@ -365,28 +395,72 @@ html[data-reduced-motion='true'] .feedback-good {
   font-weight: 800;
 }
 
-.sign-frame-label {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--ink-soft);
+.sign-storyboard-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
 }
 
-.sign-frame-dots {
+.sign-storyboard-steps li {
   display: flex;
-  justify-content: center;
-  gap: 0.35rem;
-  margin-top: 0.35rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 14px;
+  background: rgba(54, 97, 176, 0.08);
+  color: var(--ink-soft);
+  font-weight: 700;
 }
 
-.sign-frame-dots span {
-  width: 8px;
-  height: 8px;
+.sign-storyboard-steps li.is-current {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  outline: 2px solid var(--accent);
+}
+
+.sign-storyboard-steps li.is-done {
+  background: rgba(107, 168, 78, 0.18);
+  color: #1f6b48;
+}
+
+.sign-step-num {
+  width: 1.6rem;
+  height: 1.6rem;
   border-radius: 50%;
-  background: rgba(54, 97, 176, 0.25);
+  display: grid;
+  place-items: center;
+  background: #fff;
+  font-weight: 900;
+  flex: 0 0 auto;
 }
 
-.sign-frame-dots span.is-on {
-  background: var(--sense-blue);
+@keyframes signEmojiPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes signArrowPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+html[data-reduced-motion='true'] .sign-storyboard-emoji,
+html[data-reduced-motion='true'] .sign-arrow-path,
+html[data-no-sudden='true'] .sign-storyboard-emoji,
+html[data-no-sudden='true'] .sign-arrow-path {
+  animation: none !important;
 }
 
 .game-hud {
@@ -532,13 +606,42 @@ html[data-reduced-motion='true'] .feedback-good {
   cursor: pointer;
 }
 
-.sign-live-choice .sign-live-hq {
+.sign-live-choice .sign-storyboard {
   width: 100%;
 }
 
-.sign-live-choice .sign-live-meta,
-.sign-live-choice .sign-frame-dots {
+.sign-live-choice .sign-storyboard-steps,
+.sign-live-choice .sign-how {
   display: none;
+}
+
+.sign-live-choice .sign-storyboard-stage {
+  min-height: 140px;
+  padding: 0.65rem;
+}
+
+.sign-live-choice .sign-storyboard-emoji {
+  font-size: 2.4rem;
+}
+
+.sign-live-choice .sign-line-hand {
+  width: 56px;
+  height: 56px;
+}
+
+.memory-card .sign-storyboard {
+  width: 100%;
+}
+
+.memory-card .sign-storyboard-steps,
+.memory-card .sign-how,
+.memory-card .sign-live-badge {
+  display: none;
+}
+
+.memory-card .sign-storyboard-stage {
+  min-height: 100px;
+  box-shadow: none;
 }
 
 .sign-how {

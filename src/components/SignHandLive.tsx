@@ -1,455 +1,272 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { SignPose } from '../data/signs'
 
 type Props = {
   pose: SignPose
   title?: string
+  emoji?: string
+  how?: string
   replayKey?: string | number
   large?: boolean
 }
 
-/** Detailed palm + fingers for flipbook frames. */
-function Hand({
-  x,
-  y,
-  rot = 0,
-  scale = 1,
-  mirror = false,
-  skin = '#F0D2B0',
-  sleeve = '#3661B0',
-}: {
-  x: number
-  y: number
-  rot?: number
-  scale?: number
-  mirror?: boolean
-  skin?: string
-  sleeve?: string
-}) {
-  const sx = mirror ? -scale : scale
+type Step = {
+  caption: string
+  /** Direction hint shown under the emoji stage */
+  arrow: 'wave' | 'forward' | 'circle' | 'tap' | 'up' | 'down' | 'together' | 'cross' | 'shake'
+}
+
+const STEPS: Record<SignPose, Step[]> = {
+  wave: [
+    { caption: 'Hand near forehead', arrow: 'up' },
+    { caption: 'Wave out and back', arrow: 'wave' },
+  ],
+  'chin-out': [
+    { caption: 'Fingers touch chin', arrow: 'tap' },
+    { caption: 'Move hand forward', arrow: 'forward' },
+  ],
+  'circle-chest': [
+    { caption: 'Flat hand on chest', arrow: 'tap' },
+    { caption: 'Circle gently', arrow: 'circle' },
+  ],
+  'tips-together': [
+    { caption: 'Fingertips face in', arrow: 'together' },
+    { caption: 'Tap tips together', arrow: 'tap' },
+  ],
+  'thumbs-up': [
+    { caption: 'Make a fist', arrow: 'up' },
+    { caption: 'Nod fist like “yes”', arrow: 'shake' },
+  ],
+  'thumbs-down': [
+    { caption: 'Two fingers + thumb', arrow: 'together' },
+    { caption: 'Close for “no”', arrow: 'tap' },
+  ],
+  'fist-help': [
+    { caption: 'Fist on open palm', arrow: 'tap' },
+    { caption: 'Lift both hands up', arrow: 'up' },
+  ],
+  'hand-heart': [
+    { caption: 'Cross arms on chest', arrow: 'cross' },
+    { caption: 'Hold over your heart', arrow: 'tap' },
+  ],
+  'to-mouth': [
+    { caption: 'Fingertips near mouth', arrow: 'up' },
+    { caption: 'Tap like eating', arrow: 'tap' },
+  ],
+  'cup-drink': [
+    { caption: 'Make a C-hand cup', arrow: 'up' },
+    { caption: 'Tip toward mouth', arrow: 'forward' },
+  ],
+  'palms-down': [
+    { caption: 'Palms face in', arrow: 'together' },
+    { caption: 'Flip palms down — done', arrow: 'down' },
+  ],
+  'stop-flat': [
+    { caption: 'One palm flat', arrow: 'up' },
+    { caption: 'Chop for “stop”', arrow: 'down' },
+  ],
+  'link-friends': [
+    { caption: 'Hook index fingers', arrow: 'together' },
+    { caption: 'Switch hooks', arrow: 'shake' },
+  ],
+  'm-tap': [
+    { caption: 'Open hand at chin', arrow: 'up' },
+    { caption: 'Thumb taps chin', arrow: 'tap' },
+  ],
+  'd-tap': [
+    { caption: 'Open hand at forehead', arrow: 'up' },
+    { caption: 'Thumb taps forehead', arrow: 'tap' },
+  ],
+  'play-y': [
+    { caption: 'Make Y hands', arrow: 'shake' },
+    { caption: 'Shake side to side', arrow: 'wave' },
+  ],
+}
+
+function MotionArrow({ kind }: { kind: Step['arrow'] }) {
   return (
-    <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${sx} ${scale})`}>
-      <ellipse cx="0" cy="18" rx="16" ry="12" fill={sleeve} />
-      <ellipse cx="0" cy="0" rx="18" ry="20" fill={skin} />
-      <rect x="-7" y="-38" width="7" height="26" rx="3.5" fill={skin} />
-      <rect x="-1" y="-40" width="7" height="28" rx="3.5" fill={skin} />
-      <rect x="5" y="-36" width="7" height="24" rx="3.5" fill={skin} />
-      <rect x="11" y="-30" width="6" height="18" rx="3" fill={skin} />
-      <rect x="-16" y="-8" width="8" height="18" rx="4" fill={skin} transform="rotate(-35 -12 1)" />
-    </g>
+    <svg className={`sign-arrow sign-arrow--${kind}`} viewBox="0 0 120 40" aria-hidden="true">
+      {kind === 'wave' ? (
+        <path
+          className="sign-arrow-path"
+          d="M10 28 C30 8, 50 32, 70 12 S100 28, 110 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+      ) : null}
+      {kind === 'forward' ? (
+        <path
+          className="sign-arrow-path"
+          d="M16 20 H92 M78 8 L104 20 L78 32"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : null}
+      {kind === 'circle' ? (
+        <circle
+          className="sign-arrow-path"
+          cx="60"
+          cy="20"
+          r="12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeDasharray="16 10"
+        />
+      ) : null}
+      {kind === 'tap' ? (
+        <g className="sign-arrow-path" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+          <path d="M60 6 V28" />
+          <path d="M48 20 L60 32 L72 20" />
+        </g>
+      ) : null}
+      {kind === 'up' ? (
+        <g className="sign-arrow-path" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+          <path d="M60 34 V10" />
+          <path d="M46 20 L60 6 L74 20" />
+        </g>
+      ) : null}
+      {kind === 'down' ? (
+        <g className="sign-arrow-path" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+          <path d="M60 6 V30" />
+          <path d="M46 20 L60 34 L74 20" />
+        </g>
+      ) : null}
+      {kind === 'together' ? (
+        <g className="sign-arrow-path" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+          <path d="M20 20 H48 M36 10 L50 20 L36 30" />
+          <path d="M100 20 H72 M84 10 L70 20 L84 30" />
+        </g>
+      ) : null}
+      {kind === 'cross' ? (
+        <g className="sign-arrow-path" stroke="currentColor" strokeWidth="5" fill="none" strokeLinecap="round">
+          <path d="M30 10 L90 30" />
+          <path d="M90 10 L30 30" />
+        </g>
+      ) : null}
+      {kind === 'shake' ? (
+        <path
+          className="sign-arrow-path"
+          d="M24 20 H44 M76 20 H96 M52 12 V28"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+      ) : null}
+    </svg>
   )
 }
 
-type Frame = { label: string; nodes: ReactNode }
+/** Clean line-art hand icon (dictionary style), not fleshy cartoons. */
+function LineHand({ variant = 'open' }: { variant?: 'open' | 'fist' | 'point' | 'cup' }) {
+  return (
+    <svg className="sign-line-hand" viewBox="0 0 80 80" aria-hidden="true">
+      {variant === 'open' ? (
+        <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M28 70 V38" />
+          <path d="M40 72 V28" />
+          <path d="M52 70 V34" />
+          <path d="M62 66 V42" />
+          <path d="M20 58 C14 50, 16 40, 26 38" />
+          <path d="M26 50 C26 62, 54 66, 60 52" />
+        </g>
+      ) : null}
+      {variant === 'fist' ? (
+        <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
+          <rect x="22" y="34" width="36" height="28" rx="12" />
+          <path d="M40 34 V18" />
+        </g>
+      ) : null}
+      {variant === 'point' ? (
+        <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
+          <path d="M30 66 V40" />
+          <path d="M42 68 V22" />
+          <path d="M54 64 V44" />
+          <path d="M22 52 C18 46, 20 38, 28 36" />
+        </g>
+      ) : null}
+      {variant === 'cup' ? (
+        <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
+          <path d="M24 30 C18 44, 20 62, 40 66 C60 62, 62 44, 56 30" />
+          <path d="M28 30 H52" />
+        </g>
+      ) : null}
+    </svg>
+  )
+}
 
-function framesFor(pose: SignPose): Frame[] {
-  switch (pose) {
-    case 'wave':
-      return [
-        {
-          label: 'Hand up',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="14" fill="#F0D2B0" />
-              <Hand x={78} y={48} rot={-20} />
-            </>
-          ),
-        },
-        {
-          label: 'Wave out',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="14" fill="#F0D2B0" />
-              <Hand x={88} y={44} rot={18} />
-            </>
-          ),
-        },
-        {
-          label: 'Wave back',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="14" fill="#F0D2B0" />
-              <Hand x={72} y={46} rot={-28} />
-            </>
-          ),
-        },
-      ]
-    case 'chin-out':
-      return [
-        {
-          label: 'Touch chin',
-          nodes: (
-            <>
-              <circle cx="60" cy="36" r="16" fill="#F0D2B0" />
-              <Hand x={58} y={58} rot={10} scale={0.9} />
-            </>
-          ),
-        },
-        {
-          label: 'Move forward',
-          nodes: (
-            <>
-              <circle cx="60" cy="36" r="16" fill="#F0D2B0" />
-              <Hand x={86} y={50} rot={-8} scale={0.9} />
-            </>
-          ),
-        },
-      ]
-    case 'circle-chest':
-      return [
-        {
-          label: 'On chest',
-          nodes: (
-            <>
-              <ellipse cx="60" cy="72" rx="28" ry="30" fill="#B7DAF5" />
-              <Hand x={48} y={62} rot={-20} scale={0.85} />
-            </>
-          ),
-        },
-        {
-          label: 'Circle',
-          nodes: (
-            <>
-              <ellipse cx="60" cy="72" rx="28" ry="30" fill="#B7DAF5" />
-              <Hand x={70} y={52} rot={30} scale={0.85} />
-            </>
-          ),
-        },
-        {
-          label: 'Around',
-          nodes: (
-            <>
-              <ellipse cx="60" cy="72" rx="28" ry="30" fill="#B7DAF5" />
-              <Hand x={74} y={74} rot={100} scale={0.85} />
-            </>
-          ),
-        },
-      ]
-    case 'tips-together':
-      return [
-        {
-          label: 'Hands apart',
-          nodes: (
-            <>
-              <Hand x={38} y={70} rot={20} scale={0.8} mirror />
-              <Hand x={82} y={70} rot={-20} scale={0.8} />
-            </>
-          ),
-        },
-        {
-          label: 'Tips tap',
-          nodes: (
-            <>
-              <Hand x={50} y={62} rot={10} scale={0.8} mirror />
-              <Hand x={70} y={62} rot={-10} scale={0.8} />
-            </>
-          ),
-        },
-      ]
-    case 'thumbs-up':
-      return [
-        {
-          label: 'Fist',
-          nodes: <Hand x={60} y={68} rot={0} scale={1.05} />,
-        },
-        {
-          label: 'Nod yes',
-          nodes: <Hand x={60} y={68} rot={18} scale={1.05} />,
-        },
-        {
-          label: 'Nod back',
-          nodes: <Hand x={60} y={68} rot={-12} scale={1.05} />,
-        },
-      ]
-    case 'thumbs-down':
-      return [
-        {
-          label: 'Open',
-          nodes: <Hand x={62} y={60} rot={-30} scale={1} sleeve="#C7303A" />,
-        },
-        {
-          label: 'Close no',
-          nodes: <Hand x={70} y={58} rot={10} scale={0.95} sleeve="#C7303A" />,
-        },
-      ]
-    case 'fist-help':
-      return [
-        {
-          label: 'Fist on palm',
-          nodes: (
-            <>
-              <Hand x={60} y={86} rot={90} scale={0.85} sleeve="#74B8D2" />
-              <Hand x={60} y={58} rot={0} scale={0.85} />
-            </>
-          ),
-        },
-        {
-          label: 'Lift up',
-          nodes: (
-            <>
-              <Hand x={60} y={70} rot={90} scale={0.85} sleeve="#74B8D2" />
-              <Hand x={60} y={42} rot={0} scale={0.85} />
-            </>
-          ),
-        },
-      ]
-    case 'hand-heart':
-      return [
-        {
-          label: 'Cross arms',
-          nodes: (
-            <>
-              <Hand x={48} y={70} rot={40} scale={0.9} mirror sleeve="#C7303A" />
-              <Hand x={72} y={70} rot={-40} scale={0.9} sleeve="#C7303A" />
-              <path
-                d="M60 78 C48 68 48 58 54 56 C57 55 59 58 60 62 C61 58 63 55 66 56 C72 58 72 68 60 78Z"
-                fill="#C7303A"
-                opacity="0.9"
-              />
-            </>
-          ),
-        },
-        {
-          label: 'Hold heart',
-          nodes: (
-            <>
-              <Hand x={46} y={72} rot={35} scale={0.9} mirror sleeve="#C7303A" />
-              <Hand x={74} y={72} rot={-35} scale={0.9} sleeve="#C7303A" />
-              <path
-                d="M60 82 C44 68 46 54 56 54 C59 54 60 58 60 62 C60 58 61 54 64 54 C74 54 76 68 60 82Z"
-                fill="#C7303A"
-              />
-            </>
-          ),
-        },
-      ]
-    case 'to-mouth':
-      return [
-        {
-          label: 'Hand low',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="15" fill="#F0D2B0" />
-              <Hand x={60} y={78} rot={0} scale={0.85} />
-            </>
-          ),
-        },
-        {
-          label: 'To mouth',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="15" fill="#F0D2B0" />
-              <Hand x={60} y={52} rot={0} scale={0.85} />
-            </>
-          ),
-        },
-      ]
-    case 'cup-drink':
-      return [
-        {
-          label: 'Cup hand',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="15" fill="#F0D2B0" />
-              <Hand x={62} y={78} rot={-15} scale={0.9} />
-            </>
-          ),
-        },
-        {
-          label: 'Tip to drink',
-          nodes: (
-            <>
-              <circle cx="60" cy="34" r="15" fill="#F0D2B0" />
-              <Hand x={68} y={48} rot={-40} scale={0.9} />
-            </>
-          ),
-        },
-      ]
-    case 'palms-down':
-      return [
-        {
-          label: 'Palms in',
-          nodes: (
-            <>
-              <Hand x={40} y={64} rot={100} scale={0.85} mirror sleeve="#6BA84E" />
-              <Hand x={80} y={64} rot={-100} scale={0.85} sleeve="#6BA84E" />
-            </>
-          ),
-        },
-        {
-          label: 'Flip done',
-          nodes: (
-            <>
-              <Hand x={34} y={74} rot={160} scale={0.85} mirror sleeve="#6BA84E" />
-              <Hand x={86} y={74} rot={-160} scale={0.85} sleeve="#6BA84E" />
-            </>
-          ),
-        },
-      ]
-    case 'stop-flat':
-      return [
-        {
-          label: 'Hand up',
-          nodes: (
-            <>
-              <Hand x={60} y={86} rot={90} scale={0.9} sleeve="#74B8D2" />
-              <Hand x={60} y={40} rot={0} scale={0.9} sleeve="#C7303A" />
-            </>
-          ),
-        },
-        {
-          label: 'Chop stop',
-          nodes: (
-            <>
-              <Hand x={60} y={86} rot={90} scale={0.9} sleeve="#74B8D2" />
-              <Hand x={60} y={62} rot={0} scale={0.9} sleeve="#C7303A" />
-            </>
-          ),
-        },
-      ]
-    case 'link-friends':
-      return [
-        {
-          label: 'Hook',
-          nodes: (
-            <>
-              <Hand x={44} y={70} rot={25} scale={0.8} mirror />
-              <Hand x={76} y={70} rot={-25} scale={0.8} />
-            </>
-          ),
-        },
-        {
-          label: 'Switch',
-          nodes: (
-            <>
-              <Hand x={48} y={62} rot={-15} scale={0.8} mirror />
-              <Hand x={72} y={62} rot={15} scale={0.8} />
-            </>
-          ),
-        },
-      ]
-    case 'm-tap':
-      return [
-        {
-          label: 'Near chin',
-          nodes: (
-            <>
-              <circle cx="60" cy="40" r="16" fill="#F0D2B0" />
-              <Hand x={78} y={58} rot={-25} scale={0.85} sleeve="#8B3A6B" />
-            </>
-          ),
-        },
-        {
-          label: 'Tap chin',
-          nodes: (
-            <>
-              <circle cx="60" cy="40" r="16" fill="#F0D2B0" />
-              <Hand x={68} y={52} rot={-10} scale={0.85} sleeve="#8B3A6B" />
-            </>
-          ),
-        },
-      ]
-    case 'd-tap':
-      return [
-        {
-          label: 'Near forehead',
-          nodes: (
-            <>
-              <circle cx="60" cy="40" r="16" fill="#F0D2B0" />
-              <Hand x={78} y={36} rot={-20} scale={0.85} />
-            </>
-          ),
-        },
-        {
-          label: 'Tap forehead',
-          nodes: (
-            <>
-              <circle cx="60" cy="40" r="16" fill="#F0D2B0" />
-              <Hand x={70} y={30} rot={-5} scale={0.85} />
-            </>
-          ),
-        },
-      ]
-    case 'play-y':
-      return [
-        {
-          label: 'Y hands',
-          nodes: (
-            <>
-              <Hand x={40} y={68} rot={-25} scale={0.85} sleeve="#E0B84A" />
-              <Hand x={80} y={68} rot={25} scale={0.85} sleeve="#E0B84A" />
-            </>
-          ),
-        },
-        {
-          label: 'Shake play',
-          nodes: (
-            <>
-              <Hand x={36} y={64} rot={15} scale={0.85} sleeve="#E0B84A" />
-              <Hand x={84} y={64} rot={-15} scale={0.85} sleeve="#E0B84A" />
-            </>
-          ),
-        },
-      ]
-    default:
-      return [{ label: 'Sign', nodes: <Hand x={60} y={70} /> }]
-  }
+function handVariant(pose: SignPose): 'open' | 'fist' | 'point' | 'cup' {
+  if (pose === 'thumbs-up' || pose === 'fist-help') return 'fist'
+  if (pose === 'cup-drink') return 'cup'
+  if (pose === 'stop-flat' || pose === 'thumbs-down') return 'point'
+  return 'open'
 }
 
 /**
- * Multi-frame “live” sign demo — flipbook of clearer hand illustrations.
+ * Storyboard-style live sign demo:
+ * big meaning emoji + motion arrow + line-art hand + step captions.
+ * Replaces the old fleshy cartoon hands.
  */
-export function SignHandLive({ pose, title, replayKey = 0, large }: Props) {
-  const frames = framesFor(pose)
-  const [frame, setFrame] = useState(0)
+export function SignHandLive({
+  pose,
+  title,
+  emoji = '✋',
+  how,
+  replayKey = 0,
+  large,
+}: Props) {
+  const steps = useMemo(() => STEPS[pose] ?? STEPS.wave, [pose])
+  const [step, setStep] = useState(0)
   const reduced =
     typeof document !== 'undefined' &&
     (document.documentElement.dataset.reducedMotion === 'true' ||
       document.documentElement.dataset.noSudden === 'true')
 
   useEffect(() => {
-    setFrame(0)
+    setStep(0)
   }, [pose, replayKey])
 
   useEffect(() => {
-    if (reduced || frames.length < 2) return
+    if (reduced || steps.length < 2) return
     const id = window.setInterval(() => {
-      setFrame((f) => (f + 1) % frames.length)
-    }, 700)
+      setStep((s) => (s + 1) % steps.length)
+    }, 1100)
     return () => window.clearInterval(id)
-  }, [pose, replayKey, frames.length, reduced])
+  }, [pose, replayKey, steps.length, reduced])
 
-  const current = frames[frame] ?? frames[0]
+  const current = steps[step] ?? steps[0]
 
   return (
-    <div className={`sign-live-hq ${large ? 'is-large' : ''}`}>
-      <svg
-        className="sign-hand-svg"
-        viewBox="0 0 120 120"
-        role="img"
-        aria-label={title || current.label}
-      >
-        <defs>
-          <linearGradient id="signBg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#F7F7F2" />
-            <stop offset="100%" stopColor="#D6E6F6" />
-          </linearGradient>
-        </defs>
-        <rect width="120" height="120" rx="26" fill="url(#signBg)" />
-        {current.nodes}
-      </svg>
-      <div className="sign-live-meta">
-        <span className="sign-live-badge">Live sign</span>
-        <span className="sign-frame-label">{current.label}</span>
+    <div className={`sign-storyboard ${large ? 'is-large' : ''}`} aria-label={title || 'Live sign'}>
+      <div className="sign-storyboard-stage">
+        <span className="sign-storyboard-emoji" aria-hidden="true">
+          {emoji}
+        </span>
+        <div className={`sign-storyboard-hand is-step-${step}`} data-pose={pose}>
+          <LineHand variant={handVariant(pose)} />
+        </div>
+        <MotionArrow kind={current.arrow} />
+        <span className="sign-live-badge">Live steps</span>
       </div>
-      <div className="sign-frame-dots" aria-hidden="true">
-        {frames.map((_, i) => (
-          <span key={i} className={i === frame ? 'is-on' : ''} />
+
+      <ol className="sign-storyboard-steps">
+        {steps.map((s, i) => (
+          <li key={s.caption} className={i === step ? 'is-current' : i < step ? 'is-done' : ''}>
+            <span className="sign-step-num">{i + 1}</span>
+            <span>{s.caption}</span>
+          </li>
         ))}
-      </div>
+      </ol>
+
+      {how ? <p className="sign-how">{how}</p> : null}
     </div>
   )
 }
 
-// Re-export alias used by older imports
 export { SignHandLive as SignHand }

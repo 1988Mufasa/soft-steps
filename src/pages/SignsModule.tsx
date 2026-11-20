@@ -252,10 +252,14 @@ export function SignsModule() {
           </span>
         </header>
         <div className="target-card sign-target">
-          <SignHand pose={lesson.pose} title={lesson.word} replayKey={replay} large />
-          <p className="sign-how">
-            {lesson.emoji} {lesson.how}
-          </p>
+          <SignHand
+            pose={lesson.pose}
+            title={lesson.word}
+            emoji={lesson.emoji}
+            how={lesson.how}
+            replayKey={replay}
+            large
+          />
           <div className="confirm-row sign-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setReplay((n) => n + 1)}>
               Replay live sign
@@ -336,7 +340,12 @@ export function SignsModule() {
                       <strong>{card.sign.word}</strong>
                     </span>
                   ) : (
-                    <SignHand pose={card.sign.pose} title={card.sign.word} replayKey={card.id} />
+                    <SignHand
+                      pose={card.sign.pose}
+                      title={card.sign.word}
+                      emoji={card.sign.emoji}
+                      replayKey={card.id}
+                    />
                   )
                 ) : (
                   <span className="memory-back">?</span>
@@ -376,10 +385,11 @@ export function SignsModule() {
           <SignHand
             pose={matchRound.target.pose}
             title={matchRound.target.word}
+            emoji={matchRound.target.emoji}
+            how={matchRound.target.how}
             replayKey={replay}
             large
           />
-          <p className="sign-how">{matchRound.target.how}</p>
           <div className="confirm-row sign-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setReplay((n) => n + 1)}>
               Replay live sign
@@ -434,7 +444,12 @@ export function SignsModule() {
               disabled={locked}
               onClick={() => onMatchPick(item.id, false)}
             >
-              <SignHand pose={item.pose} title={item.word} replayKey={`${replay}-${item.id}`} />
+              <SignHand
+                pose={item.pose}
+                title={item.word}
+                emoji={item.emoji}
+                replayKey={`${replay}-${item.id}`}
+              />
             </button>
           ))}
         </div>
