@@ -15,6 +15,10 @@ export type SignPose =
   | 'm-tap'
   | 'd-tap'
   | 'play-y'
+  | 'wait'
+  | 'want'
+  | 'bathroom'
+  | 'home'
 
 export type SignItem = {
   id: string
@@ -155,6 +159,38 @@ export const SIGNS: SignItem[] = [
     pose: 'play-y',
     how: 'Y-hands shake side to side.',
     ages: ['7-12'],
+  },
+  {
+    id: 'wait',
+    word: 'Wait',
+    emoji: '⏳',
+    pose: 'wait',
+    how: 'Palms up, fingers wiggle gently.',
+    ages: ['3-6', '7-12'],
+  },
+  {
+    id: 'want',
+    word: 'Want',
+    emoji: '🤲',
+    pose: 'want',
+    how: 'Hands pull toward your chest.',
+    ages: ['3-6', '7-12'],
+  },
+  {
+    id: 'bathroom',
+    word: 'Bathroom',
+    emoji: '🚽',
+    pose: 'bathroom',
+    how: 'Fist with T shakes at the side.',
+    ages: ['3-6', '7-12'],
+  },
+  {
+    id: 'home',
+    word: 'Home',
+    emoji: '🏠',
+    pose: 'home',
+    how: 'Fingertips touch cheek, then chin.',
+    ages: ['3-6', '7-12'],
   },
 ]
 

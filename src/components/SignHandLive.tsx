@@ -12,9 +12,33 @@ type Props = {
 
 const CLIP_MS = 2400
 
+/** Still “photo card” frames — clarity over fancy animation. */
+const PHOTO_FRAMES: Record<SignPose, [string, string, string]> = {
+  wave: ['Hand up', 'Open near forehead', 'Wave out'],
+  'chin-out': ['Fingers on chin', 'Hand flat', 'Move forward'],
+  'circle-chest': ['Flat on chest', 'Start circle', 'Finish circle'],
+  'tips-together': ['Tips face in', 'Move closer', 'Tap tips'],
+  'thumbs-up': ['Make a fist', 'Thumb up', 'Nod yes'],
+  'thumbs-down': ['Two fingers out', 'Near thumb', 'Close for no'],
+  'fist-help': ['Palm open', 'Fist on palm', 'Lift up'],
+  'hand-heart': ['Arms open', 'Cross on chest', 'Hold heart'],
+  'to-mouth': ['Tips together', 'Near mouth', 'Tap eat'],
+  'cup-drink': ['Make a C', 'Like a cup', 'Tip to mouth'],
+  'palms-down': ['Palms face in', 'Flip out', 'All done'],
+  'stop-flat': ['One palm flat', 'Other hand edge', 'Chop stop'],
+  'link-friends': ['Hook one', 'Hook other', 'Switch'],
+  'm-tap': ['Open hand', 'At chin', 'Thumb tap'],
+  'd-tap': ['Open hand', 'At forehead', 'Thumb tap'],
+  'play-y': ['Y hands', 'Hold out', 'Shake play'],
+  wait: ['Palms up', 'Wiggle fingers', 'Wait'],
+  want: ['Hands claw', 'Pull to chest', 'Want'],
+  bathroom: ['Fist + T', 'At side', 'Shake bathroom'],
+  home: ['Fingertips', 'Cheek to chin', 'Home'],
+}
+
 /**
- * Short looping “ASL video card” — player chrome + soft signer silhouette
- * with pose-specific hand motion. Offline-friendly (no external video files).
+ * Short looping ASL video + photo cards.
+ * Offline SVG signer (no external copyrighted clips).
  */
 export function SignHandLive({
   pose,
@@ -28,16 +52,19 @@ export function SignHandLive({
   const [playing, setPlaying] = useState(true)
   const [progress, setProgress] = useState(0)
   const [localReplay, setLocalReplay] = useState(0)
+  const [photoFocus, setPhotoFocus] = useState(0)
   const reduced =
     typeof document !== 'undefined' &&
     (document.documentElement.dataset.reducedMotion === 'true' ||
       document.documentElement.dataset.noSudden === 'true')
 
   const caption = useMemo(() => title || 'Sign clip', [title])
+  const frames = useMemo(() => PHOTO_FRAMES[pose] ?? PHOTO_FRAMES.wave, [pose])
   const clipKey = `${pose}-${replayKey}-${localReplay}`
 
   useEffect(() => {
     setProgress(0)
+    setPhotoFocus(0)
     setPlaying(!reduced)
   }, [clipKey, reduced])
 
@@ -47,7 +74,9 @@ export function SignHandLive({
     const started = performance.now()
     const tick = (now: number) => {
       const elapsed = (now - started) % CLIP_MS
-      setProgress(elapsed / CLIP_MS)
+      const p = elapsed / CLIP_MS
+      setProgress(p)
+      setPhotoFocus(Math.min(2, Math.floor(p * 3)))
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -73,6 +102,21 @@ export function SignHandLive({
           <span style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       </div>
+
+      <ol className="sign-photo-strip" aria-label="Photo steps">
+        {frames.map((label, i) => (
+          <li key={label} className={i === photoFocus ? 'is-focus' : ''}>
+            <button type="button" className="sign-photo-card" onClick={() => setPhotoFocus(i)}>
+              <span className="sign-photo-frame" data-pose={pose} data-frame={i} aria-hidden="true">
+                <SignerClip pose={pose} playing={false} />
+              </span>
+              <span className="sign-photo-label">
+                <em>{i + 1}</em> {label}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
 
       <div className="sign-video-controls">
         <button
@@ -268,6 +312,36 @@ function Hands({ pose }: { pose: SignPose }) {
           <g className="sign-part-right">
             <Hand shape="y" x={130} y={110} rot={15} />
           </g>
+        </g>
+      )
+    case 'wait':
+      return (
+        <g className="sign-hand-group">
+          <g className="sign-part-left">
+            <Hand shape="flat" x={72} y={120} rot={-8} />
+          </g>
+          <g className="sign-part-right">
+            <Hand shape="flat" x={128} y={120} rot={8} />
+          </g>
+        </g>
+      )
+    case 'want':
+      return (
+        <g className="sign-hand-group sign-mover--want">
+          <Hand shape="bunch" x={78} y={130} rot={-15} />
+          <Hand shape="bunch" x={122} y={130} rot={15} />
+        </g>
+      )
+    case 'bathroom':
+      return (
+        <g className="sign-hand-group sign-mover--bathroom">
+          <Hand shape="fist-thumb" x={130} y={110} rot={0} />
+        </g>
+      )
+    case 'home':
+      return (
+        <g className="sign-hand-group sign-mover--home">
+          <Hand shape="bunch" x={88} y={62} rot={-10} />
         </g>
       )
     default:

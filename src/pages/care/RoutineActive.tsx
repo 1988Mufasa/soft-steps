@@ -74,7 +74,11 @@ export function RoutineActive() {
 
   const completeStep = () => {
     setCelebrating(true)
-    if (prefs.celebrateSounds && settings.sensory.soundOn) {
+    if (
+      prefs.celebrateSounds &&
+      settings.sensory.soundOn &&
+      !settings.sensory.muteCelebrations
+    ) {
       playCorrect(true)
     }
     const delay = motionOff ? 400 : 900
@@ -86,14 +90,25 @@ export function RoutineActive() {
         setRewardSticker(sticker)
         setFinished(true)
         setCelebrating(false)
-        updateSettings({
-          routinePrefs: {
-            ...prefs,
-            stepIndex: 0,
-            tokensEarned: prefs.tokensEarned + 1,
-            stickers: [...prefs.stickers, sticker].slice(-24),
-          },
-        })
+        {
+          const dayKey = new Date().toISOString().slice(0, 10)
+          const prev = settings.careStats
+          const sameDay = prev.routinesDayKey === dayKey
+          updateSettings({
+            routinePrefs: {
+              ...prefs,
+              stepIndex: 0,
+              tokensEarned: prefs.tokensEarned + 1,
+              stickers: [...prefs.stickers, sticker].slice(-24),
+            },
+            careStats: {
+              routinesCompleted: prev.routinesCompleted + 1,
+              routinesCompletedToday: sameDay ? prev.routinesCompletedToday + 1 : 1,
+              routinesDayKey: dayKey,
+              lastRoutineAt: new Date().toISOString(),
+            },
+          })
+        }
         return
       }
       updateSettings({

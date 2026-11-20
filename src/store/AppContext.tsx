@@ -84,6 +84,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : 'false'
     root.dataset.dimColors = settings.sensory.dimColors ? 'true' : 'false'
     root.dataset.noSudden = settings.sensory.disableSuddenAnimations ? 'true' : 'false'
+    root.dataset.mutedPalette = settings.sensory.mutedPalette ? 'true' : 'false'
+    root.dataset.muteCelebrations = settings.sensory.muteCelebrations ? 'true' : 'false'
     setSpeechPrefs({
       voiceURI: settings.sensory.voiceURI || '',
       style: settings.sensory.voiceStyle || 'child',
@@ -111,6 +113,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : prev.routinePrefs,
         stories: patch.stories ?? prev.stories,
         interestChecklist: patch.interestChecklist ?? prev.interestChecklist,
+        customAacCards: patch.customAacCards ?? prev.customAacCards,
+        careStats: patch.careStats ? { ...prev.careStats, ...patch.careStats } : prev.careStats,
+        home: patch.home
+          ? { ...prev.home, ...patch.home, favorites: patch.home.favorites ?? prev.home.favorites }
+          : prev.home,
       }
       saveSettings(next)
       return next

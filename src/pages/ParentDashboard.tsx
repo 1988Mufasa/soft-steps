@@ -103,8 +103,53 @@ export function ParentDashboard() {
       </header>
 
       <div className="dash-grid">
-        <article className="dash-card">
-          <h2>Recent AAC check-ins</h2>
+        <article className="dash-card insights-card">
+          <h2>Parent insights</h2>
+          <ul className="insights-stats">
+            <li>
+              <strong>{settings.careStats.routinesCompletedToday}</strong>
+              <span>routines done today</span>
+            </li>
+            <li>
+              <strong>{settings.careStats.routinesCompleted}</strong>
+              <span>routines all time</span>
+            </li>
+            <li>
+              <strong>{settings.routinePrefs.tokensEarned}</strong>
+              <span>reward tokens</span>
+            </li>
+            <li>
+              <strong>{checkIns.length}</strong>
+              <span>saved check-ins</span>
+            </li>
+            <li>
+              <strong>
+                {Math.max(
+                  0,
+                  ...MODULE_LABELS.map((m) => progress[m.id].bestStreak),
+                )}
+              </strong>
+              <span>best practice streak</span>
+            </li>
+            <li>
+              <strong>{settings.customAacCards.length}</strong>
+              <span>family AAC phrases</span>
+            </li>
+          </ul>
+          {settings.careStats.lastRoutineAt ? (
+            <p className="fine-print">
+              Last routine finished{' '}
+              {new Date(settings.careStats.lastRoutineAt).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </p>
+          ) : (
+            <p className="fine-print">No routines finished yet — kids use Home → First / Then.</p>
+          )}
+          <h3>Recent AAC check-ins</h3>
           {checkIns.length === 0 ? (
             <p>No check-ins yet. Kids can use Home → AAC &amp; check-in.</p>
           ) : (
@@ -127,6 +172,26 @@ export function ParentDashboard() {
               ))}
             </ul>
           )}
+          <h3>Practice streaks</h3>
+          <ul className="progress-list">
+            {MODULE_LABELS.map((m) => {
+              const p = progress[m.id]
+              return (
+                <li key={m.id}>
+                  <strong>{m.label}</strong>
+                  <span>
+                    ★ {p.bestStreak} · {p.correct}/{p.attempts || 0} correct
+                    {p.lastPlayedAt
+                      ? ` · ${new Date(p.lastPlayedAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}`
+                      : ''}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
         </article>
 
         <article className="dash-card">
@@ -212,7 +277,8 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card">
-          <h2>Sensory preferences</h2>
+          <h2>Global sensory prefs</h2>
+          <p className="fine-print">One place for the whole app (also syncs routine celebrate/mute).</p>
           <label className="check-line">
             <input
               type="checkbox"
@@ -222,6 +288,22 @@ export function ParentDashboard() {
               }
             />
             Soft sound / voice
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.muteCelebrations}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, muteCelebrations: e.target.checked },
+                  routinePrefs: {
+                    ...settings.routinePrefs,
+                    celebrateSounds: !e.target.checked,
+                  },
+                })
+              }
+            />
+            Mute celebrations
           </label>
           <label className="check-line">
             <input
@@ -238,6 +320,18 @@ export function ParentDashboard() {
           <label className="check-line">
             <input
               type="checkbox"
+              checked={settings.sensory.disableSuddenAnimations}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, disableSuddenAnimations: e.target.checked },
+                })
+              }
+            />
+            No sudden animations
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
               checked={settings.sensory.dimColors}
               onChange={(e) =>
                 updateSettings({ sensory: { ...settings.sensory, dimColors: e.target.checked } })
@@ -248,14 +342,18 @@ export function ParentDashboard() {
           <label className="check-line">
             <input
               type="checkbox"
-              checked={settings.sensory.disableSuddenAnimations}
+              checked={settings.sensory.mutedPalette}
               onChange={(e) =>
                 updateSettings({
-                  sensory: { ...settings.sensory, disableSuddenAnimations: e.target.checked },
+                  sensory: { ...settings.sensory, mutedPalette: e.target.checked },
+                  routinePrefs: {
+                    ...settings.routinePrefs,
+                    mutedPalette: e.target.checked,
+                  },
                 })
               }
             />
-            Disable sudden animations
+            Muted palette (app-wide)
           </label>
         </article>
 

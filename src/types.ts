@@ -25,9 +25,35 @@ export type SensoryPrefs = {
   reducedMotion: boolean
   dimColors: boolean
   disableSuddenAnimations: boolean
+  /** Mute celebratory chimes / sudden “yay” feedback */
+  muteCelebrations: boolean
+  /** Soften accent colors app-wide */
+  mutedPalette: boolean
   /** System speechSynthesis voiceURI; empty = auto-pick best quality */
   voiceURI: string
   voiceStyle: VoiceStyle
+}
+
+export type CustomAacCard = {
+  id: string
+  label: string
+  emoji: string
+  photoDataUrl?: string
+}
+
+export type CareStats = {
+  routinesCompleted: number
+  routinesCompletedToday: number
+  /** Local calendar day key YYYY-MM-DD for rolling “today” count */
+  routinesDayKey: string
+  lastRoutineAt: string | null
+}
+
+export type HomePrefs = {
+  /** Practice module featured on Today’s path */
+  todayPractice: ModuleId
+  /** Favorite care/practice ids shown first under More */
+  favorites: string[]
 }
 
 export type RoutineStep = {
@@ -112,6 +138,9 @@ export type ParentSettings = {
   schedule?: ScheduleBoard
   stories: Story[]
   interestChecklist: { id: string; label: string; done: boolean }[]
+  customAacCards: CustomAacCard[]
+  careStats: CareStats
+  home: HomePrefs
 }
 
 export type ModuleProgress = {
@@ -198,7 +227,39 @@ export const SAMPLE_STORIES: Story[] = [
       { id: 'a4', title: 'Landed', body: 'We landed. Next step is bags.', emoji: '🧳', voiceText: 'We landed. Next step is bags.' },
     ],
   },
+  {
+    id: 'doctor',
+    title: 'Doctor visit',
+    pages: [
+      { id: 'dr1', title: 'Check in', body: 'We say hello at the desk.', emoji: '🏥', voiceText: 'We say hello at the desk.' },
+      { id: 'dr2', title: 'Wait', body: 'We wait. I can hold a quiet toy.', emoji: '🧸', voiceText: 'We wait. I can hold a quiet toy.' },
+      { id: 'dr3', title: 'Listen', body: 'The doctor listens to my body gently.', emoji: '🩺', voiceText: 'The doctor listens to my body gently.' },
+      { id: 'dr4', title: 'Done', body: 'Visit finished. We go home together.', emoji: '🏠', voiceText: 'Visit finished. We go home together.' },
+    ],
+  },
+  {
+    id: 'school',
+    title: 'School morning',
+    pages: [
+      { id: 'sc1', title: 'Bag', body: 'I pack my bag with what I need.', emoji: '🎒', voiceText: 'I pack my bag with what I need.' },
+      { id: 'sc2', title: 'Ride', body: 'We travel to school.', emoji: '🚌', voiceText: 'We travel to school.' },
+      { id: 'sc3', title: 'Hello', body: 'I say hello to my teacher.', emoji: '👩‍🏫', voiceText: 'I say hello to my teacher.' },
+      { id: 'sc4', title: 'Ready', body: 'I am ready for the first activity.', emoji: '📗', voiceText: 'I am ready for the first activity.' },
+    ],
+  },
 ]
+
+export const DEFAULT_CARE_STATS: CareStats = {
+  routinesCompleted: 0,
+  routinesCompletedToday: 0,
+  routinesDayKey: '',
+  lastRoutineAt: null,
+}
+
+export const DEFAULT_HOME: HomePrefs = {
+  todayPractice: 'abc',
+  favorites: ['schedule', 'talk', 'signs'],
+}
 
 export const DEFAULT_INTEREST_CHECKLIST = [
   { id: 'c1', label: 'Put shoes away', done: false },
@@ -227,6 +288,8 @@ export const DEFAULT_SETTINGS: ParentSettings = {
     reducedMotion: false,
     dimColors: false,
     disableSuddenAnimations: false,
+    muteCelebrations: false,
+    mutedPalette: false,
     voiceURI: '',
     voiceStyle: 'child',
   },
@@ -247,6 +310,9 @@ export const DEFAULT_SETTINGS: ParentSettings = {
     pages: s.pages.map((p) => ({ ...p })),
   })),
   interestChecklist: DEFAULT_INTEREST_CHECKLIST.map((c) => ({ ...c })),
+  customAacCards: [],
+  careStats: { ...DEFAULT_CARE_STATS },
+  home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
 }
 
 export function emptyProgress(): ProgressState {

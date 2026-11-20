@@ -1,13 +1,31 @@
 import { hashPin } from '../security/pinCrypto'
 import {
+  DEFAULT_CARE_STATS,
+  DEFAULT_HOME,
   DEFAULT_PIN,
   DEFAULT_ROUTINE_PREFS,
   DEFAULT_SETTINGS,
+  SAMPLE_STORIES,
   emptyProgress,
   type ParentSettings,
   type ProgressState,
   type Routine,
+  type Story,
 } from '../types'
+
+function mergeStories(parsed: Story[] | undefined, base: Story[]): Story[] {
+  if (!parsed?.length) return base.map((s) => ({ ...s, pages: s.pages.map((p) => ({ ...p })) }))
+  const byId = new Map(parsed.map((s) => [s.id, s]))
+  for (const sample of SAMPLE_STORIES) {
+    if (!byId.has(sample.id)) {
+      byId.set(sample.id, {
+        ...sample,
+        pages: sample.pages.map((p) => ({ ...p })),
+      })
+    }
+  }
+  return [...byId.values()]
+}
 
 const SETTINGS_KEY = 'soft-steps-settings'
 const PROGRESS_KEY = 'soft-steps-progress'
@@ -31,6 +49,9 @@ function cloneDefaults(): ParentSettings {
       pages: s.pages.map((p) => ({ ...p })),
     })),
     interestChecklist: DEFAULT_SETTINGS.interestChecklist.map((c) => ({ ...c })),
+    customAacCards: [],
+    careStats: { ...DEFAULT_CARE_STATS },
+    home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
   }
 }
 
@@ -138,10 +159,17 @@ export function loadSettings(): ParentSettings {
         ...parsed.routinePrefs,
         stickers: parsed.routinePrefs?.stickers ?? [],
       },
-      stories: parsed.stories?.length ? parsed.stories : base.stories,
+      stories: mergeStories(parsed.stories, base.stories),
       interestChecklist: parsed.interestChecklist?.length
         ? parsed.interestChecklist
         : base.interestChecklist,
+      customAacCards: Array.isArray(parsed.customAacCards) ? parsed.customAacCards : [],
+      careStats: { ...DEFAULT_CARE_STATS, ...parsed.careStats },
+      home: {
+        ...DEFAULT_HOME,
+        ...parsed.home,
+        favorites: parsed.home?.favorites ?? [...DEFAULT_HOME.favorites],
+      },
     }
   } catch {
     return cloneDefaults()

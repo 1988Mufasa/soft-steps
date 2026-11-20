@@ -65,15 +65,26 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2,woff}'],
+        // Precache app shell + fonts so calm / First-Then / AAC stay offline after install
+        globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2,woff,webmanifest}'],
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'cdn-cache',
-              expiration: { maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: { maxEntries: 48, maxAgeSeconds: 60 * 60 * 24 * 60 },
+            },
+          },
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages-cache',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 * 14 },
             },
           },
         ],

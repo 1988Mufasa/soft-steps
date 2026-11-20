@@ -11,6 +11,8 @@ const THEME_FACTS: Record<InterestTheme, { title: string; facts: string[]; emoji
       'Some trains have many cars linked together.',
       'Tracks help trains stay on a clear path.',
       'A whistle can mean “ready” or “hello.”',
+      'Freight trains carry boxes and food.',
+      'A caboose used to ride at the very end.',
     ],
   },
   dinosaurs: {
@@ -20,6 +22,8 @@ const THEME_FACTS: Record<InterestTheme, { title: string; facts: string[]; emoji
       'Some dinosaurs walked on two feet.',
       'Fossils are clues from long ago.',
       'Plant-eaters and meat-eaters lived in different ways.',
+      'Long necks helped some dinosaurs reach high leaves.',
+      'Scientists learn new dinosaur names every year.',
     ],
   },
   animals: {
@@ -29,6 +33,8 @@ const THEME_FACTS: Record<InterestTheme, { title: string; facts: string[]; emoji
       'Animals have many ways to move and rest.',
       'Soft pets like gentle hands.',
       'Some animals are awake at night.',
+      'Birds use feathers to stay warm and fly.',
+      'Fish breathe with gills in the water.',
     ],
   },
   space: {
@@ -38,6 +44,8 @@ const THEME_FACTS: Record<InterestTheme, { title: string; facts: string[]; emoji
       'The Moon lights up from the Sun.',
       'Stars look tiny because they are far away.',
       'Astronauts float when gravity feels soft.',
+      'Mars looks red from iron in its dust.',
+      'A rocket needs a clear countdown before lift-off.',
     ],
   },
   patterns: {
@@ -47,6 +55,8 @@ const THEME_FACTS: Record<InterestTheme, { title: string; facts: string[]; emoji
       'AAB AAB is a repeating pattern.',
       'Even numbers can pair up.',
       'Shapes can tessellate like tiles.',
+      'Counting by twos is a skip pattern.',
+      'Symmetry means both sides match.',
     ],
   },
 }
