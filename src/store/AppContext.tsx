@@ -87,7 +87,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ? { ...prev.enabledOnlineActivities, ...patch.enabledOnlineActivities }
           : prev.enabledOnlineActivities,
         sensory: patch.sensory ? { ...prev.sensory, ...patch.sensory } : prev.sensory,
-        schedule: patch.schedule ? { ...prev.schedule, ...patch.schedule } : prev.schedule,
+        routines: patch.routines ?? prev.routines,
+        routinePrefs: patch.routinePrefs
+          ? { ...prev.routinePrefs, ...patch.routinePrefs }
+          : prev.routinePrefs,
         stories: patch.stories ?? prev.stories,
         interestChecklist: patch.interestChecklist ?? prev.interestChecklist,
       }

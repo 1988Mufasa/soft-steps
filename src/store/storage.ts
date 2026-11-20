@@ -1,8 +1,10 @@
 import {
+  DEFAULT_ROUTINE_PREFS,
   DEFAULT_SETTINGS,
   emptyProgress,
   type ParentSettings,
   type ProgressState,
+  type Routine,
 } from '../types'
 
 const SETTINGS_KEY = 'soft-steps-settings'
@@ -16,13 +18,12 @@ function cloneDefaults(): ParentSettings {
     enabledCareModules: { ...DEFAULT_SETTINGS.enabledCareModules },
     enabledOnlineActivities: { ...DEFAULT_SETTINGS.enabledOnlineActivities },
     sensory: { ...DEFAULT_SETTINGS.sensory },
-    schedule: {
-      ...DEFAULT_SETTINGS.schedule,
-      first: DEFAULT_SETTINGS.schedule.first
-        ? { ...DEFAULT_SETTINGS.schedule.first }
-        : null,
-      then: DEFAULT_SETTINGS.schedule.then ? { ...DEFAULT_SETTINGS.schedule.then } : null,
-    },
+    routines: DEFAULT_SETTINGS.routines.map((r) => ({
+      ...r,
+      steps: r.steps.map((s) => ({ ...s })),
+      thenReward: { ...r.thenReward },
+    })),
+    routinePrefs: { ...DEFAULT_SETTINGS.routinePrefs, stickers: [...DEFAULT_SETTINGS.routinePrefs.stickers] },
     stories: DEFAULT_SETTINGS.stories.map((s) => ({
       ...s,
       pages: s.pages.map((p) => ({ ...p })),
@@ -31,12 +32,61 @@ function cloneDefaults(): ParentSettings {
   }
 }
 
+function migrateLegacySchedule(parsed: Partial<ParentSettings>, base: ParentSettings): Routine[] {
+  if (parsed.routines?.length) {
+    return parsed.routines.map((r) => ({
+      ...r,
+      steps: r.steps.map((s) => ({ ...s })),
+      thenReward: { ...r.thenReward },
+    }))
+  }
+  if (parsed.schedule?.first || parsed.schedule?.then) {
+    const steps = []
+    if (parsed.schedule.first) {
+      steps.push({
+        id: parsed.schedule.first.id || 'first',
+        label: parsed.schedule.first.label,
+        emoji: parsed.schedule.first.emoji,
+        photoDataUrl: parsed.schedule.first.photoDataUrl,
+        timerSeconds: parsed.schedule.timerSeconds || 60,
+        voiceText: parsed.schedule.first.label,
+      })
+    }
+    const then = parsed.schedule.then
+    return [
+      {
+        id: 'routine-migrated',
+        templateId: 'leaving' as const,
+        title: 'My routine',
+        steps:
+          steps.length > 0
+            ? steps
+            : base.routines[0].steps.map((s) => ({ ...s })),
+        thenReward: then
+          ? { label: then.label, emoji: then.emoji, photoDataUrl: then.photoDataUrl }
+          : { ...base.routines[0].thenReward },
+      },
+    ]
+  }
+  return base.routines.map((r) => ({
+    ...r,
+    steps: r.steps.map((s) => ({ ...s })),
+    thenReward: { ...r.thenReward },
+  }))
+}
+
 export function loadSettings(): ParentSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
     if (!raw) return cloneDefaults()
     const parsed = JSON.parse(raw) as Partial<ParentSettings>
     const base = cloneDefaults()
+    const routines = migrateLegacySchedule(parsed, base)
+    const activeRoutineId =
+      parsed.activeRoutineId && routines.some((r) => r.id === parsed.activeRoutineId)
+        ? parsed.activeRoutineId
+        : routines[0]?.id ?? base.activeRoutineId
+
     return {
       ...base,
       ...parsed,
@@ -47,11 +97,12 @@ export function loadSettings(): ParentSettings {
         ...parsed.enabledOnlineActivities,
       },
       sensory: { ...base.sensory, ...parsed.sensory },
-      schedule: {
-        ...base.schedule,
-        ...parsed.schedule,
-        first: parsed.schedule?.first ?? base.schedule.first,
-        then: parsed.schedule?.then ?? base.schedule.then,
+      routines,
+      activeRoutineId,
+      routinePrefs: {
+        ...DEFAULT_ROUTINE_PREFS,
+        ...parsed.routinePrefs,
+        stickers: parsed.routinePrefs?.stickers ?? [],
       },
       stories: parsed.stories?.length ? parsed.stories : base.stories,
       interestChecklist: parsed.interestChecklist?.length

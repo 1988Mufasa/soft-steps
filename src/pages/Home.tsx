@@ -23,7 +23,7 @@ const CARE: {
 }[] = [
   { id: 'calm', title: 'Calm toolkit', blurb: 'Breathe, liquid, bubbles, sand', path: '/calm' },
   { id: 'feelings', title: 'Feelings', blurb: 'Body + emotion check-in', path: '/feelings' },
-  { id: 'schedule', title: 'First / Then', blurb: 'Visual schedule + timer', path: '/schedule' },
+  { id: 'schedule', title: 'First / Then', blurb: 'Routine · timer · rewards', path: '/schedule' },
   { id: 'stories', title: 'What to expect', blurb: 'Picture social stories', path: '/stories' },
   { id: 'talk', title: 'Talk board', blurb: 'Offline AAC by time of day', path: '/talk' },
   { id: 'friends', title: 'Social cues', blurb: 'Gentle practice scenes', path: '/friends' },

@@ -13,7 +13,9 @@ import { MultiMatch } from './pages/online/MultiMatch'
 import { MeltdownMode } from './pages/care/MeltdownMode'
 import { CalmToolkit } from './pages/care/CalmToolkit'
 import { FeelingsCheckIn } from './pages/care/FeelingsCheckIn'
-import { ScheduleBoardPage } from './pages/care/ScheduleBoard'
+import { RoutineActive } from './pages/care/RoutineActive'
+import { FirstThenBoard } from './pages/care/FirstThenBoard'
+import { RoutineBuilder } from './pages/care/RoutineBuilder'
 import { SocialStories } from './pages/care/SocialStories'
 import { TalkAac } from './pages/care/TalkAac'
 import { SocialCues } from './pages/care/SocialCues'
@@ -61,7 +63,23 @@ export default function App() {
           path="/schedule"
           element={
             <GuardedCare id="schedule">
-              <ScheduleBoardPage />
+              <RoutineActive />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/schedule/board"
+          element={
+            <GuardedCare id="schedule">
+              <FirstThenBoard />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/schedule/builder"
+          element={
+            <GuardedCare id="schedule">
+              <RoutineBuilder />
             </GuardedCare>
           }
         />

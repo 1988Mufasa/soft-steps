@@ -22,6 +22,15 @@ const THEME_FACTS: Record<InterestTheme, { title: string; facts: string[]; emoji
       'Plant-eaters and meat-eaters lived in different ways.',
     ],
   },
+  animals: {
+    title: 'Animals',
+    emoji: '🐾',
+    facts: [
+      'Animals have many ways to move and rest.',
+      'Soft pets like gentle hands.',
+      'Some animals are awake at night.',
+    ],
+  },
   space: {
     title: 'Space',
     emoji: '🚀',

@@ -20,7 +20,7 @@ const MODULE_LABELS: { id: ModuleId; label: string }[] = [
 const CARE_LABELS: { id: CareModuleId; label: string }[] = [
   { id: 'calm', label: 'Calm toolkit / Meltdown Mode' },
   { id: 'feelings', label: 'Feelings check-in' },
-  { id: 'schedule', label: 'First / Then schedule' },
+  { id: 'schedule', label: 'First / Then routines' },
   { id: 'stories', label: 'Social stories' },
   { id: 'talk', label: 'Talk board (AAC)' },
   { id: 'friends', label: 'Social cues' },
@@ -37,6 +37,7 @@ const ONLINE_LABELS: { id: OnlineActivityId; label: string }[] = [
 const INTERESTS: { id: InterestTheme; label: string }[] = [
   { id: 'trains', label: 'Trains' },
   { id: 'dinosaurs', label: 'Dinosaurs' },
+  { id: 'animals', label: 'Animals' },
   { id: 'space', label: 'Space' },
   { id: 'patterns', label: 'Math patterns' },
 ]
