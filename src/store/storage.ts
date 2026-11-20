@@ -13,8 +13,21 @@ function cloneDefaults(): ParentSettings {
   return {
     ...DEFAULT_SETTINGS,
     enabledModules: { ...DEFAULT_SETTINGS.enabledModules },
+    enabledCareModules: { ...DEFAULT_SETTINGS.enabledCareModules },
     enabledOnlineActivities: { ...DEFAULT_SETTINGS.enabledOnlineActivities },
     sensory: { ...DEFAULT_SETTINGS.sensory },
+    schedule: {
+      ...DEFAULT_SETTINGS.schedule,
+      first: DEFAULT_SETTINGS.schedule.first
+        ? { ...DEFAULT_SETTINGS.schedule.first }
+        : null,
+      then: DEFAULT_SETTINGS.schedule.then ? { ...DEFAULT_SETTINGS.schedule.then } : null,
+    },
+    stories: DEFAULT_SETTINGS.stories.map((s) => ({
+      ...s,
+      pages: s.pages.map((p) => ({ ...p })),
+    })),
+    interestChecklist: DEFAULT_SETTINGS.interestChecklist.map((c) => ({ ...c })),
   }
 }
 
@@ -23,15 +36,27 @@ export function loadSettings(): ParentSettings {
     const raw = localStorage.getItem(SETTINGS_KEY)
     if (!raw) return cloneDefaults()
     const parsed = JSON.parse(raw) as Partial<ParentSettings>
+    const base = cloneDefaults()
     return {
-      ...DEFAULT_SETTINGS,
+      ...base,
       ...parsed,
-      enabledModules: { ...DEFAULT_SETTINGS.enabledModules, ...parsed.enabledModules },
+      enabledModules: { ...base.enabledModules, ...parsed.enabledModules },
+      enabledCareModules: { ...base.enabledCareModules, ...parsed.enabledCareModules },
       enabledOnlineActivities: {
-        ...DEFAULT_SETTINGS.enabledOnlineActivities,
+        ...base.enabledOnlineActivities,
         ...parsed.enabledOnlineActivities,
       },
-      sensory: { ...DEFAULT_SETTINGS.sensory, ...parsed.sensory },
+      sensory: { ...base.sensory, ...parsed.sensory },
+      schedule: {
+        ...base.schedule,
+        ...parsed.schedule,
+        first: parsed.schedule?.first ?? base.schedule.first,
+        then: parsed.schedule?.then ?? base.schedule.then,
+      },
+      stories: parsed.stories?.length ? parsed.stories : base.stories,
+      interestChecklist: parsed.interestChecklist?.length
+        ? parsed.interestChecklist
+        : base.interestChecklist,
     }
   } catch {
     return cloneDefaults()

@@ -7,7 +7,13 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { ModuleId, OnlineActivityId, ParentSettings, ProgressState } from '../types'
+import type {
+  CareModuleId,
+  ModuleId,
+  OnlineActivityId,
+  ParentSettings,
+  ProgressState,
+} from '../types'
 import {
   clearSessionStarted,
   loadProgress,
@@ -25,6 +31,7 @@ type AppContextValue = {
   online: boolean
   updateSettings: (patch: Partial<ParentSettings>) => void
   setEnabledModule: (id: ModuleId, enabled: boolean) => void
+  setEnabledCareModule: (id: CareModuleId, enabled: boolean) => void
   setEnabledOnlineActivity: (id: OnlineActivityId, enabled: boolean) => void
   recordAnswer: (id: ModuleId, correct: boolean, streak: number) => void
   resetProgress: () => void
@@ -56,23 +63,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.reducedMotion = settings.sensory.reducedMotion
-      ? 'true'
-      : 'false'
-  }, [settings.sensory.reducedMotion])
+    const root = document.documentElement
+    root.dataset.reducedMotion =
+      settings.sensory.reducedMotion || settings.sensory.disableSuddenAnimations
+        ? 'true'
+        : 'false'
+    root.dataset.dimColors = settings.sensory.dimColors ? 'true' : 'false'
+    root.dataset.noSudden = settings.sensory.disableSuddenAnimations ? 'true' : 'false'
+  }, [settings.sensory])
 
   const updateSettings = useCallback((patch: Partial<ParentSettings>) => {
     setSettings((prev) => {
-      const next = {
+      const next: ParentSettings = {
         ...prev,
         ...patch,
         enabledModules: patch.enabledModules
           ? { ...prev.enabledModules, ...patch.enabledModules }
           : prev.enabledModules,
+        enabledCareModules: patch.enabledCareModules
+          ? { ...prev.enabledCareModules, ...patch.enabledCareModules }
+          : prev.enabledCareModules,
         enabledOnlineActivities: patch.enabledOnlineActivities
           ? { ...prev.enabledOnlineActivities, ...patch.enabledOnlineActivities }
           : prev.enabledOnlineActivities,
         sensory: patch.sensory ? { ...prev.sensory, ...patch.sensory } : prev.sensory,
+        schedule: patch.schedule ? { ...prev.schedule, ...patch.schedule } : prev.schedule,
+        stories: patch.stories ?? prev.stories,
+        interestChecklist: patch.interestChecklist ?? prev.interestChecklist,
       }
       saveSettings(next)
       return next
@@ -84,6 +101,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const next = {
         ...prev,
         enabledModules: { ...prev.enabledModules, [id]: enabled },
+      }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const setEnabledCareModule = useCallback((id: CareModuleId, enabled: boolean) => {
+    setSettings((prev) => {
+      const next = {
+        ...prev,
+        enabledCareModules: { ...prev.enabledCareModules, [id]: enabled },
       }
       saveSettings(next)
       return next
@@ -120,9 +148,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProgress(resetStoredProgress())
   }, [])
 
-  const changePin = useCallback((pin: string) => {
-    updateSettings({ pin })
-  }, [updateSettings])
+  const changePin = useCallback(
+    (pin: string) => {
+      updateSettings({ pin })
+    },
+    [updateSettings],
+  )
 
   const sessionStarted = getSessionStarted()
   const limitMs =
@@ -134,12 +165,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const minutesLeft =
     limitMs === null ? null : Math.max(0, Math.ceil((limitMs - elapsed) / 60_000))
 
-  useEffect(() => {
-    if (sessionExpired) {
-      // keep session marker so limit stays until browser session ends / parent clears
-    }
-  }, [sessionExpired])
-
   const value = useMemo(
     () => ({
       settings,
@@ -147,6 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       online,
       updateSettings,
       setEnabledModule,
+      setEnabledCareModule,
       setEnabledOnlineActivity,
       recordAnswer,
       resetProgress,
@@ -160,6 +186,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       online,
       updateSettings,
       setEnabledModule,
+      setEnabledCareModule,
       setEnabledOnlineActivity,
       recordAnswer,
       resetProgress,

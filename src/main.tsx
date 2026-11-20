@@ -7,8 +7,10 @@ import '@fontsource-variable/literata/wght.css'
 import './index.css'
 import App from './App'
 import { AppProvider } from './store/AppContext'
+import { initMobileShell } from './mobile'
 
 registerSW({ immediate: true })
+void initMobileShell()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

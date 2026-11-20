@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useApp } from '../store/AppContext'
-import type { ModuleId } from '../types'
+import type { CareModuleId, ModuleId } from '../types'
 
 const MODULES: {
   id: ModuleId
@@ -15,9 +15,25 @@ const MODULES: {
   { id: 'numbers', title: 'Numbers', blurb: 'Count and choose', path: '/numbers', accent: 'mod-numbers' },
 ]
 
+const CARE: {
+  id: CareModuleId
+  title: string
+  blurb: string
+  path: string
+}[] = [
+  { id: 'calm', title: 'Calm toolkit', blurb: 'Breathe, liquid, bubbles, sand', path: '/calm' },
+  { id: 'feelings', title: 'Feelings', blurb: 'Body + emotion check-in', path: '/feelings' },
+  { id: 'schedule', title: 'First / Then', blurb: 'Visual schedule + timer', path: '/schedule' },
+  { id: 'stories', title: 'What to expect', blurb: 'Picture social stories', path: '/stories' },
+  { id: 'talk', title: 'Talk board', blurb: 'Offline AAC by time of day', path: '/talk' },
+  { id: 'friends', title: 'Social cues', blurb: 'Gentle practice scenes', path: '/friends' },
+  { id: 'interest', title: 'Interest rewards', blurb: 'Unlock special-interest facts', path: '/interest' },
+]
+
 export function Home() {
   const { settings, online, progress } = useApp()
   const enabled = MODULES.filter((m) => settings.enabledModules[m.id])
+  const care = CARE.filter((m) => settings.enabledCareModules[m.id])
 
   return (
     <div className="home">
@@ -25,7 +41,9 @@ export function Home() {
         <div className="hero-copy">
           <p className="brand">Soft Steps</p>
           <h1>Learn gently, one step at a time</h1>
-          <p className="hero-sub">ABCs, shapes, colors, and numbers — calm practice for ages 3–12.</p>
+          <p className="hero-sub">
+            Calm tools, schedules, talk boards, and practice — for ages 3–12.
+          </p>
           <div className="status-row">
             <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
               {online ? 'Online ready' : 'Offline mode'}
@@ -46,19 +64,55 @@ export function Home() {
             <ellipse cx="90" cy="170" rx="70" ry="28" fill="#5F9E88" opacity="0.55" />
             <ellipse cx="180" cy="190" rx="90" ry="30" fill="#4F8F7A" opacity="0.45" />
             <rect x="120" y="100" width="70" height="70" rx="14" fill="#F4FBF7" />
-            <text x="155" y="148" textAnchor="middle" fontSize="42" fontFamily="Nunito, sans-serif" fill="#2C4A42">
+            <text
+              x="155"
+              y="148"
+              textAnchor="middle"
+              fontSize="42"
+              fontFamily="Nunito, sans-serif"
+              fill="#2C4A42"
+            >
               A
             </text>
           </svg>
         </div>
       </header>
 
+      {settings.enabledCareModules.calm ? (
+        <section className="section">
+          <Link to="/meltdown" className="meltdown-home-btn" aria-label="Meltdown Mode — quiet calm tools">
+            <span className="meltdown-home-orb" aria-hidden="true" />
+            <span>Quiet calm</span>
+          </Link>
+        </section>
+      ) : null}
+
       <section className="section">
         <div className="section-head">
           <h2>
-            <span className="eyebrow offline-tag">Offline</span> Practice offline
+            <span className="eyebrow offline-tag">Offline</span> Care & routines
           </h2>
-          <p>Works without Wi‑Fi after you open the app once.</p>
+          <p>Calming, feelings, schedules, talk, stories — work without Wi‑Fi.</p>
+        </div>
+        <div className="module-grid care-grid">
+          {care.map((mod) => (
+            <Link key={mod.id} to={mod.path} className="module-card mod-care">
+              <span className="module-title">{mod.title}</span>
+              <span className="module-blurb">{mod.blurb}</span>
+            </Link>
+          ))}
+          {care.length === 0 ? (
+            <p className="empty-note">Care tools are turned off in Parent tools.</p>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <h2>
+            <span className="eyebrow offline-tag">Offline</span> Practice
+          </h2>
+          <p>ABCs, shapes, colors, and numbers.</p>
         </div>
         <div className="module-grid">
           {enabled.map((mod) => {
@@ -74,7 +128,7 @@ export function Home() {
             )
           })}
           {enabled.length === 0 ? (
-            <p className="empty-note">All modules are turned off. Ask a grown-up to enable some in Parent tools.</p>
+            <p className="empty-note">Practice modules are turned off in Parent tools.</p>
           ) : null}
         </div>
       </section>
@@ -93,7 +147,7 @@ export function Home() {
               <p>
                 {online
                   ? 'Mix quiz · Gentle timer · Multi-step match'
-                  : 'You’re offline — open for a clear message, or use Offline practice above'}
+                  : 'You’re offline — open for a clear message, or use Offline tools above'}
               </p>
             </div>
             <span className="chev">→</span>

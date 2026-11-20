@@ -10,16 +10,28 @@ import { OnlineHub } from './pages/OnlineHub'
 import { MixQuiz } from './pages/online/MixQuiz'
 import { GentleTimer } from './pages/online/GentleTimer'
 import { MultiMatch } from './pages/online/MultiMatch'
+import { MeltdownMode } from './pages/care/MeltdownMode'
+import { CalmToolkit } from './pages/care/CalmToolkit'
+import { FeelingsCheckIn } from './pages/care/FeelingsCheckIn'
+import { ScheduleBoardPage } from './pages/care/ScheduleBoard'
+import { SocialStories } from './pages/care/SocialStories'
+import { TalkAac } from './pages/care/TalkAac'
+import { SocialCues } from './pages/care/SocialCues'
+import { InterestRewards } from './pages/care/InterestRewards'
 import { ParentGate } from './pages/ParentGate'
 import { ParentDashboard } from './pages/ParentDashboard'
 import { useApp } from './store/AppContext'
-import type { ModuleId } from './types'
+import type { CareModuleId, ModuleId } from './types'
 
 function GuardedModule({ id, children }: { id: ModuleId; children: ReactNode }) {
   const { settings } = useApp()
-  if (!settings.enabledModules[id]) {
-    return <Navigate to="/" replace />
-  }
+  if (!settings.enabledModules[id]) return <Navigate to="/" replace />
+  return <SessionGate>{children}</SessionGate>
+}
+
+function GuardedCare({ id, children }: { id: CareModuleId; children: ReactNode }) {
+  const { settings } = useApp()
+  if (!settings.enabledCareModules[id]) return <Navigate to="/" replace />
   return <SessionGate>{children}</SessionGate>
 }
 
@@ -28,6 +40,63 @@ export default function App() {
     <div className="app-shell">
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/meltdown" element={<MeltdownMode />} />
+        <Route
+          path="/calm"
+          element={
+            <GuardedCare id="calm">
+              <CalmToolkit />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/feelings"
+          element={
+            <GuardedCare id="feelings">
+              <FeelingsCheckIn />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/schedule"
+          element={
+            <GuardedCare id="schedule">
+              <ScheduleBoardPage />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/stories"
+          element={
+            <GuardedCare id="stories">
+              <SocialStories />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/talk"
+          element={
+            <GuardedCare id="talk">
+              <TalkAac />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <GuardedCare id="friends">
+              <SocialCues />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/interest"
+          element={
+            <GuardedCare id="interest">
+              <InterestRewards />
+            </GuardedCare>
+          }
+        />
         <Route
           path="/abc"
           element={

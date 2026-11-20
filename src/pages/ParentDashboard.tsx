@@ -1,13 +1,30 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp, unlockNewSession } from '../store/AppContext'
-import type { AgeBand, ModuleId, OnlineActivityId } from '../types'
+import type {
+  AgeBand,
+  CareModuleId,
+  InterestTheme,
+  ModuleId,
+  OnlineActivityId,
+} from '../types'
+import { DEFAULT_INTEREST_CHECKLIST, SAMPLE_STORIES } from '../types'
 
 const MODULE_LABELS: { id: ModuleId; label: string }[] = [
   { id: 'abc', label: 'ABCs' },
   { id: 'shapes', label: 'Shapes' },
   { id: 'colors', label: 'Colors' },
   { id: 'numbers', label: 'Numbers' },
+]
+
+const CARE_LABELS: { id: CareModuleId; label: string }[] = [
+  { id: 'calm', label: 'Calm toolkit / Meltdown Mode' },
+  { id: 'feelings', label: 'Feelings check-in' },
+  { id: 'schedule', label: 'First / Then schedule' },
+  { id: 'stories', label: 'Social stories' },
+  { id: 'talk', label: 'Talk board (AAC)' },
+  { id: 'friends', label: 'Social cues' },
+  { id: 'interest', label: 'Interest rewards' },
 ]
 
 const ONLINE_LABELS: { id: OnlineActivityId; label: string }[] = [
@@ -17,6 +34,13 @@ const ONLINE_LABELS: { id: OnlineActivityId; label: string }[] = [
   { id: 'sync-demo', label: 'Progress sync demo' },
 ]
 
+const INTERESTS: { id: InterestTheme; label: string }[] = [
+  { id: 'trains', label: 'Trains' },
+  { id: 'dinosaurs', label: 'Dinosaurs' },
+  { id: 'space', label: 'Space' },
+  { id: 'patterns', label: 'Math patterns' },
+]
+
 export function ParentDashboard() {
   const navigate = useNavigate()
   const {
@@ -24,6 +48,7 @@ export function ParentDashboard() {
     progress,
     updateSettings,
     setEnabledModule,
+    setEnabledCareModule,
     setEnabledOnlineActivity,
     resetProgress,
     changePin,
@@ -88,13 +113,10 @@ export function ParentDashboard() {
               </button>
             ))}
           </div>
-          <p className="fine-print">
-            3–6 uses fewer choices and simpler prompts. 7–12 adds more options and word cues.
-          </p>
         </article>
 
         <article className="dash-card">
-          <h2>Modules</h2>
+          <h2>Practice modules</h2>
           <ul className="module-toggles">
             {MODULE_LABELS.map((m) => (
               <li key={m.id}>
@@ -103,6 +125,24 @@ export function ParentDashboard() {
                     type="checkbox"
                     checked={settings.enabledModules[m.id]}
                     onChange={(e) => setEnabledModule(m.id, e.target.checked)}
+                  />
+                  {m.label}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="dash-card">
+          <h2>Care & routines</h2>
+          <ul className="module-toggles">
+            {CARE_LABELS.map((m) => (
+              <li key={m.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.enabledCareModules[m.id]}
+                    onChange={(e) => setEnabledCareModule(m.id, e.target.checked)}
                   />
                   {m.label}
                 </label>
@@ -136,7 +176,6 @@ export function ParentDashboard() {
               </li>
             ))}
           </ul>
-          <p className="fine-print">Online activities need a network connection. Offline modules stay separate.</p>
         </article>
 
         <article className="dash-card">
@@ -149,7 +188,7 @@ export function ParentDashboard() {
                 updateSettings({ sensory: { ...settings.sensory, soundOn: e.target.checked } })
               }
             />
-            Soft sound feedback
+            Soft sound / voice
           </label>
           <label className="check-line">
             <input
@@ -163,6 +202,65 @@ export function ParentDashboard() {
             />
             Reduced motion
           </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.dimColors}
+              onChange={(e) =>
+                updateSettings({ sensory: { ...settings.sensory, dimColors: e.target.checked } })
+              }
+            />
+            Dim colors
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.disableSuddenAnimations}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, disableSuddenAnimations: e.target.checked },
+                })
+              }
+            />
+            Disable sudden animations
+          </label>
+        </article>
+
+        <article className="dash-card">
+          <h2>Special interest</h2>
+          <div className="toggle-row wrap">
+            {INTERESTS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`chip ${settings.interestTheme === t.id ? 'is-active' : ''}`}
+                onClick={() => {
+                  updateSettings({
+                    interestTheme: t.id,
+                    interestChecklist: DEFAULT_INTEREST_CHECKLIST.map((c) => ({ ...c })),
+                  })
+                  setSaved(`Interest set to ${t.label}.`)
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              updateSettings({
+                stories: SAMPLE_STORIES.map((s) => ({
+                  ...s,
+                  pages: s.pages.map((p) => ({ ...p })),
+                })),
+              })
+              setSaved('Sample social stories restored.')
+            }}
+          >
+            Reset sample stories
+          </button>
         </article>
 
         <article className="dash-card">
@@ -196,7 +294,7 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card">
-          <h2>Progress</h2>
+          <h2>Practice progress</h2>
           <ul className="progress-list">
             {MODULE_LABELS.map((m) => {
               const p = progress[m.id]
@@ -213,7 +311,7 @@ export function ParentDashboard() {
           </ul>
           {!confirmReset ? (
             <button type="button" className="btn btn-ghost" onClick={() => setConfirmReset(true)}>
-              Reset progress…
+              Reset practice progress…
             </button>
           ) : (
             <div className="confirm-row">
@@ -223,7 +321,7 @@ export function ParentDashboard() {
                 onClick={() => {
                   resetProgress()
                   setConfirmReset(false)
-                  setSaved('Progress cleared.')
+                  setSaved('Practice progress cleared.')
                 }}
               >
                 Yes, reset
