@@ -66,6 +66,10 @@ export function softBubblePop(soundOn: boolean) {
 export type SpeakOverrides = {
   pitch?: number
   rate?: number
+  /** 0–1; classroom boost can force full volume */
+  volume?: number
+  /** Skip soft-audio quieting (noisy classroom AAC) */
+  forceFullVolume?: boolean
 }
 
 /**
@@ -86,9 +90,16 @@ export function speakText(text: string, soundOn: boolean, overrides?: SpeakOverr
     if (voice) u.voice = voice
     const pitch = overrides?.pitch ?? prosody.pitch
     const rate = overrides?.rate ?? prosody.rate
-    u.pitch = softAudio ? Math.min(pitch, 1.12) : pitch
-    u.rate = softAudio ? Math.min(rate, 0.86) : rate
-    u.volume = softAudio ? 0.7 : 1
+    const boost = Boolean(overrides?.forceFullVolume)
+    u.pitch = !boost && softAudio ? Math.min(pitch, 1.12) : pitch
+    u.rate = !boost && softAudio ? Math.min(rate, 0.86) : rate
+    if (typeof overrides?.volume === 'number') {
+      u.volume = Math.min(1, Math.max(0, overrides.volume))
+    } else if (boost) {
+      u.volume = 1
+    } else {
+      u.volume = softAudio ? 0.7 : 1
+    }
     // Some engines need a tiny delay after cancel to apply the new voice
     window.setTimeout(() => {
       try {

@@ -1072,6 +1072,7 @@ export function ParentDashboard() {
               [
                 { ms: 0 as const, label: 'Off' },
                 { ms: 1000 as const, label: '1s' },
+                { ms: 1500 as const, label: '1.5s' },
                 { ms: 2000 as const, label: '2s' },
                 { ms: 3000 as const, label: '3s' },
               ] as const
@@ -1103,6 +1104,73 @@ export function ParentDashboard() {
               </button>
             ))}
           </div>
+          <label className="check-line" style={{ marginTop: '0.65rem' }}>
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.classroomVolumeBoost}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      classroomVolumeBoost: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Classroom volume boost on.'
+                    : 'Classroom volume boost off.',
+                )
+              }}
+            />
+            Classroom volume boost
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.strongTapHighlight}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      strongTapHighlight: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Strong tap highlight on.'
+                    : 'Strong tap highlight off.',
+                )
+              }}
+            />
+            Strong tap highlight (teacher visibility)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.firstThenBarEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      firstThenBarEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'First–Then bar shown on Talk.' : 'First–Then bar hidden.',
+                )
+              }}
+            />
+            First–Then bar on Talk
+          </label>
           <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
             Open Talk AAC
           </Link>

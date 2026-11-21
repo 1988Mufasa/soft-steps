@@ -55,7 +55,10 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Attention bell speaks “Excuse me / Look!” from Talk (even when board-locked)
 - [ ] Body check opens one-tap pain/sensory screen without folders
 - [ ] Home ↔ School board switch (parental gate); core slots unchanged
-- [ ] Repeat tap cooldown (Off/1s/2s/3s): same tile ignored; different tiles instant
+- [ ] Repeat tap cooldown (Off/1s/1.5s/2s/3s): same tile ignored; different tiles instant
+- [ ] Quick-Talk: load Fall/Field trip pack in editor → strip on Talk; Clear leaves home board alone
+- [ ] First–Then bar on Talk matches active routine; tap speaks First/Then
+- [ ] Classroom volume boost + strong tap highlight / “Tapped” banner
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing

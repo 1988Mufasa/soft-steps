@@ -112,13 +112,21 @@ export type AacPrefs = {
    * Anti-stimming: ignore repeat taps on the *same* tile within this window.
    * Different tiles stay instant. 0 = Off.
    */
-  repeatCooldownMs: 0 | 1000 | 2000 | 3000
+  repeatCooldownMs: 0 | 1000 | 1500 | 2000 | 3000
   buttonAnimations: boolean
   tapSounds: boolean
   speechPitch: number
   speechRate: number
   aboutMeEnabled: boolean
   aboutMeText: string
+  /** Show Classroom Quick-Talk strip when a temporary lesson strip is loaded */
+  quickTalkEnabled: boolean
+  /** Compact First–Then bar on Talk (uses active routine) */
+  firstThenBarEnabled: boolean
+  /** Louder classroom TTS / clips (overrides soft-audio quieting for AAC) */
+  classroomVolumeBoost: boolean
+  /** Strong, longer highlight so teachers can see the active word across the table */
+  strongTapHighlight: boolean
   /** Growth stage — unlocks words/folders without moving slots */
   stage: AacStage
   /** Age range chosen at setup (drives recommendations) */
@@ -175,10 +183,25 @@ export const AAC_BOARD_CONTEXTS: {
 
 export const DEFAULT_ATTENTION_PHRASE = 'Excuse me! Look!'
 
+/** Temporary classroom fringe — never merges into permanent buttons. */
+export type AacQuickTalkWord = {
+  id: string
+  label: string
+  emoji: string
+  speak?: string
+}
+
+export type AacQuickTalkStrip = {
+  title: string
+  words: AacQuickTalkWord[]
+}
+
 export type AacLibrary = {
   categories: AacCategory[]
   buttons: AacButton[]
   prefs: AacPrefs
+  /** Today’s lesson strip — clear anytime without touching home vocabulary */
+  quickTalk: AacQuickTalkStrip | null
 }
 
 export const FITZGERALD_COLORS: Record<
@@ -274,6 +297,10 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   speechRate: 0.92,
   aboutMeEnabled: true,
   aboutMeText: DEFAULT_ABOUT_ME,
+  quickTalkEnabled: true,
+  firstThenBarEnabled: true,
+  classroomVolumeBoost: false,
+  strongTapHighlight: true,
   stage: 'starter',
   ageRange: '3-4',
   setupComplete: false,
@@ -289,6 +316,14 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   attentionPhrase: DEFAULT_ATTENTION_PHRASE,
   bodyCheckEnabled: true,
 }
+
+export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label: string }[] = [
+  { ms: 0, label: 'Off' },
+  { ms: 1000, label: '1 second' },
+  { ms: 1500, label: '1.5 seconds' },
+  { ms: 2000, label: '2 seconds' },
+  { ms: 3000, label: '3 seconds' },
+]
 
 export const PRESET_CATEGORIES: AacCategory[] = [
   { id: 'core', title: 'Core', emoji: '⭐', order: 0, source: 'preset' },
@@ -482,6 +517,25 @@ export function createDefaultAacLibrary(): AacLibrary {
     categories: PRESET_CATEGORIES.map((c) => ({ ...c })),
     buttons: PRESET_BUTTONS.map((btn) => ({ ...btn })),
     prefs: { ...DEFAULT_AAC_PREFS },
+    quickTalk: null,
+  }
+}
+
+function normalizeQuickTalk(saved?: AacQuickTalkStrip | null): AacQuickTalkStrip | null {
+  if (!saved || !Array.isArray(saved.words) || !saved.words.length) return null
+  const words = saved.words
+    .filter((w) => w && typeof w.label === 'string' && w.label.trim())
+    .slice(0, 12)
+    .map((w, i) => ({
+      id: typeof w.id === 'string' && w.id ? w.id : `qt-${i}-${w.label}`,
+      label: w.label.trim().slice(0, 32),
+      emoji: (w.emoji || '💬').slice(0, 8),
+      speak: typeof w.speak === 'string' ? w.speak : undefined,
+    }))
+  if (!words.length) return null
+  return {
+    title: (saved.title || 'Today’s words').trim().slice(0, 48),
+    words,
   }
 }
 
@@ -531,7 +585,7 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   merged.speechPitch = clamp(merged.speechPitch, 0.7, 1.6)
   merged.speechRate = clamp(merged.speechRate, 0.6, 1.2)
   if (![0, 200, 400, 600].includes(merged.touchDelayMs)) merged.touchDelayMs = 0
-  if (![0, 1000, 2000, 3000].includes(merged.repeatCooldownMs)) {
+  if (![0, 1000, 1500, 2000, 3000].includes(merged.repeatCooldownMs)) {
     merged.repeatCooldownMs = 0
   }
   if (merged.touchTrigger !== 'release') merged.touchTrigger = 'press'
@@ -544,6 +598,10 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   }
   if (typeof merged.attentionEnabled !== 'boolean') merged.attentionEnabled = true
   if (typeof merged.bodyCheckEnabled !== 'boolean') merged.bodyCheckEnabled = true
+  if (typeof merged.quickTalkEnabled !== 'boolean') merged.quickTalkEnabled = true
+  if (typeof merged.firstThenBarEnabled !== 'boolean') merged.firstThenBarEnabled = true
+  if (typeof merged.classroomVolumeBoost !== 'boolean') merged.classroomVolumeBoost = false
+  if (typeof merged.strongTapHighlight !== 'boolean') merged.strongTapHighlight = true
   return merged
 }
 
@@ -641,6 +699,7 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
       (a, b) => a.categoryId.localeCompare(b.categoryId) || a.order - b.order,
     ),
     prefs: normalizePrefs(saved.prefs),
+    quickTalk: normalizeQuickTalk(saved.quickTalk),
   }
 }
 

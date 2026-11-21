@@ -9,6 +9,7 @@ import {
 import { speakText as speakCalm } from '../../audio/calmAudio'
 import { AacBoardLock } from '../../components/AacBoardLock'
 import { AacBodyCheck } from '../../components/AacBodyCheck'
+import { AacFirstThenBar } from '../../components/AacFirstThenBar'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
 import {
   AAC_BOARD_CONTEXTS,
@@ -23,6 +24,7 @@ import {
   type AacBoardContextId,
   type AacButton,
   type AacPrefs,
+  type AacQuickTalkWord,
 } from '../../data/aacPresets'
 import type { BodyCheckItem } from '../../data/aacBodyCheck'
 import { wordFormsFor } from '../../data/aacWordForms'
@@ -60,10 +62,14 @@ export function TalkAac() {
   const lastTap = useRef<{ id: string; at: number } | null>(null)
   const cooldownClearTimer = useRef<number | null>(null)
   const [cooldownTileId, setCooldownTileId] = useState<string | null>(null)
+  const [activeBanner, setActiveBanner] = useState<string | null>(null)
+  const bannerTimer = useRef<number | null>(null)
 
   const needsSetup = !prefs.setupComplete
   const activeContextMeta =
     AAC_BOARD_CONTEXTS.find((c) => c.id === prefs.activeBoardContext) ?? AAC_BOARD_CONTEXTS[0]
+  const quickTalk = library.quickTalk
+  const showQuickTalk = Boolean(prefs.quickTalkEnabled && quickTalk?.words.length)
 
   const folderButtons = useMemo(
     () => (folderId ? buttonsForCategory(library, folderId) : []),
@@ -109,10 +115,16 @@ export function TalkAac() {
     setMessage([])
   }
 
-  const flashGlow = (id: string) => {
+  const flashGlow = (id: string, label?: string) => {
     setGlowId(id)
+    const hold = prefs.strongTapHighlight ? 1400 : 700
     if (glowTimer.current != null) window.clearTimeout(glowTimer.current)
-    glowTimer.current = window.setTimeout(() => setGlowId(null), 700)
+    glowTimer.current = window.setTimeout(() => setGlowId(null), hold)
+    if (prefs.strongTapHighlight && label) {
+      setActiveBanner(label)
+      if (bannerTimer.current != null) window.clearTimeout(bannerTimer.current)
+      bannerTimer.current = window.setTimeout(() => setActiveBanner(null), hold)
+    }
   }
 
   const activate = (btn: AacButton, speakOverride?: string) => {
@@ -140,13 +152,15 @@ export function TalkAac() {
       }, cooldownMs)
     }
 
-    flashGlow(btn.id)
     const spoken = (speakOverride || btn.speak || btn.label).trim()
+    flashGlow(btn.id, spoken)
     if (prefs.speakOnTap || prefs.audioLabels || prefs.modelMode) {
       if (speakOverride) {
         speakCalm(spoken, settings.sensory.soundOn, {
           pitch: prefs.speechPitch,
           rate: prefs.speechRate,
+          forceFullVolume: prefs.classroomVolumeBoost,
+          volume: prefs.classroomVolumeBoost ? 1 : undefined,
         })
       } else {
         speakAacButton(
@@ -163,6 +177,20 @@ export function TalkAac() {
         : btn
       setMessage((m) => [...m, chip].slice(-16))
     }
+  }
+
+  const activateQuickTalk = (word: AacQuickTalkWord) => {
+    const btn: AacButton = {
+      id: word.id,
+      label: word.label,
+      speak: word.speak || word.label,
+      emoji: word.emoji,
+      categoryId: 'family',
+      partOfSpeech: 'noun',
+      order: 0,
+      source: 'custom',
+    }
+    activate(btn)
   }
 
   const ringAttention = () => {
@@ -183,10 +211,12 @@ export function TalkAac() {
       order: 0,
       source: 'custom',
     }
-    flashGlow(btn.id)
+    flashGlow(btn.id, item.speak)
     speakCalm(item.speak, settings.sensory.soundOn, {
       pitch: prefs.speechPitch,
       rate: prefs.speechRate,
+      forceFullVolume: prefs.classroomVolumeBoost,
+      volume: prefs.classroomVolumeBoost ? 1 : undefined,
     })
     if (!prefs.modelMode && prefs.messageBar) {
       setMessage((m) => [...m, btn].slice(-16))
@@ -270,13 +300,17 @@ export function TalkAac() {
     <section
       className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''} ${
         locked ? 'is-board-locked' : ''
-      } ${prefs.modelMode ? 'is-model-mode' : ''} context-${prefs.activeBoardContext}`}
+      } ${prefs.modelMode ? 'is-model-mode' : ''} ${
+        prefs.strongTapHighlight ? 'is-strong-highlight' : ''
+      } ${prefs.classroomVolumeBoost ? 'is-volume-boost' : ''} context-${prefs.activeBoardContext}`}
     >
       <AacBoardLock
         locked={locked}
         onLock={() => setBoardLocked(true)}
         onUnlock={() => setBoardLocked(false)}
       />
+
+      {prefs.firstThenBarEnabled ? <AacFirstThenBar prefs={prefs} /> : null}
 
       {prefs.attentionEnabled ? (
         <button
@@ -467,6 +501,41 @@ export function TalkAac() {
         ) : null}
       </div>
 
+      {activeBanner ? (
+        <div className="aac-active-banner" role="status" aria-live="polite">
+          <span className="aac-active-banner-kicker">Tapped</span>
+          <strong>{activeBanner}</strong>
+        </div>
+      ) : null}
+
+      {showQuickTalk && quickTalk ? (
+        <div className="aac-quick-talk" aria-label={`Quick talk: ${quickTalk.title}`}>
+          <div className="aac-quick-talk-head">
+            <p className="aac-section-label">Quick-Talk · {quickTalk.title}</p>
+            {!locked ? (
+              <span className="fine-print">Temporary — won’t change home words</span>
+            ) : null}
+          </div>
+          <div className="aac-quick-talk-strip" role="list">
+            {quickTalk.words.map((w) => (
+              <button
+                key={w.id}
+                type="button"
+                className={`aac-quick-talk-chip ${glowId === w.id ? 'is-model-glow' : ''} ${
+                  cooldownTileId === w.id ? 'is-cooldown-calm' : ''
+                }`}
+                role="listitem"
+                onClick={() => activateQuickTalk(w)}
+                aria-label={w.speak || w.label}
+              >
+                <span aria-hidden="true">{w.emoji}</span>
+                {w.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="aac-board-shell">
         <div className="aac-core-panel">
           <p className="aac-section-label">Core words · fixed spots</p>
@@ -624,7 +693,7 @@ function AacWordButton({
     <button
       type="button"
       className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''} ${
-        glowing ? 'is-model-glow' : ''
+        glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''
       } ${cooldownCalm ? 'is-cooldown-calm' : ''}`}
       role="listitem"
       style={style}

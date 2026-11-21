@@ -11,6 +11,7 @@ import {
   FITZGERALD_COLORS,
   GRID_LAYOUTS,
   PRESET_CATEGORIES,
+  REPEAT_COOLDOWN_OPTIONS,
   applyStageToLibrary,
   buttonsForCategoryEditor,
   type AacBoardContextId,
@@ -23,6 +24,7 @@ import {
   type AacPrefs,
   type AacStage,
 } from '../../data/aacPresets'
+import { QUICK_TALK_PACKS, packToStrip, parseQuickTalkList } from '../../data/aacQuickTalk'
 import { isParentSessionValid } from '../../security/parentSession'
 import { useApp } from '../../store/AppContext'
 import {
@@ -69,6 +71,8 @@ export function AacEditor() {
   const [draftBoardContext, setDraftBoardContext] = useState<AacBoardContextId | 'both'>('both')
   const [recording, setRecording] = useState(false)
   const [photoCapture, setPhotoCapture] = useState<'photo' | 'sign' | null>(null)
+  const [qtCustomTitle, setQtCustomTitle] = useState('Today’s lesson')
+  const [qtCustomList, setQtCustomList] = useState('')
   const [msg, setMsg] = useState('')
   const [photoError, setPhotoError] = useState('')
   const mediaRecorder = useRef<MediaRecorder | null>(null)
@@ -390,6 +394,121 @@ export function AacEditor() {
         </article>
 
         <article className="dash-card">
+          <h2>Classroom Quick-Talk</h2>
+          <p className="fine-print">
+            Load temporary fringe words for today’s lesson (pumpkin, bus, zoo…). Clearing the strip
+            never touches the child’s permanent home vocabulary.
+          </p>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.quickTalkEnabled}
+              onChange={(e) => updatePrefs({ quickTalkEnabled: e.target.checked })}
+            />
+            Show Quick-Talk strip on Talk when loaded
+          </label>
+          {library.quickTalk ? (
+            <p className="save-toast" role="status">
+              Active: <strong>{library.quickTalk.title}</strong> (
+              {library.quickTalk.words.map((w) => w.label).join(', ')})
+            </p>
+          ) : (
+            <p className="fine-print">No Quick-Talk strip loaded.</p>
+          )}
+          <div className="toggle-row wrap">
+            {QUICK_TALK_PACKS.map((pack) => (
+              <button
+                key={pack.id}
+                type="button"
+                className="chip"
+                title={pack.blurb}
+                onClick={() => {
+                  saveLibrary({ ...library, quickTalk: packToStrip(pack) })
+                  setMsg(`Loaded Quick-Talk: ${pack.title}`)
+                }}
+              >
+                {pack.emoji} {pack.title}
+              </button>
+            ))}
+          </div>
+          <label className="field-label">
+            Custom strip title
+            <input
+              className="text-input"
+              value={qtCustomTitle}
+              onChange={(e) => setQtCustomTitle(e.target.value)}
+              maxLength={48}
+            />
+          </label>
+          <label className="field-label">
+            Words (comma-separated)
+            <input
+              className="text-input"
+              value={qtCustomList}
+              onChange={(e) => setQtCustomList(e.target.value)}
+              placeholder="pumpkin, leaf, fall"
+              maxLength={200}
+            />
+          </label>
+          <div className="confirm-row">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                const strip = parseQuickTalkList(qtCustomTitle, qtCustomList)
+                if (!strip) {
+                  setMsg('Add at least one word for Quick-Talk.')
+                  return
+                }
+                saveLibrary({ ...library, quickTalk: strip })
+                setMsg(`Loaded custom Quick-Talk: ${strip.title}`)
+              }}
+            >
+              Load custom strip
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={!library.quickTalk}
+              onClick={() => {
+                saveLibrary({ ...library, quickTalk: null })
+                setMsg('Quick-Talk cleared — permanent board unchanged.')
+              }}
+            >
+              Clear Quick-Talk
+            </button>
+          </div>
+        </article>
+
+        <article className="dash-card">
+          <h2>Classroom audio &amp; First–Then</h2>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.firstThenBarEnabled}
+              onChange={(e) => updatePrefs({ firstThenBarEnabled: e.target.checked })}
+            />
+            Show First–Then bar on Talk (uses active routine)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.classroomVolumeBoost}
+              onChange={(e) => updatePrefs({ classroomVolumeBoost: e.target.checked })}
+            />
+            Classroom volume boost (louder TTS / clips in noisy rooms)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.strongTapHighlight}
+              onChange={(e) => updatePrefs({ strongTapHighlight: e.target.checked })}
+            />
+            Strong tap highlight + “Tapped” banner (teacher visibility)
+          </label>
+        </article>
+
+        <article className="dash-card">
           <h2>Attention &amp; body check</h2>
           <label className="check-line">
             <input
@@ -627,17 +746,10 @@ export function AacEditor() {
           <p className="field-label">Repeat tap cooldown (anti-stimming)</p>
           <p className="fine-print">
             Blocks mashing the same tile again for a moment — different words stay instant for
-            sentence building.
+            sentence building. Try 1.5s for quiet classrooms.
           </p>
           <div className="toggle-row wrap" role="group" aria-label="Repeat tap cooldown">
-            {(
-              [
-                { ms: 0, label: 'Off' },
-                { ms: 1000, label: '1 second' },
-                { ms: 2000, label: '2 seconds' },
-                { ms: 3000, label: '3 seconds' },
-              ] as const
-            ).map((opt) => (
+            {REPEAT_COOLDOWN_OPTIONS.map((opt) => (
               <button
                 key={opt.ms}
                 type="button"
