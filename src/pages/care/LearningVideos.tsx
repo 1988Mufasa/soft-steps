@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { speakText } from '../../audio/calmAudio'
 import {
   VIDEO_CATEGORIES,
@@ -19,10 +19,25 @@ type View =
   | { kind: 'done'; title: string }
 
 const FRAME_MS = 2200
+const CAT_IDS = new Set(VIDEO_CATEGORIES.map((c) => c.id))
 
 export function LearningVideos() {
   const { settings, online, updateSettings } = useApp()
-  const [view, setView] = useState<View>({ kind: 'hub' })
+  const [params] = useSearchParams()
+  const [view, setView] = useState<View>(() => {
+    const cat = params.get('cat')
+    if (cat && CAT_IDS.has(cat as VideoCategory)) {
+      return { kind: 'list', category: cat as VideoCategory }
+    }
+    return { kind: 'hub' }
+  })
+
+  useEffect(() => {
+    const cat = params.get('cat')
+    if (cat && CAT_IDS.has(cat as VideoCategory)) {
+      setView({ kind: 'list', category: cat as VideoCategory })
+    }
+  }, [params])
   const [frame, setFrame] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [adding, setAdding] = useState(false)

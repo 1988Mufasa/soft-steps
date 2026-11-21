@@ -36,13 +36,16 @@ export default defineConfig({
       manifest: {
         name: 'Soft Steps',
         short_name: 'Soft Steps',
-        description: 'Calm ABC, shapes, colors, and numbers practice for kids.',
+        description:
+          'Calm autism-friendly learning: ABCs, signs, foods, routines, AAC check-ins, and social stories — offline-first.',
         theme_color: '#3661B0',
         background_color: '#F7F7F2',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         start_url: '/',
-        categories: ['education', 'kids'],
+        scope: '/',
+        lang: 'en',
+        categories: ['education', 'kids', 'lifestyle'],
         icons: [
           {
             src: '/icons/icon-192.png',

@@ -1,16 +1,25 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { VoicePicker } from '../components/VoicePicker'
-import { loadCheckInHistory } from '../data/checkIn'
+import { loadCheckInHistory, replaceCheckInHistory } from '../data/checkIn'
 import { useApp, unlockNewSession } from '../store/AppContext'
+import { loadAllProgress, saveAllProgress, saveSettings } from '../store/storage'
 import type {
   AgeBand,
   CareModuleId,
   InterestTheme,
+  KidProfile,
   ModuleId,
   OnlineActivityId,
 } from '../types'
-import { DEFAULT_INTEREST_CHECKLIST, SAMPLE_STORIES } from '../types'
+import {
+  DEFAULT_HOME,
+  DEFAULT_INTEREST_CHECKLIST,
+  ROUTINE_HOUR_PRESETS,
+  SAMPLE_STORIES,
+} from '../types'
+import { buildBackup, downloadText, parseBackup } from '../utils/backup'
+import { buildWeekInsightsText } from '../utils/insights'
 
 const MODULE_LABELS: { id: ModuleId; label: string }[] = [
   { id: 'abc', label: 'ABCs' },
@@ -18,7 +27,7 @@ const MODULE_LABELS: { id: ModuleId; label: string }[] = [
   { id: 'colors', label: 'Colors' },
   { id: 'numbers', label: 'Numbers' },
   { id: 'signs', label: 'Sign language' },
-  { id: 'foods', label: 'Foods (fruits & veggies)' },
+  { id: 'foods', label: 'Pictures (foods, animals, body, objects)' },
 ]
 
 const CARE_LABELS: { id: CareModuleId; label: string }[] = [
@@ -48,6 +57,12 @@ const INTERESTS: { id: InterestTheme; label: string }[] = [
   { id: 'patterns', label: 'Math patterns' },
 ]
 
+const PROFILE_EMOJIS = ['🧒', '👧', '👦', '🧑', '🦊', '🐻', '⭐', '🌈']
+
+function newProfileId() {
+  return `kid-${Date.now().toString(36)}`
+}
+
 export function ParentDashboard() {
   const navigate = useNavigate()
   const {
@@ -59,17 +74,30 @@ export function ParentDashboard() {
     setEnabledOnlineActivity,
     resetProgress,
     changePin,
+    activeProfile,
+    switchProfile,
+    upsertProfile,
+    removeProfile,
+    applyQuietMode,
   } = useApp()
   const [newPin, setNewPin] = useState('')
   const [saved, setSaved] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
   const [checkIns] = useState(() => loadCheckInHistory())
+  const [editName, setEditName] = useState(activeProfile?.name ?? '')
+  const [editEmoji, setEditEmoji] = useState(activeProfile?.emoji ?? '🧒')
+  const restoreRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (sessionStorage.getItem('soft-steps-parent-ok') !== '1') {
       navigate('/parent', { replace: true })
     }
   }, [navigate])
+
+  useEffect(() => {
+    setEditName(activeProfile?.name ?? '')
+    setEditEmoji(activeProfile?.emoji ?? '🧒')
+  }, [activeProfile?.id, activeProfile?.name, activeProfile?.emoji])
 
   const onSavePin = async (e: FormEvent) => {
     e.preventDefault()
@@ -80,6 +108,83 @@ export function ParentDashboard() {
     await changePin(newPin)
     setNewPin('')
     setSaved('PIN updated and stored as a salted hash on this device.')
+  }
+
+  const exportInsights = () => {
+    const name = activeProfile?.name ?? 'Kid'
+    const text = buildWeekInsightsText(settings, progress, name)
+    const stamp = new Date().toISOString().slice(0, 10)
+    downloadText(`soft-steps-week-${stamp}.txt`, text)
+    setSaved('Week summary downloaded as text.')
+  }
+
+  const shareInsights = async () => {
+    const name = activeProfile?.name ?? 'Kid'
+    const text = buildWeekInsightsText(settings, progress, name)
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Soft Steps week summary', text })
+        setSaved('Week summary shared.')
+        return
+      } catch {
+        /* fall through to download */
+      }
+    }
+    exportInsights()
+  }
+
+  const exportBackup = () => {
+    const backup = buildBackup(settings, loadAllProgress())
+    const stamp = new Date().toISOString().slice(0, 10)
+    downloadText(`soft-steps-backup-${stamp}.json`, JSON.stringify(backup, null, 2), 'application/json')
+    setSaved('Backup file saved. Keep it somewhere safe (Files, Drive, iCloud).')
+  }
+
+  const onRestoreFile = (file: File | null) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const parsed = parseBackup(String(reader.result))
+      if (!parsed) {
+        setSaved('That file is not a Soft Steps backup.')
+        return
+      }
+      saveSettings(parsed.settings)
+      saveAllProgress(parsed.progressByProfile ?? {})
+      replaceCheckInHistory(parsed.checkIns ?? [])
+      setSaved('Backup restored — reloading…')
+      window.setTimeout(() => window.location.reload(), 600)
+    }
+    reader.readAsText(file)
+  }
+
+  const saveActiveProfile = () => {
+    if (!activeProfile) return
+    const next: KidProfile = {
+      ...activeProfile,
+      name: editName.trim() || activeProfile.name,
+      emoji: editEmoji || activeProfile.emoji,
+      ageBand: settings.ageBand,
+      home: settings.home,
+      interestTheme: settings.interestTheme,
+    }
+    upsertProfile(next)
+    setSaved(`Saved profile “${next.name}”.`)
+  }
+
+  const addSibling = () => {
+    const id = newProfileId()
+    const profile: KidProfile = {
+      id,
+      name: `Sibling ${settings.profiles.length + 1}`,
+      emoji: PROFILE_EMOJIS[settings.profiles.length % PROFILE_EMOJIS.length],
+      ageBand: '3-6',
+      home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
+      interestTheme: 'animals',
+    }
+    upsertProfile(profile)
+    switchProfile(id)
+    setSaved(`Added ${profile.name}. Progress starts fresh for them.`)
   }
 
   return (
@@ -105,6 +210,85 @@ export function ParentDashboard() {
       </header>
 
       <div className="dash-grid">
+        <article className="dash-card quiet-card">
+          <h2>Quiet mode</h2>
+          <p className="fine-print">
+            One tap: mute celebrations, reduce motion, and soft muted colors.
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              applyQuietMode()
+              setSaved('Quiet mode on — celebrations muted, motion reduced, palette softened.')
+            }}
+          >
+            Turn on quiet mode
+          </button>
+        </article>
+
+        <article className="dash-card">
+          <h2>Kid profiles</h2>
+          <p className="fine-print">Siblings get their own age band, favorites, and practice progress.</p>
+          <div className="toggle-row wrap">
+            {settings.profiles.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`chip ${p.id === settings.activeProfileId ? 'is-active' : ''}`}
+                onClick={() => switchProfile(p.id)}
+              >
+                {p.emoji} {p.name}
+              </button>
+            ))}
+          </div>
+          {activeProfile ? (
+            <>
+              <label className="field-label">
+                Name
+                <input
+                  className="text-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </label>
+              <p className="fine-print">Emoji</p>
+              <div className="toggle-row wrap">
+                {PROFILE_EMOJIS.map((em) => (
+                  <button
+                    key={em}
+                    type="button"
+                    className={`chip ${editEmoji === em ? 'is-active' : ''}`}
+                    onClick={() => setEditEmoji(em)}
+                  >
+                    {em}
+                  </button>
+                ))}
+              </div>
+              <div className="confirm-row">
+                <button type="button" className="btn btn-secondary" onClick={saveActiveProfile}>
+                  Save profile
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={addSibling}>
+                  + Add sibling
+                </button>
+                {settings.profiles.length > 1 ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      removeProfile(activeProfile.id)
+                      setSaved('Profile removed.')
+                    }}
+                  >
+                    Remove this profile
+                  </button>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+        </article>
+
         <article className="dash-card insights-card">
           <h2>Parent insights</h2>
           <ul className="insights-stats">
@@ -126,10 +310,7 @@ export function ParentDashboard() {
             </li>
             <li>
               <strong>
-                {Math.max(
-                  0,
-                  ...MODULE_LABELS.map((m) => progress[m.id].bestStreak),
-                )}
+                {Math.max(0, ...MODULE_LABELS.map((m) => progress[m.id].bestStreak))}
               </strong>
               <span>best practice streak</span>
             </li>
@@ -151,6 +332,14 @@ export function ParentDashboard() {
           ) : (
             <p className="fine-print">No routines finished yet — kids use Home → First / Then.</p>
           )}
+          <div className="confirm-row">
+            <button type="button" className="btn btn-secondary" onClick={exportInsights}>
+              Export week (text)
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => void shareInsights()}>
+              Share week summary
+            </button>
+          </div>
           <h3>Recent AAC check-ins</h3>
           {checkIns.length === 0 ? (
             <p>No check-ins yet. Kids can use Home → AAC &amp; check-in.</p>
@@ -194,6 +383,66 @@ export function ParentDashboard() {
               )
             })}
           </ul>
+        </article>
+
+        <article className="dash-card">
+          <h2>Backup &amp; restore</h2>
+          <p className="fine-print">
+            Export settings, AAC cards, photos, stories, and progress to a file. Restore on this or
+            another device. Cloud sync (iCloud / Drive) can come later — for now save the file
+            yourself.
+          </p>
+          <div className="confirm-row">
+            <button type="button" className="btn btn-secondary" onClick={exportBackup}>
+              Download backup
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => restoreRef.current?.click()}
+            >
+              Restore from file…
+            </button>
+            <input
+              ref={restoreRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => onRestoreFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+        </article>
+
+        <article className="dash-card">
+          <h2>Routines by time of day</h2>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.autoSwitchRoutines}
+              onChange={(e) => updateSettings({ autoSwitchRoutines: e.target.checked })}
+            />
+            Auto-switch morning / after-school / bedtime by clock
+          </label>
+          <ul className="progress-list">
+            {settings.routines.map((r) => {
+              const hours = r.hours ?? ROUTINE_HOUR_PRESETS[r.templateId]
+              return (
+                <li key={r.id}>
+                  <strong>
+                    {r.title}
+                    {r.id === settings.activeRoutineId ? ' · active' : ''}
+                  </strong>
+                  <span>
+                    {hours.startHour}:00–{hours.endHour}:00
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="fine-print">
+            Edit steps in First / Then → Builder. Soft Steps picks the matching window when
+            auto-switch is on.
+          </p>
         </article>
 
         <article className="dash-card">
@@ -462,6 +711,9 @@ export function ParentDashboard() {
           >
             Reset sample stories
           </button>
+          <p className="fine-print">
+            Create brand-new stories with photos in What to expect → + New story.
+          </p>
         </article>
 
         <article className="dash-card">
@@ -496,6 +748,9 @@ export function ParentDashboard() {
 
         <article className="dash-card">
           <h2>Practice progress</h2>
+          <p className="fine-print">
+            Showing progress for {activeProfile?.emoji} {activeProfile?.name ?? 'this kid'}.
+          </p>
           <ul className="progress-list">
             {MODULE_LABELS.map((m) => {
               const p = progress[m.id]
@@ -522,7 +777,7 @@ export function ParentDashboard() {
                 onClick={() => {
                   resetProgress()
                   setConfirmReset(false)
-                  setSaved('Practice progress cleared.')
+                  setSaved('Practice progress cleared for this profile.')
                 }}
               >
                 Yes, reset
@@ -566,6 +821,9 @@ export function ParentDashboard() {
           </p>
           <Link to="/parent/billing" className="btn btn-primary">
             Open secure billing
+          </Link>
+          <Link to="/privacy" className="btn btn-ghost" style={{ marginTop: '0.5rem' }}>
+            Privacy for stores
           </Link>
         </article>
       </div>

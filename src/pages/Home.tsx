@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { HappyFaceHold } from '../components/HappyFaceHold'
 import { InstallPrompt } from '../components/InstallPrompt'
+import { themeForDate } from '../data/themes'
 import { useApp } from '../store/AppContext'
 import type { CareModuleId, ModuleId } from '../types'
 
@@ -32,7 +33,7 @@ const MODULES: {
   {
     id: 'foods',
     title: 'Foods',
-    blurb: 'Fruits & vegetables games',
+    blurb: 'Foods, animals, body & objects',
     path: '/foods',
     accent: 'mod-foods',
   },
@@ -62,14 +63,36 @@ const CARE: {
 
 export function Home() {
   const navigate = useNavigate()
-  const { settings, online, progress, updateSettings } = useApp()
+  const {
+    settings,
+    online,
+    progress,
+    updateSettings,
+    activeProfile,
+    switchProfile,
+  } = useApp()
   const [showMore, setShowMore] = useState(false)
+  const weekTheme = useMemo(() => themeForDate(), [])
 
   const enabled = MODULES.filter((m) => settings.enabledModules[m.id])
   const care = CARE.filter((m) => settings.enabledCareModules[m.id])
 
+  // Align today’s practice with the weekly theme when that module is on
+  useEffect(() => {
+    if (!settings.enabledModules[weekTheme.practice]) return
+    if (settings.home.todayPractice === weekTheme.practice) return
+    updateSettings({ home: { ...settings.home, todayPractice: weekTheme.practice } })
+    // Only on mount / theme id change
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot theme nudge
+  }, [weekTheme.id])
+
   const practice =
     enabled.find((m) => m.id === settings.home.todayPractice) ?? enabled[0] ?? null
+
+  const themePracticePath =
+    weekTheme.practice === 'foods' && weekTheme.foodKind
+      ? `/foods?kind=${weekTheme.foodKind}`
+      : MODULES.find((m) => m.id === weekTheme.practice)?.path ?? '/foods'
 
   const pathSteps = useMemo(() => {
     const steps: { key: string; title: string; blurb: string; path: string; num: string }[] = []
@@ -83,11 +106,23 @@ export function Home() {
       })
     }
     if (practice) {
+      const themed =
+        practice.id === weekTheme.practice
+          ? {
+              title: `${weekTheme.emoji} ${practice.title}`,
+              blurb: weekTheme.title,
+              path: themePracticePath,
+            }
+          : {
+              title: practice.title,
+              blurb: 'One gentle practice',
+              path: practice.path,
+            }
       steps.push({
         key: practice.id,
-        title: practice.title,
-        blurb: 'One gentle practice',
-        path: practice.path,
+        title: themed.title,
+        blurb: themed.blurb,
+        path: themed.path,
         num: String(steps.length + 1),
       })
     }
@@ -101,7 +136,15 @@ export function Home() {
       })
     }
     return steps
-  }, [practice, settings.enabledCareModules.calm, settings.enabledCareModules.schedule])
+  }, [
+    practice,
+    settings.enabledCareModules.calm,
+    settings.enabledCareModules.schedule,
+    themePracticePath,
+    weekTheme.emoji,
+    weekTheme.practice,
+    weekTheme.title,
+  ])
 
   const favorites = useMemo(() => {
     const fav = new Set(settings.home.favorites)
@@ -117,6 +160,9 @@ export function Home() {
     updateSettings({ home: { ...settings.home, favorites: [...set] } })
   }
 
+  const activeRoutine =
+    settings.routines.find((r) => r.id === settings.activeRoutineId) ?? settings.routines[0]
+
   return (
     <div className="home home-simple">
       <header className="hero hero-compact">
@@ -125,11 +171,62 @@ export function Home() {
           <span className="brand-ribbon" aria-hidden="true" />
           <h1>Today’s path</h1>
           <p className="hero-sub">
-            Three calm steps. Ages {settings.ageBand}
-            {online ? '' : ' · Offline ready'}.
+            {activeProfile ? (
+              <>
+                {activeProfile.emoji} {activeProfile.name} · Ages {settings.ageBand}
+              </>
+            ) : (
+              <>Ages {settings.ageBand}</>
+            )}
+            {online ? '' : ' · Offline ready'}
+            {activeRoutine ? ` · ${activeRoutine.title}` : ''}
           </p>
         </div>
       </header>
+
+      {settings.profiles.length > 1 ? (
+        <section className="section profile-switcher" aria-label="Kid profiles">
+          <div className="toggle-row wrap">
+            {settings.profiles.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`chip profile-chip ${p.id === settings.activeProfileId ? 'is-active' : ''}`}
+                onClick={() => switchProfile(p.id)}
+              >
+                <span aria-hidden="true">{p.emoji}</span> {p.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <aside className="week-theme-banner" aria-label="This week’s theme">
+        <span className="week-theme-emoji" aria-hidden="true">
+          {weekTheme.emoji}
+        </span>
+        <div>
+          <strong>{weekTheme.title}</strong>
+          <p>{weekTheme.blurb}</p>
+          <div className="week-theme-links">
+            {settings.enabledModules[weekTheme.practice] ? (
+              <Link to={themePracticePath} className="chip is-active">
+                Play theme games
+              </Link>
+            ) : null}
+            {weekTheme.storyId && settings.enabledCareModules.stories ? (
+              <Link to={`/stories?story=${weekTheme.storyId}`} className="chip">
+                Story
+              </Link>
+            ) : null}
+            {weekTheme.videoCategory && settings.enabledCareModules.videos ? (
+              <Link to={`/videos?cat=${weekTheme.videoCategory}`} className="chip">
+                Videos
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </aside>
 
       <InstallPrompt />
 

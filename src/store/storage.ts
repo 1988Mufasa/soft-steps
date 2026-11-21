@@ -3,10 +3,14 @@ import {
   DEFAULT_CARE_STATS,
   DEFAULT_HOME,
   DEFAULT_PIN,
+  DEFAULT_PROFILE_ID,
+  DEFAULT_PROFILES,
   DEFAULT_ROUTINE_PREFS,
   DEFAULT_SETTINGS,
+  ROUTINE_HOUR_PRESETS,
   SAMPLE_STORIES,
   emptyProgress,
+  type KidProfile,
   type ParentSettings,
   type ProgressState,
   type Routine,
@@ -29,6 +33,7 @@ function mergeStories(parsed: Story[] | undefined, base: Story[]): Story[] {
 
 const SETTINGS_KEY = 'soft-steps-settings'
 const PROGRESS_KEY = 'soft-steps-progress'
+const PROGRESS_MAP_KEY = 'soft-steps-progress-by-profile'
 const SESSION_KEY = 'soft-steps-session-started'
 
 function cloneDefaults(): ParentSettings {
@@ -42,6 +47,7 @@ function cloneDefaults(): ParentSettings {
       ...r,
       steps: r.steps.map((s) => ({ ...s })),
       thenReward: { ...r.thenReward },
+      hours: r.hours ? { ...r.hours } : undefined,
     })),
     routinePrefs: { ...DEFAULT_SETTINGS.routinePrefs, stickers: [...DEFAULT_SETTINGS.routinePrefs.stickers] },
     stories: DEFAULT_SETTINGS.stories.map((s) => ({
@@ -53,6 +59,12 @@ function cloneDefaults(): ParentSettings {
     customVideos: [],
     careStats: { ...DEFAULT_CARE_STATS },
     home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
+    profiles: DEFAULT_PROFILES.map((p) => ({
+      ...p,
+      home: { ...p.home, favorites: [...p.home.favorites] },
+    })),
+    activeProfileId: DEFAULT_PROFILE_ID,
+    autoSwitchRoutines: true,
   }
 }
 
@@ -87,6 +99,7 @@ function migrateLegacySchedule(parsed: Partial<ParentSettings>, base: ParentSett
       ...r,
       steps: r.steps.map((s) => ({ ...s })),
       thenReward: { ...r.thenReward },
+      hours: r.hours ?? ROUTINE_HOUR_PRESETS[r.templateId],
     }))
   }
   if (parsed.schedule?.first || parsed.schedule?.then) {
@@ -114,6 +127,7 @@ function migrateLegacySchedule(parsed: Partial<ParentSettings>, base: ParentSett
         thenReward: then
           ? { label: then.label, emoji: then.emoji, photoDataUrl: then.photoDataUrl }
           : { ...base.routines[0].thenReward },
+        hours: { ...ROUTINE_HOUR_PRESETS.leaving },
       },
     ]
   }
@@ -121,7 +135,35 @@ function migrateLegacySchedule(parsed: Partial<ParentSettings>, base: ParentSett
     ...r,
     steps: r.steps.map((s) => ({ ...s })),
     thenReward: { ...r.thenReward },
+    hours: r.hours ? { ...r.hours } : undefined,
   }))
+}
+
+function migrateProfiles(parsed: Partial<ParentSettings>, base: ParentSettings): KidProfile[] {
+  if (parsed.profiles?.length) {
+    return parsed.profiles.map((p) => ({
+      ...p,
+      home: {
+        ...DEFAULT_HOME,
+        ...p.home,
+        favorites: p.home?.favorites ?? [...DEFAULT_HOME.favorites],
+      },
+    }))
+  }
+  return [
+    {
+      id: DEFAULT_PROFILE_ID,
+      name: 'My kid',
+      emoji: '🧒',
+      ageBand: parsed.ageBand ?? base.ageBand,
+      home: {
+        ...DEFAULT_HOME,
+        ...parsed.home,
+        favorites: parsed.home?.favorites ?? [...DEFAULT_HOME.favorites],
+      },
+      interestTheme: parsed.interestTheme ?? base.interestTheme,
+    },
+  ]
 }
 
 export function loadSettings(): ParentSettings {
@@ -131,6 +173,12 @@ export function loadSettings(): ParentSettings {
     const parsed = JSON.parse(raw) as Partial<ParentSettings>
     const base = cloneDefaults()
     const routines = migrateLegacySchedule(parsed, base)
+    const profiles = migrateProfiles(parsed, base)
+    const activeProfileId =
+      parsed.activeProfileId && profiles.some((p) => p.id === parsed.activeProfileId)
+        ? parsed.activeProfileId
+        : profiles[0]?.id ?? DEFAULT_PROFILE_ID
+    const active = profiles.find((p) => p.id === activeProfileId) ?? profiles[0]
     const activeRoutineId =
       parsed.activeRoutineId && routines.some((r) => r.id === parsed.activeRoutineId)
         ? parsed.activeRoutineId
@@ -146,6 +194,8 @@ export function loadSettings(): ParentSettings {
         typeof parsed.pinIsDefault === 'boolean'
           ? parsed.pinIsDefault
           : !parsed.pinHash,
+      ageBand: active?.ageBand ?? base.ageBand,
+      interestTheme: active?.interestTheme ?? base.interestTheme,
       enabledModules: { ...base.enabledModules, ...parsed.enabledModules },
       enabledCareModules: { ...base.enabledCareModules, ...parsed.enabledCareModules },
       enabledOnlineActivities: {
@@ -167,11 +217,15 @@ export function loadSettings(): ParentSettings {
       customAacCards: Array.isArray(parsed.customAacCards) ? parsed.customAacCards : [],
       customVideos: Array.isArray(parsed.customVideos) ? parsed.customVideos : [],
       careStats: { ...DEFAULT_CARE_STATS, ...parsed.careStats },
-      home: {
+      home: active?.home ?? {
         ...DEFAULT_HOME,
         ...parsed.home,
         favorites: parsed.home?.favorites ?? [...DEFAULT_HOME.favorites],
       },
+      profiles,
+      activeProfileId,
+      autoSwitchRoutines:
+        typeof parsed.autoSwitchRoutines === 'boolean' ? parsed.autoSwitchRoutines : true,
     }
   } catch {
     return cloneDefaults()
@@ -182,23 +236,54 @@ export function saveSettings(settings: ParentSettings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
 }
 
-export function loadProgress(): ProgressState {
+function loadProgressMap(): Record<string, ProgressState> {
   try {
-    const raw = localStorage.getItem(PROGRESS_KEY)
-    if (!raw) return emptyProgress()
-    return { ...emptyProgress(), ...JSON.parse(raw) }
+    const raw = localStorage.getItem(PROGRESS_MAP_KEY)
+    if (raw) return JSON.parse(raw) as Record<string, ProgressState>
   } catch {
-    return emptyProgress()
+    /* fall through */
+  }
+  // Migrate legacy single progress blob into default profile
+  try {
+    const legacy = localStorage.getItem(PROGRESS_KEY)
+    if (legacy) {
+      const parsed = { ...emptyProgress(), ...JSON.parse(legacy) } as ProgressState
+      const map = { [DEFAULT_PROFILE_ID]: parsed }
+      localStorage.setItem(PROGRESS_MAP_KEY, JSON.stringify(map))
+      return map
+    }
+  } catch {
+    /* ignore */
+  }
+  return {}
+}
+
+export function loadProgress(profileId = DEFAULT_PROFILE_ID): ProgressState {
+  const map = loadProgressMap()
+  return { ...emptyProgress(), ...(map[profileId] ?? {}) }
+}
+
+export function saveProgress(progress: ProgressState, profileId = DEFAULT_PROFILE_ID) {
+  const map = loadProgressMap()
+  map[profileId] = progress
+  localStorage.setItem(PROGRESS_MAP_KEY, JSON.stringify(map))
+  // Keep legacy key in sync for older readers
+  if (profileId === DEFAULT_PROFILE_ID) {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
   }
 }
 
-export function saveProgress(progress: ProgressState) {
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
+export function loadAllProgress(): Record<string, ProgressState> {
+  return loadProgressMap()
 }
 
-export function resetProgress() {
+export function saveAllProgress(map: Record<string, ProgressState>) {
+  localStorage.setItem(PROGRESS_MAP_KEY, JSON.stringify(map))
+}
+
+export function resetProgress(profileId = DEFAULT_PROFILE_ID) {
   const cleared = emptyProgress()
-  saveProgress(cleared)
+  saveProgress(cleared, profileId)
   return cleared
 }
 

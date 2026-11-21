@@ -9,20 +9,25 @@ import {
 } from 'react'
 import type {
   CareModuleId,
+  KidProfile,
   ModuleId,
   OnlineActivityId,
   ParentSettings,
   ProgressState,
 } from '../types'
+import { DEFAULT_PROFILE_ID } from '../types'
 import { setSpeechPrefs } from '../audio/voices'
 import { hashPin, verifyPin } from '../security/pinCrypto'
+import { pickRoutineForHour } from '../utils/routines'
 import {
   clearSessionStarted,
   ensurePinHashed,
+  loadAllProgress,
   loadProgress,
   loadSettings,
   markSessionStarted,
   resetProgress as resetStoredProgress,
+  saveAllProgress,
   saveProgress,
   saveSettings,
   getSessionStarted,
@@ -33,6 +38,7 @@ type AppContextValue = {
   progress: ProgressState
   online: boolean
   pinReady: boolean
+  activeProfile: KidProfile | null
   updateSettings: (patch: Partial<ParentSettings>) => void
   setEnabledModule: (id: ModuleId, enabled: boolean) => void
   setEnabledCareModule: (id: CareModuleId, enabled: boolean) => void
@@ -41,15 +47,47 @@ type AppContextValue = {
   resetProgress: () => void
   changePin: (pin: string) => Promise<void>
   checkPin: (pin: string) => Promise<boolean>
+  switchProfile: (profileId: string) => void
+  upsertProfile: (profile: KidProfile) => void
+  removeProfile: (profileId: string) => void
+  applyQuietMode: () => void
   sessionExpired: boolean
   minutesLeft: number | null
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
 
+function withActiveProfileSynced(settings: ParentSettings): ParentSettings {
+  const profiles = settings.profiles?.length
+    ? settings.profiles
+    : [
+        {
+          id: DEFAULT_PROFILE_ID,
+          name: 'My kid',
+          emoji: '🧒',
+          ageBand: settings.ageBand,
+          home: settings.home,
+          interestTheme: settings.interestTheme,
+        },
+      ]
+  const active =
+    profiles.find((p) => p.id === settings.activeProfileId) ?? profiles[0] ?? null
+  if (!active) return { ...settings, profiles }
+  return {
+    ...settings,
+    profiles,
+    activeProfileId: active.id,
+    ageBand: active.ageBand,
+    home: active.home,
+    interestTheme: active.interestTheme,
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<ParentSettings>(() => loadSettings())
-  const [progress, setProgress] = useState<ProgressState>(() => loadProgress())
+  const [settings, setSettings] = useState<ParentSettings>(() => withActiveProfileSynced(loadSettings()))
+  const [progress, setProgress] = useState<ProgressState>(() =>
+    loadProgress(loadSettings().activeProfileId || DEFAULT_PROFILE_ID),
+  )
   const [online, setOnline] = useState(() => navigator.onLine)
   const [now, setNow] = useState(Date.now())
   const [pinReady, setPinReady] = useState(false)
@@ -59,7 +97,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     void ensurePinHashed(loadSettings()).then((next) => {
       if (!cancelled) {
-        setSettings(next)
+        setSettings(withActiveProfileSynced(next))
         setPinReady(true)
       }
     })
@@ -75,6 +113,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       window.clearInterval(tick)
     }
   }, [])
+
+  // Auto-switch routines by time of day
+  useEffect(() => {
+    if (!settings.autoSwitchRoutines) return
+    const pick = pickRoutineForHour(settings.routines, new Date(now).getHours())
+    if (pick && pick.id !== settings.activeRoutineId) {
+      setSettings((prev) => {
+        const next = { ...prev, activeRoutineId: pick.id }
+        saveSettings(next)
+        return next
+      })
+    }
+  }, [now, settings.autoSwitchRoutines, settings.routines, settings.activeRoutineId])
 
   useEffect(() => {
     const root = document.documentElement
@@ -98,7 +149,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateSettings = useCallback((patch: Partial<ParentSettings>) => {
     setSettings((prev) => {
-      const next: ParentSettings = {
+      let next: ParentSettings = {
         ...prev,
         ...patch,
         enabledModules: patch.enabledModules
@@ -123,7 +174,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
         home: patch.home
           ? { ...prev.home, ...patch.home, favorites: patch.home.favorites ?? prev.home.favorites }
           : prev.home,
+        profiles: patch.profiles ?? prev.profiles,
       }
+
+      // Keep active profile in sync when age/home/interest change
+      if (patch.ageBand || patch.home || patch.interestTheme) {
+        next = {
+          ...next,
+          profiles: next.profiles.map((p) =>
+            p.id === next.activeProfileId
+              ? {
+                  ...p,
+                  ageBand: patch.ageBand ?? p.ageBand,
+                  home: patch.home
+                    ? { ...p.home, ...patch.home, favorites: patch.home.favorites ?? p.home.favorites }
+                    : p.home,
+                  interestTheme: patch.interestTheme ?? p.interestTheme,
+                }
+              : p,
+          ),
+        }
+      }
+
+      next = withActiveProfileSynced(next)
       saveSettings(next)
       return next
     })
@@ -162,24 +235,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const recordAnswer = useCallback((id: ModuleId, correct: boolean, streak: number) => {
-    setProgress((prev) => {
-      const current = prev[id]
-      const nextModule = {
-        attempts: current.attempts + 1,
-        correct: current.correct + (correct ? 1 : 0),
-        bestStreak: Math.max(current.bestStreak, streak),
-        lastPlayedAt: new Date().toISOString(),
-      }
-      const next = { ...prev, [id]: nextModule }
-      saveProgress(next)
-      return next
-    })
-  }, [])
+  const recordAnswer = useCallback(
+    (id: ModuleId, correct: boolean, streak: number) => {
+      setProgress((prev) => {
+        const current = prev[id]
+        const nextModule = {
+          attempts: current.attempts + 1,
+          correct: current.correct + (correct ? 1 : 0),
+          bestStreak: Math.max(current.bestStreak, streak),
+          lastPlayedAt: new Date().toISOString(),
+        }
+        const next = { ...prev, [id]: nextModule }
+        saveProgress(next, settings.activeProfileId)
+        return next
+      })
+    },
+    [settings.activeProfileId],
+  )
 
   const resetProgress = useCallback(() => {
-    setProgress(resetStoredProgress())
-  }, [])
+    setProgress(resetStoredProgress(settings.activeProfileId))
+  }, [settings.activeProfileId])
 
   const changePin = useCallback(async (pin: string) => {
     const secrets = await hashPin(pin, false)
@@ -207,6 +283,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [settings.pinHash, settings.pinSalt],
   )
 
+  const switchProfile = useCallback((profileId: string) => {
+    setSettings((prev) => {
+      saveProgress(progress, prev.activeProfileId)
+      const next = withActiveProfileSynced({ ...prev, activeProfileId: profileId })
+      saveSettings(next)
+      setProgress(loadProgress(profileId))
+      return next
+    })
+  }, [progress])
+
+  const upsertProfile = useCallback((profile: KidProfile) => {
+    setSettings((prev) => {
+      const exists = prev.profiles.some((p) => p.id === profile.id)
+      const profiles = exists
+        ? prev.profiles.map((p) => (p.id === profile.id ? profile : p))
+        : [...prev.profiles, profile]
+      const next = withActiveProfileSynced({ ...prev, profiles })
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const removeProfile = useCallback((profileId: string) => {
+    setSettings((prev) => {
+      if (prev.profiles.length <= 1) return prev
+      const profiles = prev.profiles.filter((p) => p.id !== profileId)
+      const activeProfileId =
+        prev.activeProfileId === profileId ? profiles[0].id : prev.activeProfileId
+      const map = loadAllProgress()
+      delete map[profileId]
+      saveAllProgress(map)
+      const next = withActiveProfileSynced({ ...prev, profiles, activeProfileId })
+      saveSettings(next)
+      setProgress(loadProgress(activeProfileId))
+      return next
+    })
+  }, [])
+
+  const applyQuietMode = useCallback(() => {
+    updateSettings({
+      sensory: {
+        ...settings.sensory,
+        muteCelebrations: true,
+        reducedMotion: true,
+        mutedPalette: true,
+        disableSuddenAnimations: true,
+        dimColors: true,
+      },
+      routinePrefs: {
+        ...settings.routinePrefs,
+        celebrateSounds: false,
+        mutedPalette: true,
+      },
+    })
+  }, [settings.sensory, settings.routinePrefs, updateSettings])
+
+  const activeProfile =
+    settings.profiles.find((p) => p.id === settings.activeProfileId) ?? settings.profiles[0] ?? null
+
   const sessionStarted = getSessionStarted()
   const limitMs =
     settings.sessionLimitMinutes && settings.sessionLimitMinutes > 0
@@ -223,6 +358,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       progress,
       online,
       pinReady,
+      activeProfile,
       updateSettings,
       setEnabledModule,
       setEnabledCareModule,
@@ -231,6 +367,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       resetProgress,
       changePin,
       checkPin,
+      switchProfile,
+      upsertProfile,
+      removeProfile,
+      applyQuietMode,
       sessionExpired,
       minutesLeft,
     }),
@@ -239,6 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       progress,
       online,
       pinReady,
+      activeProfile,
       updateSettings,
       setEnabledModule,
       setEnabledCareModule,
@@ -247,6 +388,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       resetProgress,
       changePin,
       checkPin,
+      switchProfile,
+      upsertProfile,
+      removeProfile,
+      applyQuietMode,
       sessionExpired,
       minutesLeft,
     ],

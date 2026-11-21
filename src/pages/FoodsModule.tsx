@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { GameHUD } from '../components/GameHUD'
 import { ChoiceGrid } from '../components/ChoiceGrid'
 import { GameCelebration } from '../components/GameCelebration'
 import { FeedbackBanner } from '../components/FeedbackBanner'
 import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
 import { speakText } from '../audio/calmAudio'
-import { foodPool, type FoodItem, type FoodKind } from '../data/foods'
+import { FOOD_KIND_META, foodPool, type FoodItem, type FoodKind } from '../data/foods'
 import { useApp } from '../store/AppContext'
 import { choiceCount, pickChoices, shuffle } from '../utils/quiz'
 
@@ -14,10 +14,15 @@ type Hub = 'hub' | FoodKind
 type Mode = 'menu' | 'learn' | 'match' | 'pick-food' | 'memory' | 'challenge' | 'win'
 
 const CHALLENGE_ROUNDS = 8
+const KIND_IDS = new Set(FOOD_KIND_META.map((k) => k.id))
 
 export function FoodsModule() {
   const { settings, recordAnswer } = useApp()
-  const [hub, setHub] = useState<Hub>('hub')
+  const [params] = useSearchParams()
+  const initialKind = params.get('kind')
+  const [hub, setHub] = useState<Hub>(() =>
+    initialKind && KIND_IDS.has(initialKind as FoodKind) ? (initialKind as FoodKind) : 'hub',
+  )
   const kind: FoodKind | undefined = hub === 'hub' ? undefined : hub
 
   const pool = useMemo(
@@ -27,6 +32,14 @@ export function FoodsModule() {
   const count = choiceCount(settings.ageBand)
 
   const [mode, setMode] = useState<Mode>('menu')
+
+  useEffect(() => {
+    const q = params.get('kind')
+    if (q && KIND_IDS.has(q as FoodKind)) {
+      setHub(q as FoodKind)
+      setMode('menu')
+    }
+  }, [params])
   const [lessonIndex, setLessonIndex] = useState(0)
   const [streak, setStreak] = useState(0)
   const [stars, setStars] = useState(0)
@@ -52,7 +65,7 @@ export function FoodsModule() {
   const [matched, setMatched] = useState<string[]>([])
 
   const lesson = pool[lessonIndex % Math.max(pool.length, 1)]
-  const topicLabel = hub === 'fruit' ? 'Fruits' : hub === 'veg' ? 'Vegetables' : 'Foods'
+  const topicLabel = FOOD_KIND_META.find((k) => k.id === hub)?.title ?? 'Pictures'
 
   const openCategory = (next: FoodKind) => {
     setHub(next)
@@ -168,26 +181,26 @@ export function FoodsModule() {
           </Link>
           <div className="activity-meta">
             <p className="eyebrow offline-tag">Learning game</p>
-            <h1>Foods</h1>
+            <h1>Pictures</h1>
           </div>
           <span className="age-badge">Ages {settings.ageBand}</span>
         </header>
-        <p className="prompt">Pick fruits or vegetables. Calm games — works offline.</p>
+        <p className="prompt">Fruits, veggies, animals, body parts, and daily objects — works offline.</p>
         <div className="sign-mode-grid">
-          <button type="button" className="sign-mode-card food-hub-fruit" onClick={() => openCategory('fruit')}>
-            <span className="sign-mode-emoji" aria-hidden="true">
-              🍎
-            </span>
-            <strong>Fruits</strong>
-            <span>Apples, berries, and more</span>
-          </button>
-          <button type="button" className="sign-mode-card food-hub-veg" onClick={() => openCategory('veg')}>
-            <span className="sign-mode-emoji" aria-hidden="true">
-              🥕
-            </span>
-            <strong>Vegetables</strong>
-            <span>Carrots, greens, and more</span>
-          </button>
+          {FOOD_KIND_META.map((k) => (
+            <button
+              key={k.id}
+              type="button"
+              className={`sign-mode-card ${k.id === 'fruit' ? 'food-hub-fruit' : k.id === 'veg' ? 'food-hub-veg' : ''}`}
+              onClick={() => openCategory(k.id)}
+            >
+              <span className="sign-mode-emoji" aria-hidden="true">
+                {k.emoji}
+              </span>
+              <strong>{k.title}</strong>
+              <span>{k.blurb}</span>
+            </button>
+          ))}
         </div>
       </section>
     )
@@ -198,7 +211,7 @@ export function FoodsModule() {
       <section className="activity-shell food-game">
         <header className="activity-header">
           <button type="button" className="back-link" onClick={() => setHub('hub')}>
-            ← Foods
+            ← Pictures
           </button>
           <div className="activity-meta">
             <p className="eyebrow offline-tag">Learning game</p>
@@ -300,7 +313,9 @@ export function FoodsModule() {
             {lesson.emoji}
           </span>
           <p className="food-name-xl">{lesson.name}</p>
-          <p className="sign-how">{lesson.kind === 'fruit' ? 'Fruit' : 'Vegetable'}</p>
+          <p className="sign-how">
+            {FOOD_KIND_META.find((k) => k.id === lesson.kind)?.title ?? 'Picture'}
+          </p>
           <div className="confirm-row sign-actions">
             <button
               type="button"

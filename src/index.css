@@ -3051,3 +3051,124 @@ html[data-focus-outlines='true'] :focus {
 .sign-mode-card.is-wifi-needed {
   outline: 2px dashed rgba(199, 48, 58, 0.4);
 }
+
+/* —— Stickiness suite: themes, profiles, install, stories, privacy —— */
+.week-theme-banner {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(224, 184, 74, 0.22), rgba(116, 184, 210, 0.2));
+  box-shadow: var(--shadow);
+}
+
+.week-theme-emoji {
+  font-size: 2rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.week-theme-banner strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.week-theme-banner p {
+  margin: 0.2rem 0 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.week-theme-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.profile-switcher {
+  margin-bottom: 0.5rem;
+}
+
+.profile-chip {
+  font-weight: 800;
+}
+
+.install-checklist {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.install-checklist li::before {
+  content: '✓ ';
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.install-success {
+  background: linear-gradient(135deg, rgba(107, 168, 78, 0.18), rgba(54, 97, 176, 0.12));
+}
+
+.field-label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+  margin: 0.75rem 0;
+}
+
+.text-input {
+  width: 100%;
+  border: 2px solid rgba(54, 97, 176, 0.25);
+  border-radius: 14px;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  background: #fff;
+}
+
+textarea.text-input {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.story-builder-page {
+  padding: 1rem;
+  margin: 0.75rem 0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow);
+}
+
+.story-builder-page h3 {
+  margin: 0 0 0.5rem;
+}
+
+.chip-new {
+  border-style: dashed;
+}
+
+.privacy-page .privacy-block {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+}
+
+.privacy-page .privacy-block h2 {
+  font-size: 1.15rem;
+  margin-bottom: 0.4rem;
+}
+
+.privacy-page ul {
+  margin: 0.4rem 0 0.75rem;
+  padding-left: 1.2rem;
+}
+
+html[data-mute-celebrations='true'] .game-celebration-sky {
+  display: none;
+}
+
+.quiet-card {
+  border: 2px solid rgba(54, 97, 176, 0.2);
+}

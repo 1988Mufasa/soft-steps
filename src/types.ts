@@ -74,6 +74,21 @@ export type HomePrefs = {
   favorites: string[]
 }
 
+export type KidProfile = {
+  id: string
+  name: string
+  emoji: string
+  ageBand: AgeBand
+  home: HomePrefs
+  interestTheme: InterestTheme
+}
+
+/** Hour window 0–23 for auto-switching active routine */
+export type RoutineHours = {
+  startHour: number
+  endHour: number
+}
+
 export type RoutineStep = {
   id: string
   label: string
@@ -96,6 +111,8 @@ export type Routine = {
     emoji: string
     photoDataUrl?: string
   }
+  /** When set, this routine auto-activates during these hours */
+  hours?: RoutineHours
 }
 
 export type RoutinePrefs = {
@@ -160,6 +177,11 @@ export type ParentSettings = {
   customVideos: CustomLearningVideo[]
   careStats: CareStats
   home: HomePrefs
+  /** Sibling profiles — age band / favorites / interest live here */
+  profiles: KidProfile[]
+  activeProfileId: string
+  /** Follow routine hour windows automatically */
+  autoSwitchRoutines: boolean
 }
 
 export type ModuleProgress = {
@@ -281,6 +303,25 @@ export const DEFAULT_HOME: HomePrefs = {
   favorites: ['schedule', 'talk', 'signs'],
 }
 
+export const DEFAULT_PROFILE_ID = 'kid-1'
+
+export const DEFAULT_PROFILES: KidProfile[] = [
+  {
+    id: DEFAULT_PROFILE_ID,
+    name: 'My kid',
+    emoji: '🧒',
+    ageBand: '3-6',
+    home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
+    interestTheme: 'dinosaurs',
+  },
+]
+
+export const ROUTINE_HOUR_PRESETS: Record<RoutineTemplateId, RoutineHours> = {
+  morning: { startHour: 5, endHour: 11 },
+  leaving: { startHour: 11, endHour: 16 },
+  bedtime: { startHour: 16, endHour: 5 },
+}
+
 export const DEFAULT_INTEREST_CHECKLIST = [
   { id: 'c1', label: 'Put shoes away', done: false },
   { id: 'c2', label: 'Wash hands', done: false },
@@ -327,6 +368,32 @@ export const DEFAULT_SETTINGS: ParentSettings = {
       ...DEFAULT_MORNING,
       steps: DEFAULT_MORNING.steps.map((s) => ({ ...s })),
       thenReward: { ...DEFAULT_MORNING.thenReward },
+      hours: { ...ROUTINE_HOUR_PRESETS.morning },
+    },
+    {
+      id: 'routine-after-default',
+      templateId: 'leaving',
+      title: 'After school',
+      steps: [
+        { id: 'a1', label: 'Snack', emoji: '🍎', timerSeconds: 60, voiceText: 'Snack' },
+        { id: 'a2', label: 'Backpack away', emoji: '🎒', timerSeconds: 45, voiceText: 'Backpack away' },
+        { id: 'a3', label: 'Quiet play', emoji: '🧩', timerSeconds: 120, voiceText: 'Quiet play' },
+      ],
+      thenReward: { label: 'Interest time', emoji: '⭐' },
+      hours: { ...ROUTINE_HOUR_PRESETS.leaving },
+    },
+    {
+      id: 'routine-bed-default',
+      templateId: 'bedtime',
+      title: 'Bedtime',
+      steps: [
+        { id: 'b1', label: 'Bath', emoji: '🛁', timerSeconds: 90, voiceText: 'Bath' },
+        { id: 'b2', label: 'Pajamas', emoji: '🩱', timerSeconds: 60, voiceText: 'Pajamas' },
+        { id: 'b3', label: 'Brush teeth', emoji: '🪥', timerSeconds: 60, voiceText: 'Brush teeth' },
+        { id: 'b4', label: 'Story', emoji: '📖', timerSeconds: 120, voiceText: 'Story' },
+      ],
+      thenReward: { label: 'Lights soft', emoji: '🌙' },
+      hours: { ...ROUTINE_HOUR_PRESETS.bedtime },
     },
   ],
   routinePrefs: { ...DEFAULT_ROUTINE_PREFS },
@@ -339,6 +406,12 @@ export const DEFAULT_SETTINGS: ParentSettings = {
   customVideos: [],
   careStats: { ...DEFAULT_CARE_STATS },
   home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
+  profiles: DEFAULT_PROFILES.map((p) => ({
+    ...p,
+    home: { ...p.home, favorites: [...p.home.favorites] },
+  })),
+  activeProfileId: DEFAULT_PROFILE_ID,
+  autoSwitchRoutines: true,
 }
 
 export function emptyProgress(): ProgressState {

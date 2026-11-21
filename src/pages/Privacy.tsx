@@ -1,0 +1,90 @@
+import { Link } from 'react-router-dom'
+
+/**
+ * Store-facing privacy copy for TestFlight / Play Internal / App Store review.
+ * Device-local by design — no child accounts on Soft Steps servers.
+ */
+export function Privacy() {
+  return (
+    <section className="care-page privacy-page">
+      <header className="activity-header">
+        <Link to="/" className="back-link">
+          ← Home
+        </Link>
+        <div className="activity-meta">
+          <p className="eyebrow">Soft Steps</p>
+          <h1>Privacy</h1>
+        </div>
+      </header>
+
+      <article className="privacy-block">
+        <h2>Who Soft Steps is for</h2>
+        <p>
+          Soft Steps is a calm learning and care app for children (roughly ages 3–12) and the
+          grown-ups who support them. Practice games, routines, AAC check-ins, and social stories
+          run on the device.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>What we store on the device</h2>
+        <ul>
+          <li>Parent PIN (salted hash only — never plain digits)</li>
+          <li>Kid profiles, age band, favorites, and practice progress</li>
+          <li>Routines, AAC phrases, custom photos, and social stories you add</li>
+          <li>Optional check-in history and sensory / accessibility prefs</li>
+        </ul>
+        <p>
+          Soft Steps does not create child accounts on our servers. Learning data stays in this
+          browser or app install unless you export a backup file yourself.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Camera &amp; microphone</h2>
+        <p>
+          Camera is used only when a grown-up or caregiver adds a photo (stories, AAC, routines).
+          Microphone is used for on-device speech synthesis / practice — Soft Steps does not upload
+          audio recordings to Soft Steps servers. Permissions are requested by the OS when you tap
+          those features.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Network</h2>
+        <p>
+          Most tools work offline after install. Optional online extras (YouTube Kids embeds you
+          choose, Stripe Checkout for support purchases) need Wi‑Fi. Purchases never run offline.
+          Soft Steps does not sell personal data and does not show third-party ads.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Payments</h2>
+        <p>
+          Optional support payments use Stripe-hosted Checkout. Card numbers are entered on Stripe’s
+          pages — they never touch Soft Steps storage.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Backups</h2>
+        <p>
+          Grown-ups can export a local backup file (settings, AAC, photos, progress). You choose
+          where to keep that file (device Files, iCloud Drive, Google Drive, etc.). Soft Steps does
+          not automatically sync to the cloud yet.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Contact</h2>
+        <p>
+          For privacy questions about Soft Steps store builds (TestFlight / Play Internal), use the
+          support channel listed with your build invitation.
+        </p>
+      </article>
+
+      <p className="fine-print">Last updated for store packaging · Soft Steps</p>
+    </section>
+  )
+}

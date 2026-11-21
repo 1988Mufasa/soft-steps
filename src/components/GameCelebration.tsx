@@ -33,27 +33,31 @@ export function GameCelebration({ stars, subtitle, children }: Props) {
     return () => window.clearTimeout(t)
   }, [muted])
 
+  const hideParty = muted || reduced
+
   return (
     <div
-      className={`game-celebration ${reduced ? 'is-calm' : ''}`}
+      className={`game-celebration ${hideParty ? 'is-calm' : ''}`}
       role="status"
       aria-live="polite"
     >
-      <div className="game-celebration-sky" aria-hidden="true">
-        {BALLOONS.map((b, i) => (
-          <span
-            key={i}
-            className="game-balloon"
-            style={{
-              left: `${8 + i * 11}%`,
-              animationDelay: `${i * 0.18}s`,
-              ['--balloon-drift' as string]: `${(i % 3) - 1}px`,
-            }}
-          >
-            {b}
-          </span>
-        ))}
-      </div>
+      {!hideParty ? (
+        <div className="game-celebration-sky" aria-hidden="true">
+          {BALLOONS.map((b, i) => (
+            <span
+              key={i}
+              className="game-balloon"
+              style={{
+                left: `${8 + i * 11}%`,
+                animationDelay: `${i * 0.18}s`,
+                ['--balloon-drift' as string]: `${(i % 3) - 1}px`,
+              }}
+            >
+              {b}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <p className="game-celebration-title">You are awesome</p>
       {typeof stars === 'number' ? (

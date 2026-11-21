@@ -234,6 +234,13 @@ export function saveCheckIn(entry: SavedCheckIn) {
   return next
 }
 
+/** Replace full history (backup restore). Keeps newest 40. */
+export function replaceCheckInHistory(entries: SavedCheckIn[]) {
+  const next = (Array.isArray(entries) ? entries : []).slice(0, 40)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+  return next
+}
+
 export function buildCheckInSentence(parts: {
   feelingSpeak: string
   bodySpeak: string
