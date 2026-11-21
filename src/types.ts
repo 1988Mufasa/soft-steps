@@ -13,12 +13,12 @@ export type CareModuleId =
   | 'interest'
   | 'videos'
 
-/** Parent-added learning video (YouTube) for online watch */
+/** Parent-added learning video (YouTube Kids) for online watch */
 export type CustomLearningVideo = {
   id: string
   title: string
   emoji: string
-  /** YouTube video id (11 chars) */
+  /** YouTube / YouTube Kids video id (11 chars) */
   youtubeId: string
 }
 

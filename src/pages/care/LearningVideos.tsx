@@ -65,7 +65,7 @@ export function LearningVideos() {
     e.preventDefault()
     const yt = parseYoutubeId(url)
     if (!yt) {
-      setError('Paste a YouTube link or 11-character video id.')
+      setError('Paste a YouTube Kids link (or YouTube link/id that works in Kids).')
       return
     }
     const trimmed = title.trim() || 'Family video'
@@ -114,27 +114,40 @@ export function LearningVideos() {
             ← Family
           </button>
           <div className="activity-meta">
-            <p className="eyebrow online-tag">Online video</p>
+            <p className="eyebrow online-tag">YouTube Kids</p>
             <h1>
               {view.emoji} {view.title}
             </h1>
           </div>
         </header>
         {!online ? (
-          <p className="empty-note">You’re offline. Family YouTube videos need Wi‑Fi.</p>
+          <p className="empty-note">You’re offline. YouTube Kids videos need Wi‑Fi.</p>
         ) : (
-          <div className="video-embed-wrap">
-            <iframe
-              title={view.title}
-              src={`https://www.youtube-nocookie.com/embed/${view.id}?rel=0&modestbranding=1`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
-          </div>
+          <>
+            <div className="video-embed-wrap">
+              <iframe
+                title={view.title}
+                src={`https://www.youtubekids.com/embed/${view.id}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+            <a
+              className="btn btn-secondary"
+              href={`https://www.youtubekids.com/watch?v=${view.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open in YouTube Kids
+            </a>
+          </>
         )}
-        <p className="fine-print">Grown-ups choose family videos. Soft Steps does not host the file.</p>
+        <p className="fine-print">
+          Plays in YouTube Kids (not regular YouTube). Only Kids-approved videos will load. Soft Steps
+          does not host the file.
+        </p>
         <button
           type="button"
           className="btn btn-primary"
@@ -231,7 +244,7 @@ export function LearningVideos() {
 
         {isFamily ? (
           <>
-            <p className="prompt">Grown-up YouTube picks. Needs Wi‑Fi to play.</p>
+            <p className="prompt">Grown-up YouTube Kids picks. Needs Wi‑Fi to play.</p>
             <div className="video-card-grid">
               {family.map((v) => (
                 <button
@@ -246,7 +259,7 @@ export function LearningVideos() {
                     {v.emoji}
                   </span>
                   <strong>{v.title}</strong>
-                  <span className="fine-print">YouTube</span>
+                  <span className="fine-print">YouTube Kids</span>
                 </button>
               ))}
             </div>
@@ -254,7 +267,7 @@ export function LearningVideos() {
 
             {!adding ? (
               <button type="button" className="btn btn-secondary" onClick={() => setAdding(true)}>
-                Add YouTube video
+                Add YouTube Kids video
               </button>
             ) : (
               <form className="aac-add-form" onSubmit={addFamilyVideo}>
@@ -267,12 +280,12 @@ export function LearningVideos() {
                   <input type="text" value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={8} />
                 </label>
                 <label>
-                  YouTube link or id
+                  YouTube Kids link or video id
                   <input
                     type="text"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://youtube.com/watch?v=… or video id"
+                    placeholder="https://www.youtubekids.com/watch?v=… or video id"
                     required
                   />
                 </label>
@@ -346,7 +359,7 @@ export function LearningVideos() {
         <span className="age-badge">Ages {settings.ageBand}</span>
       </header>
       <p className="prompt">
-        Offline watch lessons by topic. Family YouTube videos play when you’re online.
+        Offline watch lessons by topic. Family YouTube Kids videos play when you’re online.
       </p>
       <div className="sign-mode-grid">
         {VIDEO_CATEGORIES.map((c) => (
@@ -372,7 +385,7 @@ export function LearningVideos() {
             📺
           </span>
           <strong>Family videos</strong>
-          <span>{online ? 'YouTube when online' : 'Add now · play with Wi‑Fi'}</span>
+          <span>{online ? 'YouTube Kids when online' : 'Add now · play with Wi‑Fi'}</span>
         </button>
       </div>
     </section>
