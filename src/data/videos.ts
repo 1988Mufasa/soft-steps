@@ -150,26 +150,3 @@ export function videosForAge(ageBand: '3-6' | '7-12', category?: VideoCategory) 
     (v) => v.ages.includes(ageBand) && (!category || v.category === category),
   )
 }
-
-/** Pull a video id from a YouTube Kids / YouTube URL or raw id. */
-export function parseYoutubeId(input: string): string | null {
-  const raw = input.trim()
-  if (/^[\w-]{11}$/.test(raw)) return raw
-  try {
-    const url = new URL(raw)
-    const host = url.hostname.replace(/^www\./, '')
-    if (host === 'youtu.be') {
-      const id = url.pathname.replace(/^\//, '').slice(0, 11)
-      return /^[\w-]{11}$/.test(id) ? id : null
-    }
-    if (host === 'youtubekids.com' || host === 'youtube.com' || host === 'm.youtube.com') {
-      const v = url.searchParams.get('v')
-      if (v && /^[\w-]{11}$/.test(v)) return v
-      const embed = url.pathname.match(/\/(?:embed|video)\/([\w-]{11})/)
-      if (embed) return embed[1]
-    }
-  } catch {
-    /* not a URL */
-  }
-  return null
-}

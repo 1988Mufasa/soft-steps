@@ -37,7 +37,7 @@ export default defineConfig({
         name: 'Soft Steps',
         short_name: 'Soft Steps',
         description:
-          'Calm autism-friendly learning: ABCs, signs, foods, routines, AAC check-ins, and social stories — offline-first.',
+          'Calm autism-friendly learning: ABCs, signs, foods, routines, AAC Talk, and social stories — 100% offline after install.',
         theme_color: '#3661B0',
         background_color: '#F7F7F2',
         display: 'standalone',
@@ -100,21 +100,9 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8787',
-        changeOrigin: true,
-      },
-    },
   },
   preview: {
     host: '127.0.0.1',
     port: 4173,
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8787',
-        changeOrigin: true,
-      },
-    },
   },
 })

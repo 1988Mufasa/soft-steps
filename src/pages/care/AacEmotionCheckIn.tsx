@@ -17,7 +17,7 @@ type Step = 'body' | 'feeling' | 'need' | 'done'
 const SUGGEST_PATH: Record<string, { path: string; title: string }> = {
   meltdown: { path: '/meltdown', title: 'Quiet calm' },
   calm: { path: '/calm', title: 'Calm toolkit' },
-  talk: { path: '/talk', title: 'Talk board' },
+  talk: { path: '/talk', title: 'Talk AAC' },
   schedule: { path: '/schedule', title: 'First / Then' },
 }
 

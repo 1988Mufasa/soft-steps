@@ -1,4 +1,5 @@
 import { hashPin } from '../security/pinCrypto'
+import { mergeAacLibrary } from '../data/aacPresets'
 import {
   DEFAULT_CARE_STATS,
   DEFAULT_HOME,
@@ -56,6 +57,7 @@ function cloneDefaults(): ParentSettings {
     })),
     interestChecklist: DEFAULT_SETTINGS.interestChecklist.map((c) => ({ ...c })),
     customAacCards: [],
+    aacLibrary: mergeAacLibrary(DEFAULT_SETTINGS.aacLibrary),
     customVideos: [],
     careStats: { ...DEFAULT_CARE_STATS },
     home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
@@ -66,6 +68,31 @@ function cloneDefaults(): ParentSettings {
     activeProfileId: DEFAULT_PROFILE_ID,
     autoSwitchRoutines: true,
   }
+}
+
+function migrateAacLibrary(parsed: Partial<ParentSettings>) {
+  const library = mergeAacLibrary(parsed.aacLibrary)
+  // Fold legacy customAacCards into Family words if not already present
+  const legacy = Array.isArray(parsed.customAacCards) ? parsed.customAacCards : []
+  const existingIds = new Set(library.buttons.map((b) => b.id))
+  const existingLabels = new Set(library.buttons.map((b) => b.label.toLowerCase()))
+  let order = 1000
+  for (const card of legacy) {
+    if (!card?.label) continue
+    const id = card.id || `legacy-${card.label}`
+    if (existingIds.has(id) || existingLabels.has(card.label.toLowerCase())) continue
+    library.buttons.push({
+      id,
+      label: card.label,
+      emoji: card.emoji || '💬',
+      categoryId: 'family',
+      partOfSpeech: 'noun',
+      photoDataUrl: card.photoDataUrl,
+      order: order++,
+      source: 'custom',
+    })
+  }
+  return library
 }
 
 /** Migrate legacy plaintext PIN → salted PBKDF2 hash. Never leave PIN in localStorage. */
@@ -220,6 +247,7 @@ export function loadSettings(): ParentSettings {
         ? parsed.interestChecklist
         : base.interestChecklist,
       customAacCards: Array.isArray(parsed.customAacCards) ? parsed.customAacCards : [],
+      aacLibrary: migrateAacLibrary(parsed),
       customVideos: Array.isArray(parsed.customVideos) ? parsed.customVideos : [],
       careStats: { ...DEFAULT_CARE_STATS, ...parsed.careStats },
       home: active?.home ?? {

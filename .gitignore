@@ -38,3 +38,4 @@ ios/DerivedData
 *.njsproj
 *.sln
 *.sw?
+server/

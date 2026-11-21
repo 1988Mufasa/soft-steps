@@ -63,12 +63,22 @@ export function softBubblePop(soundOn: boolean) {
   }
 }
 
+export type SpeakOverrides = {
+  pitch?: number
+  rate?: number
+  /** 0–1; classroom boost can force full volume */
+  volume?: number
+  /** Skip soft-audio quieting (noisy classroom AAC) */
+  forceFullVolume?: boolean
+}
+
 /**
  * Soft Steps speech — prefers high-quality / premium system voices,
  * with parent-chosen voice + style when set. Soft-audio mode lowers volume
  * and slows rate for sensory-friendly listening / VoiceOver coexistence.
+ * Uses on-device Web Speech (iOS AVSpeech / Android TTS under the hood in WebView).
  */
-export function speakText(text: string, soundOn: boolean) {
+export function speakText(text: string, soundOn: boolean, overrides?: SpeakOverrides) {
   if (!soundOn || !('speechSynthesis' in window)) return
   try {
     window.speechSynthesis.cancel()
@@ -78,9 +88,18 @@ export function speakText(text: string, soundOn: boolean) {
     const u = new SpeechSynthesisUtterance(text)
     const voice = resolveVoice()
     if (voice) u.voice = voice
-    u.pitch = softAudio ? Math.min(prosody.pitch, 1.12) : prosody.pitch
-    u.rate = softAudio ? Math.min(prosody.rate, 0.86) : prosody.rate
-    u.volume = softAudio ? 0.7 : 1
+    const pitch = overrides?.pitch ?? prosody.pitch
+    const rate = overrides?.rate ?? prosody.rate
+    const boost = Boolean(overrides?.forceFullVolume)
+    u.pitch = !boost && softAudio ? Math.min(pitch, 1.12) : pitch
+    u.rate = !boost && softAudio ? Math.min(rate, 0.86) : rate
+    if (typeof overrides?.volume === 'number') {
+      u.volume = Math.min(1, Math.max(0, overrides.volume))
+    } else if (boost) {
+      u.volume = 1
+    } else {
+      u.volume = softAudio ? 0.7 : 1
+    }
     // Some engines need a tiny delay after cancel to apply the new voice
     window.setTimeout(() => {
       try {

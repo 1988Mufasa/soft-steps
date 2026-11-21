@@ -200,6 +200,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         stories: patch.stories ?? prev.stories,
         interestChecklist: patch.interestChecklist ?? prev.interestChecklist,
         customAacCards: patch.customAacCards ?? prev.customAacCards,
+        aacLibrary: patch.aacLibrary ?? prev.aacLibrary,
         customVideos: patch.customVideos ?? prev.customVideos,
         careStats: patch.careStats ? { ...prev.careStats, ...patch.careStats } : prev.careStats,
         home: patch.home

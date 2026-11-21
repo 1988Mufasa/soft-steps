@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { HappyFaceHold } from '../components/HappyFaceHold'
 import { InstallPrompt } from '../components/InstallPrompt'
+import { ParentalGateModal } from '../components/ParentalGateModal'
 import { themeForDate } from '../data/themes'
 import { useApp } from '../store/AppContext'
 import type { CareModuleId, ModuleId } from '../types'
@@ -55,8 +55,13 @@ const CARE: {
   { id: 'feelings', title: 'Feelings', blurb: 'Quick emotion check-in', path: '/feelings' },
   { id: 'schedule', title: 'First / Then', blurb: 'Routine · timer · rewards', path: '/schedule' },
   { id: 'stories', title: 'What to expect', blurb: 'Picture social stories', path: '/stories' },
-  { id: 'videos', title: 'Learning videos', blurb: 'Watch lessons · YouTube Kids', path: '/videos' },
-  { id: 'talk', title: 'Talk board', blurb: 'Offline AAC by time of day', path: '/talk' },
+  { id: 'videos', title: 'Learning videos', blurb: 'Offline watch lessons', path: '/videos' },
+  {
+    id: 'talk',
+    title: 'Talk (AAC)',
+    blurb: 'Full communication board — words, photos, signs',
+    path: '/talk',
+  },
   { id: 'friends', title: 'Social cues', blurb: 'Gentle practice scenes', path: '/friends' },
   { id: 'interest', title: 'Interest rewards', blurb: 'Unlock special-interest facts', path: '/interest' },
 ]
@@ -72,6 +77,8 @@ export function Home() {
     switchProfile,
   } = useApp()
   const [showMore, setShowMore] = useState(false)
+  const [showParentGate, setShowParentGate] = useState(false)
+  const [privacyPending, setPrivacyPending] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
       return localStorage.getItem('soft-steps-onboard-v1') !== '1'
@@ -254,7 +261,7 @@ export function Home() {
               <li>Follow Today’s path: First / Then → practice → Calm.</li>
               <li>Add photos in stories or Talk board when you’re ready.</li>
               <li>
-                Grown-ups: hold the happy face → PIN (change starter <code>1234</code>).
+                Grown-ups: open Grown-ups → PIN (change starter <code>1234</code>).
               </li>
             </ol>
           </div>
@@ -422,31 +429,67 @@ export function Home() {
 
             <div className="section-head" style={{ marginTop: '1.25rem' }}>
               <h2>
-                <span className="eyebrow online-tag">Online</span> Network
+                <span className="eyebrow offline-tag">Offline</span> Extra games
               </h2>
             </div>
             {settings.onlineExtrasEnabled ? (
-              <Link to="/online" className={`online-card ${online ? '' : 'is-disabled'}`}>
+              <Link to="/online" className="online-card">
                 <div>
-                  <strong>Open online hub</strong>
-                  <p>
-                    {online
-                      ? 'Mix quiz · Gentle timer · Multi-step match'
-                      : 'You’re offline — use Today’s path and Favorites above'}
-                  </p>
+                  <strong>Open extra games</strong>
+                  <p>Mix quiz · Gentle timer · Multi-step match — works without Wi‑Fi</p>
                 </div>
                 <span className="chev">→</span>
               </Link>
             ) : (
-              <p className="empty-note">Online extras are turned off in Grown-ups.</p>
+              <p className="empty-note">Extra games are turned off in Grown-ups.</p>
             )}
           </>
         ) : null}
       </section>
 
       <footer className="home-footer home-footer-secure">
-        <HappyFaceHold onUnlock={() => navigate('/parent')} />
+        <button
+          type="button"
+          className="grownups-link"
+          onClick={() => {
+            setPrivacyPending(false)
+            setShowParentGate(true)
+          }}
+        >
+          Grown-ups
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost home-privacy-link"
+          onClick={() => {
+            setPrivacyPending(true)
+            setShowParentGate(true)
+          }}
+        >
+          Privacy
+        </button>
       </footer>
+
+      {showParentGate ? (
+        <ParentalGateModal
+          title={privacyPending ? 'Privacy' : 'Parent Controls'}
+          blurb={
+            privacyPending
+              ? 'Grown-ups confirm before opening the privacy policy.'
+              : 'Grown-ups confirm before opening Parent Controls.'
+          }
+          onCancel={() => {
+            setShowParentGate(false)
+            setPrivacyPending(false)
+          }}
+          onVerified={() => {
+            const goPrivacy = privacyPending
+            setShowParentGate(false)
+            setPrivacyPending(false)
+            navigate(goPrivacy ? '/privacy' : '/parent')
+          }}
+        />
+      ) : null}
     </div>
   )
 }

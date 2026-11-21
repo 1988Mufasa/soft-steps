@@ -1,3 +1,5 @@
+import { createDefaultAacLibrary, type AacLibrary } from './data/aacPresets'
+
 export type AgeBand = '3-6' | '7-12'
 
 export type ModuleId = 'abc' | 'shapes' | 'colors' | 'numbers' | 'signs' | 'foods'
@@ -13,12 +15,12 @@ export type CareModuleId =
   | 'interest'
   | 'videos'
 
-/** Parent-added learning video (YouTube Kids) for online watch */
+/** @deprecated Legacy custom video entries — Soft Steps no longer embeds YouTube Kids. */
 export type CustomLearningVideo = {
   id: string
   title: string
   emoji: string
-  /** YouTube / YouTube Kids video id (11 chars) */
+  /** Legacy external id (unused; kept for backup restore compatibility) */
   youtubeId: string
 }
 
@@ -62,6 +64,18 @@ export type CustomAacCard = {
   emoji: string
   photoDataUrl?: string
 }
+
+export type {
+  AacAgeRange,
+  AacButton,
+  AacCategory,
+  AacDisplayMode,
+  AacGridLayout,
+  AacLibrary,
+  AacPartOfSpeech,
+  AacPrefs,
+  AacStage,
+} from './data/aacPresets'
 
 export type CareStats = {
   routinesCompleted: number
@@ -180,6 +194,8 @@ export type ParentSettings = {
   stories: Story[]
   interestChecklist: { id: string; label: string; done: boolean }[]
   customAacCards: CustomAacCard[]
+  /** Full AAC library — presets + family/therapist/educator customizations */
+  aacLibrary: AacLibrary
   customVideos: CustomLearningVideo[]
   careStats: CareStats
   home: HomePrefs
@@ -411,6 +427,7 @@ export const DEFAULT_SETTINGS: ParentSettings = {
   })),
   interestChecklist: DEFAULT_INTEREST_CHECKLIST.map((c) => ({ ...c })),
   customAacCards: [],
+  aacLibrary: createDefaultAacLibrary(),
   customVideos: [],
   careStats: { ...DEFAULT_CARE_STATS },
   home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },

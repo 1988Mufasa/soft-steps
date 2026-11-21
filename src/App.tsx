@@ -22,12 +22,12 @@ import { FirstThenBoard } from './pages/care/FirstThenBoard'
 import { RoutineBuilder } from './pages/care/RoutineBuilder'
 import { SocialStories } from './pages/care/SocialStories'
 import { TalkAac } from './pages/care/TalkAac'
+import { AacEditor } from './pages/care/AacEditor'
 import { SocialCues } from './pages/care/SocialCues'
 import { InterestRewards } from './pages/care/InterestRewards'
 import { LearningVideos } from './pages/care/LearningVideos'
 import { ParentGate } from './pages/ParentGate'
 import { ParentDashboard } from './pages/ParentDashboard'
-import { ParentBilling } from './pages/ParentBilling'
 import { Privacy } from './pages/Privacy'
 import { useApp } from './store/AppContext'
 import type { CareModuleId, ModuleId } from './types'
@@ -120,6 +120,14 @@ export default function App() {
           element={
             <GuardedCare id="talk">
               <TalkAac />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/talk/edit"
+          element={
+            <GuardedCare id="talk">
+              <AacEditor />
             </GuardedCare>
           }
         />
@@ -221,7 +229,6 @@ export default function App() {
         />
         <Route path="/parent" element={<ParentGate />} />
         <Route path="/parent/dashboard" element={<ParentDashboard />} />
-        <Route path="/parent/billing" element={<ParentBilling />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

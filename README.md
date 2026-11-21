@@ -64,10 +64,11 @@ Or temporarily set `server.url` in `capacitor.config.ts` while iterating, then r
 | iOS IPA / Simulator | ❌ needs macOS + Xcode |
 | Store submission | ❌ local machine / CI with signing |
 
-## Offline vs online
+## Offline (100%)
 
-- **Offline:** ABCs, Shapes, Colors, Numbers
-- **Online:** Mix quiz, Gentle timer, Multi-step match, sync demo
+After install / first load, Soft Steps works without Wi‑Fi: ABCs, Shapes, Colors, Numbers, Signs,
+Foods, Care tools, AAC Talk, Learning videos, and Extra games (Mix quiz, Gentle timer, Multi-step
+match). Progress stays on the device — no cloud sync.
 
 ## Stack
 

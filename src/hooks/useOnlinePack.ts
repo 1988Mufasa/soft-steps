@@ -5,20 +5,15 @@ import { useApp } from '../store/AppContext'
 type PackState =
   | { status: 'loading' }
   | { status: 'ready'; pack: OnlinePack }
-  | { status: 'offline' }
   | { status: 'error'; message: string }
 
+/** Extra-game packs load from on-device data — works fully offline. */
 export function useOnlinePack() {
-  const { online, settings } = useApp()
+  const { settings } = useApp()
   const [state, setState] = useState<PackState>({ status: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
-    if (!online) {
-      setState({ status: 'offline' })
-      return
-    }
-
     const controller = new AbortController()
     setState({ status: 'loading' })
 
@@ -28,16 +23,14 @@ export function useOnlinePack() {
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
-        const message = err instanceof Error ? err.message : 'error'
-        if (message === 'OFFLINE' || !navigator.onLine) {
-          setState({ status: 'offline' })
-        } else {
-          setState({ status: 'error', message: 'Could not load online activities. Try again.' })
-        }
+        setState({
+          status: 'error',
+          message: err instanceof Error ? err.message : 'Could not load activities.',
+        })
       })
 
     return () => controller.abort()
-  }, [online, settings.ageBand, reloadKey])
+  }, [settings.ageBand, reloadKey])
 
   return {
     state,

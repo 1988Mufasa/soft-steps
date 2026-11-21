@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { GuidedAccessGuide } from '../components/GuidedAccessGuide'
+import { TherapistEducatorGuideModal } from '../components/TherapistEducatorGuideModal'
 import { VoicePicker } from '../components/VoicePicker'
+import { useParentalGate } from '../hooks/useParentalGate'
+import { getGuidedAccessStatus, type GuidedAccessStatus } from '../native/guidedAccess'
 import { loadCheckInHistory, replaceCheckInHistory } from '../data/checkIn'
 import { useParentSessionGuard } from '../hooks/useParentSessionGuard'
 import { clearParentSession } from '../security/parentSession'
@@ -49,16 +53,15 @@ const CARE_LABELS: { id: CareModuleId; label: string }[] = [
   { id: 'schedule', label: 'First / Then routines' },
   { id: 'stories', label: 'Social stories' },
   { id: 'videos', label: 'Learning videos' },
-  { id: 'talk', label: 'Talk board (AAC)' },
+  { id: 'talk', label: 'Talk AAC (full board + editor)' },
   { id: 'friends', label: 'Social cues' },
   { id: 'interest', label: 'Interest rewards' },
 ]
 
 const ONLINE_LABELS: { id: OnlineActivityId; label: string }[] = [
-  { id: 'mix-quiz', label: 'Mix quiz' },
-  { id: 'gentle-timer', label: 'Gentle timer' },
-  { id: 'multi-match', label: 'Multi-step match' },
-  { id: 'sync-demo', label: 'Progress sync demo' },
+  { id: 'mix-quiz', label: 'Mix quiz (offline)' },
+  { id: 'gentle-timer', label: 'Gentle timer (offline)' },
+  { id: 'multi-match', label: 'Multi-step match (offline)' },
 ]
 
 const INTERESTS: { id: InterestTheme; label: string }[] = [
@@ -96,6 +99,33 @@ export function ParentDashboard() {
   const [confirmPin, setConfirmPin] = useState('')
   const [saved, setSaved] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [gaStatus, setGaStatus] = useState<GuidedAccessStatus | null>(null)
+  const [showGaGuide, setShowGaGuide] = useState(false)
+  const [showTherapistGuide, setShowTherapistGuide] = useState(false)
+  const { requestGate: requestPrivacyGate, gateModal: privacyGateModal } = useParentalGate({
+    title: 'Privacy',
+    blurb: 'Grown-ups confirm before opening the privacy policy.',
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    const refresh = () => {
+      void getGuidedAccessStatus().then((s) => {
+        if (!cancelled) setGaStatus(s)
+      })
+    }
+    refresh()
+    const id = window.setInterval(refresh, 4000)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [])
   const [checkIns] = useState(() => loadCheckInHistory())
   const [editName, setEditName] = useState(activeProfile?.name ?? '')
   const [editEmoji, setEditEmoji] = useState(activeProfile?.emoji ?? '🧒')
@@ -147,7 +177,7 @@ export function ParentDashboard() {
           <h2>Change the starter PIN</h2>
           <p>
             Soft Steps still uses the first-time default <strong>1234</strong>. Choose a new 4–6
-            digit PIN before you can open settings, billing, or backups.
+            digit PIN before you can open settings or backups.
           </p>
           <form onSubmit={(e) => void onSavePin(e)} className="pin-form">
             <label className="field-label">
@@ -339,6 +369,20 @@ export function ParentDashboard() {
         Grown-up session · locks in ~{Math.max(1, Math.ceil(remainingMs / 60_000))} min of idle or when
         the 15‑minute limit ends.
       </p>
+
+      <div className="confirm-row therapist-guide-launch">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => setShowTherapistGuide(true)}
+        >
+          For Therapists &amp; Educators
+        </button>
+      </div>
+
+      {showTherapistGuide ? (
+        <TherapistEducatorGuideModal onClose={() => setShowTherapistGuide(false)} />
+      ) : null}
 
       <div className="dash-grid">
         <article className="dash-card quiet-card">
@@ -651,14 +695,17 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card">
-          <h2>Online features</h2>
+          <h2>Extra games (offline)</h2>
+          <p className="fine-print">
+            Mix quiz, timer, and multi-match run on this device — Soft Steps does not need Wi‑Fi.
+          </p>
           <label className="check-line">
             <input
               type="checkbox"
               checked={settings.onlineExtrasEnabled}
               onChange={(e) => updateSettings({ onlineExtrasEnabled: e.target.checked })}
             />
-            Enable all online extras
+            Enable extra games
           </label>
           <ul className="module-toggles">
             {ONLINE_LABELS.map((a) => (
@@ -1008,19 +1055,213 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card security-card">
-          <h2>Security & payments</h2>
-          <p>
-            Card numbers never touch Soft Steps. Support payments use Stripe-hosted Checkout only.
-            Purchases require Wi‑Fi — they cannot start offline.
+          <h2>Adult Communication Lock</h2>
+          <p className="fine-print">
+            When locked, Talk AAC hides Home, Edit, and chrome so only communication tiles and the
+            sentence strip stay interactive. Unlock requires a 4-second padlock hold, then PIN or
+            spelled numbers.
           </p>
-          <Link to="/parent/billing" className="btn btn-primary">
-            Open secure billing
-          </Link>
-          <Link to="/privacy" className="btn btn-ghost" style={{ marginTop: '0.5rem' }}>
-            Privacy for stores
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.boardLocked}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      boardLocked: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Talk board locked from Parent Controls.'
+                    : 'Talk board unlocked from Parent Controls.',
+                )
+              }}
+            />
+            Lock Talk AAC board now
+          </label>
+          <p className="field-label" style={{ marginTop: '0.85rem' }}>
+            Repeat tap cooldown
+          </p>
+          <p className="fine-print">
+            Anti-stimming: ignore rapid repeats on the same AAC tile. Other tiles stay instant.
+          </p>
+          <div className="toggle-row wrap" role="group" aria-label="Repeat tap cooldown">
+            {(
+              [
+                { ms: 0 as const, label: 'Off' },
+                { ms: 1000 as const, label: '1s' },
+                { ms: 1500 as const, label: '1.5s' },
+                { ms: 2000 as const, label: '2s' },
+                { ms: 3000 as const, label: '3s' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${
+                  settings.aacLibrary.prefs.repeatCooldownMs === opt.ms ? 'is-active' : ''
+                }`}
+                onClick={() => {
+                  updateSettings({
+                    aacLibrary: {
+                      ...settings.aacLibrary,
+                      prefs: {
+                        ...settings.aacLibrary.prefs,
+                        repeatCooldownMs: opt.ms,
+                      },
+                    },
+                  })
+                  setSaved(
+                    opt.ms === 0
+                      ? 'Repeat tap cooldown off.'
+                      : `Repeat tap cooldown set to ${opt.ms / 1000}s.`,
+                  )
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <label className="check-line" style={{ marginTop: '0.65rem' }}>
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.classroomVolumeBoost}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      classroomVolumeBoost: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Classroom volume boost on.'
+                    : 'Classroom volume boost off.',
+                )
+              }}
+            />
+            Classroom volume boost
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.strongTapHighlight}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      strongTapHighlight: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Strong tap highlight on.'
+                    : 'Strong tap highlight off.',
+                )
+              }}
+            />
+            Strong tap highlight (teacher visibility)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.firstThenBarEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      firstThenBarEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'First–Then Schedule Bar shown on Talk.'
+                    : 'First–Then Schedule Bar hidden.',
+                )
+              }}
+            />
+            Show First–Then Schedule Bar
+          </label>
+          <p className="fine-print">
+            Default off. Unlock a parent session, open Talk, and tap FIRST / THEN to pick AAC
+            tiles, presets, or a custom photo.
+          </p>
+          <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
+            Open Talk AAC
           </Link>
         </article>
+
+        <article className="dash-card security-card">
+          <h2>iPad Guided Access</h2>
+          <p className="fine-print">
+            Device-level lock so Soft Steps stays full-screen. Complements the in-app padlock.
+          </p>
+          <p className="ga-status-row">
+            Status:{' '}
+            {gaStatus?.available ? (
+              <span className={`ga-badge ${gaStatus.enabled ? 'is-on' : 'is-off'}`}>
+                Guided Access {gaStatus.enabled ? 'On' : 'Off'}
+              </span>
+            ) : (
+              <span className="ga-badge is-unknown">
+                {gaStatus?.platform === 'ios'
+                  ? 'Unavailable in this build — rebuild iOS app for live status'
+                  : 'Check on iPad (status available in Soft Steps iOS app)'}
+              </span>
+            )}
+          </p>
+          <button type="button" className="btn btn-primary" onClick={() => setShowGaGuide(true)}>
+            How to Lock iPad Screen
+          </button>
+        </article>
+
+        <article className="dash-card security-card">
+          <h2>Security & privacy</h2>
+          <p>
+            Soft Steps has no in-app purchases and never collects payments. Learning data stays on
+            this device unless you export a backup yourself.
+          </p>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => requestPrivacyGate(() => navigate('/privacy'))}
+          >
+            Privacy for stores
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() =>
+              requestPrivacyGate(() => {
+                window.open(
+                  'https://github.com/1988Mufasa/soft-steps/issues',
+                  '_blank',
+                  'noopener,noreferrer',
+                )
+              })
+            }
+          >
+            Support / feedback
+          </button>
+        </article>
       </div>
+
+      {showGaGuide ? <GuidedAccessGuide onClose={() => setShowGaGuide(false)} /> : null}
+      {privacyGateModal}
 
       {saved ? (
         <p className="save-toast" role="status">

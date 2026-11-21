@@ -27,16 +27,44 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Encrypted backup download + restore with PIN
 - [ ] Restore keeps current device PIN
 
-## Videos & network
+## Videos & offline
 - [ ] Offline topic lessons play without Wi‑Fi
-- [ ] Family YouTube Kids embed plays on Wi‑Fi (or “Open in YouTube Kids” works)
-- [ ] Purchase flow refuses offline; online opens Stripe (or demo message)
+- [ ] Learning videos: offline topic lessons only (no YouTube Kids)
+- [ ] Airplane mode: Home, Talk, Extra games (mix/timer/match) all usable
+- [ ] Extra games hub never blocks for “needs Wi‑Fi” / no sync demo
+- [ ] No billing / purchase screens anywhere in the app
 
 ## Profiles & content
 - [ ] Add sibling profile; progress stays separate
 - [ ] Sign language shows ASL‑inspired disclaimer
 - [ ] Caregiver onboarding banner dismisses once
 
+## AAC Talk board
+- [ ] Setup: pick Ages 3–4 / 5–7 / 8–12 and a recommended grid (2×2–2×3 / 3×4 / 4×6)
+- [ ] Starter shows Want, Help, More, All Done, Yes, No in top-left fixed cells
+- [ ] Grow to 5–7 then 8–12 — earlier words stay in the same cells; folders appear
+- [ ] Sentence strip: tap words → icons line up → Speak / Backspace / Clear all
+- [ ] Fitzgerald colors (yellow/green/blue/pink–purple) on core words
+- [ ] Hold Edit 3s → PIN → photos / signs / voice / stage change
+- [ ] About Me + Guided Access guide work
+- [ ] Adult Communication Lock: padlock hides Home/Edit/About; hold 4s → PIN or spelled numbers
+- [ ] Parent Controls: toggle board lock; Guided Access badge; How to Lock iPad Screen guide
+- [ ] Mask/Unmask in Edit keeps empty permanent slots (no grid shift)
+- [ ] Hold a verb (eat/go) → word-forms popup; pick a form
+- [ ] Model mode: taps glow + speak without filling sentence strip
+- [ ] Export AAC board JSON → import on another device restores layout/masks/media
+- [ ] Editor Snap & crop photo + Hold-to-record family voice on a word
+- [ ] Attention bell speaks “Excuse me / Look!” from Talk (even when board-locked)
+- [ ] Body check opens one-tap pain/sensory screen without folders
+- [ ] Home ↔ School board switch (parental gate); core slots unchanged
+- [ ] Repeat tap cooldown (Off/1s/1.5s/2s/3s): same tile ignored; different tiles instant
+- [ ] Quick-Talk: load Fall/Field trip pack in editor → strip on Talk; Clear leaves home board alone
+- [ ] First–Then Schedule Bar toggle default off; when on: speak “First …, then …”, checkmark greens FIRST, adult picker behind parent session
+- [ ] Classroom volume boost + strong tap highlight / “Tapped” banner
+- [ ] Parent Controls → For Therapists & Educators → guide modal + Share Guide (share sheet / copy / download)
+- [ ] ParentalGateModal: Grown-ups / Privacy / Share Guide / Support / board edit — randomized challenge + keypad; wrong answer new challenge; Cancel returns to child screen
+
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing
 - [ ] Age rating / permission strings match camera + mic use
+- [ ] Listing mentions offline AAC / no child account / no cloud AAC tracking

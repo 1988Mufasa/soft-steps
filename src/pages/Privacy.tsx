@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
+import { GatedExternalLink } from '../components/GatedExternalLink'
 
 /**
  * Store-facing privacy copy for TestFlight / Play Internal / App Store review.
- * Device-local by design — no child accounts on Soft Steps servers.
+ * Device-local by design — no child accounts, no in-app purchases.
  */
 export function Privacy() {
   return (
@@ -21,8 +22,8 @@ export function Privacy() {
         <h2>Who Soft Steps is for</h2>
         <p>
           Soft Steps is a calm learning and care app for children (roughly ages 3–12) and the
-          grown-ups who support them. Practice games, routines, AAC check-ins, and social stories
-          run on the device.
+          grown-ups who support them. Practice games, routines, AAC Talk, check-ins, and social
+          stories run on the device — no child account required.
         </p>
       </article>
 
@@ -35,8 +36,9 @@ export function Privacy() {
           <li>Optional check-in history and sensory / accessibility prefs</li>
         </ul>
         <p>
-          Soft Steps does not create child accounts on our servers. Learning data stays in this
-          browser or app install unless you export a backup file yourself.
+          Soft Steps does not create child accounts on our servers and does not collect AAC taps or
+          vocabulary use in the cloud. Learning data stays in this browser or app install unless
+          you export a backup file yourself.
         </p>
       </article>
 
@@ -44,26 +46,28 @@ export function Privacy() {
         <h2>Camera &amp; microphone</h2>
         <p>
           Camera is used only when a grown-up or caregiver adds a photo (stories, AAC, routines).
-          Microphone is used for on-device speech synthesis / practice — Soft Steps does not upload
-          audio recordings to Soft Steps servers. Permissions are requested by the OS when you tap
-          those features.
+          Microphone is used for on-device custom AAC voice clips and speech — Soft Steps does not
+          upload audio recordings to Soft Steps servers. Permissions are requested by the OS when
+          you tap those features.
         </p>
       </article>
 
       <article className="privacy-block">
         <h2>Network</h2>
         <p>
-          Most tools work offline after install. Optional online extras (YouTube Kids embeds you
-          choose, Stripe Checkout for support purchases) need Wi‑Fi. Purchases never run offline.
-          Soft Steps does not sell personal data and does not show third-party ads.
+          Soft Steps is built to work 100% offline after install — practice games, AAC Talk, routines,
+          check-ins, social stories, and learning videos all run on the device. Soft Steps has no
+          in-app purchases and does not collect payments. Soft Steps does not sell personal data and
+          does not show third-party ads. Soft Steps does not embed YouTube Kids or other external
+          video hosts.
         </p>
       </article>
 
       <article className="privacy-block">
-        <h2>Payments</h2>
+        <h2>No payments</h2>
         <p>
-          Optional support payments use Stripe-hosted Checkout. Card numbers are entered on Stripe’s
-          pages — they never touch Soft Steps storage.
+          Soft Steps does not sell subscriptions or one-time purchases inside the app. There is no
+          checkout, no Stripe, and no card entry of any kind.
         </p>
       </article>
 
@@ -95,14 +99,15 @@ export function Privacy() {
       </article>
 
       <article className="privacy-block">
-        <h2>Contact</h2>
+        <h2>Contact &amp; support</h2>
         <p>
-          For privacy questions about Soft Steps store builds (TestFlight / Play Internal), use the
-          support channel listed with your build invitation.
+          Questions about privacy: use the contact email listed with your App Store / Play listing
+          when Soft Steps is published. Project feedback opens behind a grown-up check.
         </p>
+        <GatedExternalLink href="https://github.com/1988Mufasa/soft-steps/issues">
+          Support / feedback
+        </GatedExternalLink>
       </article>
-
-      <p className="fine-print">Last updated for store packaging · Soft Steps</p>
     </section>
   )
 }

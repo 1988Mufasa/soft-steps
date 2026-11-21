@@ -26,7 +26,7 @@ export type OnlinePack = {
   gentleRounds: MixItem[]
   matchSequences: MatchSequence[]
   fetchedAt: string
-  source: 'network-demo'
+  source: 'on-device' | 'network-demo'
 }
 
 const MIX_YOUNG: MixItem[] = [
@@ -191,14 +191,10 @@ const MATCH_OLDER: MatchSequence[] = [
   },
 ]
 
-/** Simulates a short network fetch for online activity packs. Rejects when offline. */
+/** Load on-device activity packs (no network — Soft Steps stays 100% offline). */
 export async function fetchOnlinePack(ageBand: AgeBand, signal?: AbortSignal): Promise<OnlinePack> {
-  if (!navigator.onLine) {
-    throw new Error('OFFLINE')
-  }
-
   await new Promise<void>((resolve, reject) => {
-    const timer = window.setTimeout(() => resolve(), 450)
+    const timer = window.setTimeout(() => resolve(), 40)
     const onAbort = () => {
       window.clearTimeout(timer)
       reject(new DOMException('Aborted', 'AbortError'))
@@ -210,16 +206,12 @@ export async function fetchOnlinePack(ageBand: AgeBand, signal?: AbortSignal): P
     signal?.addEventListener('abort', onAbort, { once: true })
   })
 
-  if (!navigator.onLine) {
-    throw new Error('OFFLINE')
-  }
-
   const mix = ageBand === '3-6' ? MIX_YOUNG : MIX_OLDER
   return {
     mixQuiz: mix,
     gentleRounds: mix.filter((_, i) => i % 2 === 0).concat(mix.filter((_, i) => i % 2 === 1)),
     matchSequences: ageBand === '3-6' ? MATCH_YOUNG : MATCH_OLDER,
     fetchedAt: new Date().toISOString(),
-    source: 'network-demo',
+    source: 'on-device',
   }
 }

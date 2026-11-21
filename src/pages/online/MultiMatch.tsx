@@ -31,10 +31,6 @@ export function MultiMatch() {
     return <Navigate to="/online" replace />
   }
 
-  if (state.status === 'offline') {
-    return <OnlineShell title="Multi-step match" requireOnline>{null}</OnlineShell>
-  }
-
   if (state.status === 'loading') {
     return (
       <OnlineShell title="Multi-step match">
