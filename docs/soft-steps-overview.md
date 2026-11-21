@@ -4,12 +4,10 @@ See also the project store overview for the full feature map. This repo copy tra
 
 ## Full AAC Talk board
 
-- **Core vs fringe:** high-frequency core words pinned on the main board; snacks/toys/places in folders
-- **Fixed positions:** never rearranges by tap frequency (motor planning / muscle memory)
+- **Age setup:** parents / SLPs / educators pick Ages 3–4 (2×2/2×3), 5–7 (3×4), or 8–12 (4×6) with recommended grids
+- **Grow without re-learning:** master 4×6 slot map — upgrading only unlocks more cells; Want/Help/More/Yes/No/All Done never move
+- **Essential core on main:** yellow pronouns (I/You/Me/My), green verbs, blue feelings, pink–purple social
+- **Folders:** Feelings, Food, People, Places, ASL Signs appear as the stage expands
 - **Sentence strip:** top message window with icons, Speak / Backspace / Clear all
-- **Fitzgerald Key colors:** yellow pronouns, green verbs, orange nouns, blue feelings
-- **Customization:** photos, sign images, custom voice clips; grid 2×2 → 4×6; TTS pitch/speed
-- **Touch / sensory:** hold delay, speak-on-release, optional animations & tap sounds
-- **Safety:** hold-3s + PIN parental gate; About Me emergency message; Guided Access / App Pinning guide
-- **Offline / COPPA angle:** Talk needs no account and no cloud tracking of AAC taps
-- Routes: `/talk` (kid) · `/talk/edit` (PIN editor)
+- **Customization:** photos, sign images, voice clips; TTS pitch/speed; touch/sensory; About Me; Guided Access guide
+- Routes: `/talk` (kid) · `/talk/edit` (PIN editor + setup)

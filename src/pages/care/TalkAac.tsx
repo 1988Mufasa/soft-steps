@@ -4,44 +4,51 @@ import { speakAacButton, speakAacSentence, speakAboutMe } from '../../audio/aacS
 import {
   FITZGERALD_COLORS,
   buttonsForCategory,
+  coreButtonsInViewport,
   fringeCategories,
   gridColumns,
+  gridRows,
+  layoutMeta,
   resolveAacVisual,
-  visibleCategories,
   type AacButton,
   type AacPrefs,
 } from '../../data/aacPresets'
 import { useAacTouch } from '../../hooks/useAacTouch'
 import { useApp } from '../../store/AppContext'
+import { isParentSessionValid } from '../../security/parentSession'
+import { AacSetup } from './AacSetup'
 
 /**
- * Full AAC communicator — fixed positions, core+fringe, Fitzgerald colors,
- * sentence strip, About Me, touch accommodations.
+ * Age-adaptive AAC communicator — fixed motor-planning slots,
+ * core on main screen, fringe folders as the child grows.
  */
 export function TalkAac() {
   const navigate = useNavigate()
   const { settings } = useApp()
   const library = settings.aacLibrary
   const prefs = library.prefs
-  const allCats = useMemo(() => visibleCategories(library), [library])
   const fringe = useMemo(() => fringeCategories(library), [library])
-  const coreButtons = useMemo(() => buttonsForCategory(library, 'core'), [library])
+  const coreButtons = useMemo(() => coreButtonsInViewport(library), [library])
 
-  const [categoryId, setCategoryId] = useState(() => fringe[0]?.id ?? 'core')
+  const [folderId, setFolderId] = useState<string | null>(null)
   const [message, setMessage] = useState<AacButton[]>([])
   const [editHold, setEditHold] = useState(0)
   const editTimer = useRef<number | null>(null)
   const editTick = useRef<number | null>(null)
 
-  const activeCat = allCats.find((c) => c.id === categoryId) ?? allCats[0]
-  const showPinnedCore = prefs.corePinned && activeCat?.id !== 'core'
-  const fringeButtons = useMemo(
-    () => (activeCat ? buttonsForCategory(library, activeCat.id) : []),
-    [library, activeCat],
+  // First visit: grown-up setup (if session already open) or prompt to hold Edit
+  const needsSetup = !prefs.setupComplete
+
+  const folderButtons = useMemo(
+    () => (folderId ? buttonsForCategory(library, folderId) : []),
+    [library, folderId],
   )
+  const activeFolder = fringe.find((c) => c.id === folderId)
 
   const activate = (btn: AacButton) => {
-    if (prefs.speakOnTap) speakAacButton(btn, settings.sensory.soundOn, prefs)
+    if (prefs.speakOnTap || prefs.audioLabels) {
+      speakAacButton(btn, settings.sensory.soundOn, prefs)
+    }
     if (prefs.messageBar) setMessage((m) => [...m, btn].slice(-16))
   }
 
@@ -50,10 +57,9 @@ export function TalkAac() {
     speakAacSentence(message, settings.sensory.soundOn, prefs)
   }
 
+  const meta = layoutMeta(prefs.gridLayout)
   const cols = gridColumns(prefs.gridLayout)
-  const gridClass = `aac-comm-grid layout-${prefs.gridLayout} cols-${cols} ${
-    prefs.largeButtons ? 'is-large' : ''
-  }`
+  const rows = gridRows(prefs.gridLayout)
 
   const clearEditHold = () => {
     if (editTimer.current != null) window.clearTimeout(editTimer.current)
@@ -75,8 +81,27 @@ export function TalkAac() {
     }, 3000)
   }
 
+  if (needsSetup && isParentSessionValid()) {
+    return (
+      <section className="care-page aac-comm">
+        <header className="activity-header">
+          <Link to="/" className="back-link">
+            ← Home
+          </Link>
+          <div className="activity-meta">
+            <p className="eyebrow offline-tag">AAC setup</p>
+            <h1>Talk</h1>
+          </div>
+        </header>
+        <AacSetup />
+      </section>
+    )
+  }
+
   return (
-    <section className="care-page aac-comm">
+    <section
+      className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''}`}
+    >
       {prefs.messageBar ? (
         <div className="aac-sentence-strip" aria-label="Sentence strip">
           <button
@@ -117,7 +142,9 @@ export function TalkAac() {
               })
             ) : (
               <span className="aac-sentence-placeholder">
-                I + want + water… tap words, then tap here to speak
+                {prefs.stage === 'starter'
+                  ? 'Tap Want, Help, More…'
+                  : 'I + want + water… tap words, then tap here to speak'}
               </span>
             )}
           </button>
@@ -157,7 +184,9 @@ export function TalkAac() {
           ← Home
         </Link>
         <div className="activity-meta">
-          <p className="eyebrow offline-tag">AAC · Offline</p>
+          <p className="eyebrow offline-tag">
+            AAC · {meta.label} · {prefs.ageRange}
+          </p>
           <h1>Talk</h1>
         </div>
         <button
@@ -173,6 +202,13 @@ export function TalkAac() {
         </button>
       </header>
 
+      {needsSetup ? (
+        <p className="aac-setup-hint" role="status">
+          Grown-ups: hold <strong>Edit</strong> for 3 seconds to pick an age-recommended grid
+          (2×2 / 2×3, 3×4, or 4×6).
+        </p>
+      ) : null}
+
       {prefs.aboutMeEnabled ? (
         <button
           type="button"
@@ -184,53 +220,75 @@ export function TalkAac() {
         </button>
       ) : null}
 
-      {showPinnedCore ? (
-        <div className="aac-core-pin" aria-label="Core words — always here">
-          <p className="aac-section-label">Core words</p>
+      <div className="aac-board-shell">
+        <div className="aac-core-panel">
+          <p className="aac-section-label">Core words · fixed spots</p>
           <div
-            className={`aac-comm-grid cols-4 is-core ${prefs.largeButtons ? 'is-large' : ''}`}
+            className={`aac-core-grid layout-${prefs.gridLayout} ${prefs.largeButtons ? 'is-large' : ''}`}
+            style={
+              {
+                '--aac-cols': cols,
+                '--aac-rows': rows,
+              } as CSSProperties
+            }
             role="list"
+            aria-label="Core communication board"
           >
             {coreButtons.map((btn) => (
-              <AacWordButton key={btn.id} btn={btn} prefs={prefs} onActivate={() => activate(btn)} />
+              <AacWordButton
+                key={btn.id}
+                btn={btn}
+                prefs={prefs}
+                onActivate={() => activate(btn)}
+                absolute
+              />
             ))}
           </div>
         </div>
-      ) : null}
 
-      <nav className="aac-cat-tabs" aria-label="Word folders">
-        {allCats.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`chip ${activeCat?.id === c.id ? 'is-active' : ''}`}
-            onClick={() => setCategoryId(c.id)}
-          >
-            <span aria-hidden="true">{c.emoji}</span> {c.title}
-          </button>
-        ))}
-      </nav>
-
-      <p className="aac-section-label">
-        {activeCat?.id === 'core'
-          ? 'Core words (fixed spots)'
-          : `${activeCat?.title ?? 'Words'} folder`}
-      </p>
-
-      <div className={gridClass} role="list">
-        {(activeCat?.id === 'core' ? coreButtons : fringeButtons).map((btn) => (
-          <AacWordButton key={btn.id} btn={btn} prefs={prefs} onActivate={() => activate(btn)} />
-        ))}
-        {(activeCat?.id === 'core' ? coreButtons : fringeButtons).length === 0 ? (
-          <p className="empty-note">
-            No words here yet. Grown-ups can add some in Edit (hold Edit 3 seconds).
-          </p>
+        {prefs.showFolders && fringe.length > 0 ? (
+          <aside className="aac-folder-panel" aria-label="Category folders">
+            <p className="aac-section-label">Folders</p>
+            <nav className="aac-cat-tabs aac-folder-tabs">
+              {fringe.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`chip ${folderId === c.id ? 'is-active' : ''}`}
+                  onClick={() => setFolderId((id) => (id === c.id ? null : c.id))}
+                >
+                  <span aria-hidden="true">{c.emoji}</span> {c.title}
+                </button>
+              ))}
+            </nav>
+            {folderId ? (
+              <div
+                className={`aac-comm-grid cols-${Math.min(cols, 3)} ${prefs.largeButtons ? 'is-large' : ''}`}
+                role="list"
+                aria-label={`${activeFolder?.title ?? 'Folder'} words`}
+              >
+                {folderButtons.map((btn) => (
+                  <AacWordButton
+                    key={btn.id}
+                    btn={btn}
+                    prefs={prefs}
+                    onActivate={() => activate(btn)}
+                  />
+                ))}
+                {folderButtons.length === 0 ? (
+                  <p className="empty-note">No words in this folder yet.</p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="fine-print">Open a folder for more words. Core stays put on the left.</p>
+            )}
+          </aside>
         ) : null}
       </div>
 
       <p className="fine-print aac-motor-note">
-        Button positions stay fixed so muscle memory can grow. Grown-ups: hold Edit → PIN to
-        customize.
+        Positions never shuffle by use. Grow the board in Edit when your child is ready — same
+        spots, more words.
       </p>
     </section>
   )
@@ -240,10 +298,12 @@ function AacWordButton({
   btn,
   prefs,
   onActivate,
+  absolute,
 }: {
   btn: AacButton
   prefs: AacPrefs
   onActivate: () => void
+  absolute?: boolean
 }) {
   const visual = resolveAacVisual(btn, prefs.displayMode)
   const touch = useAacTouch({
@@ -253,19 +313,27 @@ function AacWordButton({
     onActivate,
   })
   const colors = FITZGERALD_COLORS[btn.partOfSpeech]
-  const style: CSSProperties | undefined = prefs.colorCoding
-    ? {
-        background: colors.bg,
-        borderColor: colors.border,
-        borderWidth: 3,
-        borderStyle: 'solid',
-      }
-    : undefined
+  const style: CSSProperties = {
+    ...(prefs.colorCoding
+      ? {
+          background: colors.bg,
+          borderColor: colors.border,
+          borderWidth: 3,
+          borderStyle: 'solid',
+        }
+      : {}),
+    ...(absolute && typeof btn.row === 'number' && typeof btn.col === 'number'
+      ? {
+          gridRow: btn.row + 1,
+          gridColumn: btn.col + 1,
+        }
+      : {}),
+  }
 
   return (
     <button
       type="button"
-      className={`aac-comm-card ${touch.className}`}
+      className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''}`}
       role="listitem"
       style={style}
       aria-label={btn.speak || btn.label}
@@ -286,7 +354,9 @@ function AacWordButton({
           {visual.emoji}
         </span>
       )}
-      {prefs.showLabels ? <span className="aac-comm-label">{btn.label}</span> : null}
+      {prefs.showLabels || prefs.audioLabels ? (
+        <span className="aac-comm-label">{btn.label}</span>
+      ) : null}
       {visual.kind === 'sign' ? (
         <span className="aac-sign-badge" aria-hidden="true">
           ✋

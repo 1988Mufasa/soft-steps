@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { LockedGate } from '../../components/ParentLock'
 import { VoicePicker } from '../../components/VoicePicker'
 import {
+  AAC_STAGES,
   DEFAULT_ABOUT_ME,
   FITZGERALD_COLORS,
   GRID_LAYOUTS,
   PRESET_CATEGORIES,
+  applyStageToLibrary,
   type AacButton,
   type AacCategory,
   type AacDisplayMode,
@@ -14,10 +16,12 @@ import {
   type AacLibrary,
   type AacPartOfSpeech,
   type AacPrefs,
+  type AacStage,
 } from '../../data/aacPresets'
 import { isParentSessionValid } from '../../security/parentSession'
 import { useApp } from '../../store/AppContext'
 import { readPhotoAsDataUrl } from '../../utils/imageFile'
+import { AacSetup } from './AacSetup'
 
 function newId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`
@@ -28,7 +32,7 @@ const POS_OPTIONS: { id: AacPartOfSpeech; label: string }[] = [
   { id: 'verb', label: 'Green · verbs / actions' },
   { id: 'noun', label: 'Orange · nouns' },
   { id: 'adjective', label: 'Blue · feelings / adjectives' },
-  { id: 'social', label: 'Pink · social' },
+  { id: 'social', label: 'Pink–purple · social / quick responses' },
   { id: 'misc', label: 'Gray · other' },
 ]
 
@@ -277,32 +281,93 @@ export function AacEditor() {
 
         <p className="prompt">
           Customize words, real photos, sign pictures, and voice clips. Positions stay fixed for
-          motor planning — Soft Steps never rearranges by how often a word is tapped.
+          motor planning — Soft Steps never rearranges by how often a word is tapped. Grow the age
+          stage when your child is ready; earlier words keep their exact cells.
         </p>
 
         <article className="dash-card">
-          <h2>Board layout &amp; core words</h2>
-          <p className="fine-print">Scale the grid as skills grow. Core words stay on the main board.</p>
+          <h2>Grow with your child</h2>
+          <p className="fine-print">
+            Current: {AAC_STAGES.find((s) => s.id === library.prefs.stage)?.agesLabel} ·{' '}
+            {library.prefs.gridLayout.replace('x', '×')}. Moving up only unlocks more slots and
+            folders — it does not move Want, Help, More, Yes, No, or All Done.
+          </p>
           <div className="toggle-row wrap">
-            {GRID_LAYOUTS.map((g) => (
+            {AAC_STAGES.map((s) => (
               <button
-                key={g.id}
+                key={s.id}
                 type="button"
-                className={`chip ${library.prefs.gridLayout === g.id ? 'is-active' : ''}`}
-                onClick={() => updatePrefs({ gridLayout: g.id as AacGridLayout })}
-                title={g.hint}
+                className={`chip ${library.prefs.stage === s.id ? 'is-active' : ''}`}
+                onClick={() => {
+                  saveLibrary(applyStageToLibrary(library, s.id as AacStage))
+                  setMsg(`Board set to ${s.agesLabel} (${s.defaultLayout.replace('x', '×')}).`)
+                }}
               >
-                {g.label}
+                {s.agesLabel}
               </button>
             ))}
           </div>
+        </article>
+
+        <AacSetup embedded />
+
+        <article className="dash-card">
+          <h2>Board layout &amp; core words</h2>
+          <p className="fine-print">
+            Recommended layouts for this age are highlighted. You can pick any grid; core cells stay
+            absolute.
+          </p>
+          <div className="toggle-row wrap">
+            {GRID_LAYOUTS.map((g) => {
+              const stageMeta = AAC_STAGES.find((s) => s.id === library.prefs.stage)
+              const recommended = stageMeta?.recommendedLayouts.includes(g.id)
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  className={`chip ${library.prefs.gridLayout === g.id ? 'is-active' : ''} ${
+                    recommended ? 'is-recommended' : ''
+                  }`}
+                  onClick={() => updatePrefs({ gridLayout: g.id as AacGridLayout })}
+                  title={g.hint}
+                >
+                  {g.label}
+                  {recommended ? ' ★' : ''}
+                </button>
+              )
+            })}
+          </div>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.showFolders}
+              onChange={(e) => updatePrefs({ showFolders: e.target.checked })}
+            />
+            Show category folders (Feelings, Food, People, Places, ASL Signs…)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.highContrast}
+              onChange={(e) => updatePrefs({ highContrast: e.target.checked })}
+            />
+            High-contrast icons (starter-friendly)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.audioLabels}
+              onChange={(e) => updatePrefs({ audioLabels: e.target.checked })}
+            />
+            Audio labels (speak word on activate)
+          </label>
           <label className="check-line">
             <input
               type="checkbox"
               checked={library.prefs.corePinned}
               onChange={(e) => updatePrefs({ corePinned: e.target.checked })}
             />
-            Pin core words above fringe folders
+            Keep core words on the main board
           </label>
           <label className="check-line">
             <input

@@ -1,18 +1,17 @@
 /**
- * Soft Steps AAC — basic vocabulary presets for non-verbal communicators.
- * Grown-ups can hide, edit, and add photos / sign images / voice clips on top.
- *
- * Motor planning: button order is fixed by `order` only — never by tap frequency.
+ * Soft Steps AAC — age-adaptive board with fixed motor-planning slots.
+ * Words never move when a child grows from starter → developing → expanded.
+ * Soft Steps never rearranges by tap frequency.
  */
 
 /** Fitzgerald Key–style part of speech for color coding */
 export type AacPartOfSpeech =
-  | 'pronoun' // yellow — people / pronouns
-  | 'verb' // green — actions
-  | 'noun' // orange — things / places / foods
+  | 'pronoun' // yellow
+  | 'verb' // green
+  | 'noun' // orange
   | 'adjective' // blue — feelings / descriptors
-  | 'social' // pink — social / polite
-  | 'misc' // neutral — function / other
+  | 'social' // pink / purple — quick responses
+  | 'misc'
 
 export type AacCategoryId =
   | 'core'
@@ -22,34 +21,48 @@ export type AacCategoryId =
   | 'food'
   | 'actions'
   | 'places'
+  | 'signs'
   | 'family'
 
 export type AacDisplayMode = 'photo' | 'sign' | 'emoji' | 'auto'
 
-/** Grid density for ages 3 → growing skills */
+/** Grid density options offered at setup */
 export type AacGridLayout = '2x2' | '2x3' | '3x3' | '3x4' | '4x4' | '4x6'
 
 export type AacTouchTrigger = 'press' | 'release'
 
+/** Growth stages — unlock more cells without moving existing words */
+export type AacStage = 'starter' | 'developing' | 'expanded'
+
+/** Age ranges shown during parent / SLP / educator setup */
+export type AacAgeRange = '3-4' | '5-7' | '8-12'
+
+/** Master board is always 4 columns; stages reveal more of the same map */
+export const AAC_MASTER_COLS = 4
+export const AAC_MASTER_ROWS = 6
+
 export type AacButton = {
   id: string
   label: string
-  /** Spoken aloud (defaults to label) */
   speak?: string
   emoji: string
   categoryId: AacCategoryId | string
   partOfSpeech: AacPartOfSpeech
-  /** Custom photo chosen by family / therapist / educator */
   photoDataUrl?: string
-  /** Sign-language photo / still chosen by grown-ups */
   signPhotoDataUrl?: string
-  /** Custom recorded voice clip (on-device) */
   audioDataUrl?: string
   hidden?: boolean
-  /** Lower sorts first within a category — fixed slots for muscle memory */
+  /**
+   * Legacy sort key within fringe folders.
+   * Core words use row/col instead.
+   */
   order: number
-  /** Built-in preset vs family-added */
   source: 'preset' | 'custom'
+  /** Permanent motor-planning cell (core board only) */
+  row?: number
+  col?: number
+  /** Earliest stage that shows this word */
+  minStage?: AacStage
 }
 
 export type AacCategory = {
@@ -59,38 +72,39 @@ export type AacCategory = {
   order: number
   hidden?: boolean
   source: 'preset' | 'custom'
+  /** Folders appear at this stage (core is always main) */
+  minStage?: AacStage
 }
 
 export type AacPrefs = {
-  /** Adjustable grid density */
   gridLayout: AacGridLayout
-  /** Prefer which visual when several exist */
   displayMode: AacDisplayMode
   showLabels: boolean
-  /** Speak immediately on each successful activation */
   speakOnTap: boolean
-  /** Sentence strip / message window */
   messageBar: boolean
   largeButtons: boolean
-  /** Keep high-frequency core words pinned above fringe folders */
   corePinned: boolean
-  /** Fitzgerald Key color coding */
   colorCoding: boolean
-  /** Touch delay (ms) before a press counts — reduces accidental double-taps */
   touchDelayMs: 0 | 200 | 400 | 600
-  /** Speak on finger down vs finger up */
   touchTrigger: AacTouchTrigger
-  /** Soft visual feedback on tap */
   buttonAnimations: boolean
-  /** Soft click/pop when activating a word */
   tapSounds: boolean
-  /** On-device TTS pitch override (0.7–1.6) */
   speechPitch: number
-  /** On-device TTS rate override (0.6–1.2) */
   speechRate: number
-  /** Always-visible emergency / About Me button */
   aboutMeEnabled: boolean
   aboutMeText: string
+  /** Growth stage — unlocks words/folders without moving slots */
+  stage: AacStage
+  /** Age range chosen at setup (drives recommendations) */
+  ageRange: AacAgeRange
+  /** Setup wizard completed by parent / SLP / educator */
+  setupComplete: boolean
+  /** High-contrast icons for starter boards */
+  highContrast: boolean
+  /** Speak the word label when a button activates (audio labels) */
+  audioLabels: boolean
+  /** Show fringe category folders (Feelings, Food, …) */
+  showFolders: boolean
 }
 
 export type AacLibrary = {
@@ -103,11 +117,11 @@ export const FITZGERALD_COLORS: Record<
   AacPartOfSpeech,
   { bg: string; border: string; label: string }
 > = {
-  pronoun: { bg: '#FFF3B0', border: '#E6C200', label: 'People / pronouns' },
-  verb: { bg: '#C8E6C9', border: '#43A047', label: 'Actions / verbs' },
-  noun: { bg: '#FFE0B2', border: '#FB8C00', label: 'Things / nouns' },
-  adjective: { bg: '#BBDEFB', border: '#1E88E5', label: 'Feelings / adjectives' },
-  social: { bg: '#F8BBD0', border: '#EC407A', label: 'Social' },
+  pronoun: { bg: '#FFF3B0', border: '#E6C200', label: 'Pronouns (yellow)' },
+  verb: { bg: '#C8E6C9', border: '#43A047', label: 'Verbs / actions (green)' },
+  noun: { bg: '#FFE0B2', border: '#FB8C00', label: 'Nouns (orange)' },
+  adjective: { bg: '#BBDEFB', border: '#1E88E5', label: 'Feelings / descriptors (blue)' },
+  social: { bg: '#E1BEE7', border: '#8E24AA', label: 'Social / quick responses (pink–purple)' },
   misc: { bg: '#F5F5F5', border: '#9E9E9E', label: 'Other' },
 }
 
@@ -115,21 +129,67 @@ export const GRID_LAYOUTS: {
   id: AacGridLayout
   label: string
   columns: number
+  rows: number
   hint: string
 }[] = [
-  { id: '2x2', label: '2×2', columns: 2, hint: 'Biggest buttons · ages ~3' },
-  { id: '2x3', label: '2×3', columns: 2, hint: 'Large · early AAC' },
-  { id: '3x3', label: '3×3', columns: 3, hint: 'Balanced default' },
-  { id: '3x4', label: '3×4', columns: 3, hint: 'More words' },
-  { id: '4x4', label: '4×4', columns: 4, hint: 'Denser' },
-  { id: '4x6', label: '4×6', columns: 4, hint: 'Most words · growing skills' },
+  { id: '2x2', label: '2×2', columns: 2, rows: 2, hint: 'Biggest buttons · ages 3–4' },
+  { id: '2x3', label: '2×3', columns: 2, rows: 3, hint: 'Large starter · ages 3–4' },
+  { id: '3x3', label: '3×3', columns: 3, rows: 3, hint: 'In between' },
+  { id: '3x4', label: '3×4', columns: 3, rows: 4, hint: 'Developing · ages 5–7' },
+  { id: '4x4', label: '4×4', columns: 4, rows: 4, hint: 'Denser' },
+  { id: '4x6', label: '4×6', columns: 4, rows: 6, hint: 'Expanded · ages 8–12' },
+]
+
+export const AAC_STAGES: {
+  id: AacStage
+  ageRange: AacAgeRange
+  title: string
+  agesLabel: string
+  recommendedLayouts: AacGridLayout[]
+  defaultLayout: AacGridLayout
+  blurb: string
+  focusWords: string[]
+}[] = [
+  {
+    id: 'starter',
+    ageRange: '3-4',
+    title: 'Starter grid',
+    agesLabel: 'Ages 3–4',
+    recommendedLayouts: ['2x2', '2x3'],
+    defaultLayout: '2x3',
+    blurb:
+      'Large buttons, high-contrast icons, and audio labels. Focus on immediate needs — More, All Done, Help, Yes, No, Want. Positions stay put as your child grows.',
+    focusWords: ['Want', 'Help', 'More', 'All Done', 'Yes', 'No'],
+  },
+  {
+    id: 'developing',
+    ageRange: '5-7',
+    title: 'Developing grid',
+    agesLabel: 'Ages 5–7',
+    recommendedLayouts: ['3x4'],
+    defaultLayout: '3x4',
+    blurb:
+      'Adds pronouns and basic actions so kids can build 2–3 word sentences in the message bar (I, You, Go, Stop, Eat, Drink, Play, Bathroom). Earlier words keep their exact spots.',
+    focusWords: ['I', 'You', 'Go', 'Stop', 'Eat', 'Drink', 'Play', 'Bathroom'],
+  },
+  {
+    id: 'expanded',
+    ageRange: '8-12',
+    title: 'Expanded grid',
+    agesLabel: 'Ages 8–12',
+    recommendedLayouts: ['4x6'],
+    defaultLayout: '4x6',
+    blurb:
+      'Full core board with category folders (Feelings, Food, People, Places, ASL Signs). Core words stay in the same top/left slots — no re-learning.',
+    focusWords: ['Full core board', 'Folders', 'ASL Signs'],
+  },
 ]
 
 export const DEFAULT_ABOUT_ME =
   'Hi. I am autistic and non-verbal. I use this device to talk. Please be patient and call my parent.'
 
 export const DEFAULT_AAC_PREFS: AacPrefs = {
-  gridLayout: '3x3',
+  gridLayout: '2x3',
   displayMode: 'auto',
   showLabels: true,
   speakOnTap: true,
@@ -145,97 +205,170 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   speechRate: 0.92,
   aboutMeEnabled: true,
   aboutMeText: DEFAULT_ABOUT_ME,
+  stage: 'starter',
+  ageRange: '3-4',
+  setupComplete: false,
+  highContrast: true,
+  audioLabels: true,
+  showFolders: false,
 }
 
 export const PRESET_CATEGORIES: AacCategory[] = [
   { id: 'core', title: 'Core', emoji: '⭐', order: 0, source: 'preset' },
-  { id: 'feelings', title: 'Feelings', emoji: '💛', order: 1, source: 'preset' },
-  { id: 'needs', title: 'Needs', emoji: '🛟', order: 2, source: 'preset' },
-  { id: 'people', title: 'People', emoji: '👥', order: 3, source: 'preset' },
-  { id: 'food', title: 'Food & drink', emoji: '🍎', order: 4, source: 'preset' },
-  { id: 'actions', title: 'Actions', emoji: '🏃', order: 5, source: 'preset' },
-  { id: 'places', title: 'Places', emoji: '🏠', order: 6, source: 'preset' },
-  { id: 'family', title: 'Family words', emoji: '📷', order: 7, source: 'preset' },
+  { id: 'feelings', title: 'Feelings', emoji: '💛', order: 1, source: 'preset', minStage: 'expanded' },
+  { id: 'food', title: 'Food', emoji: '🍎', order: 2, source: 'preset', minStage: 'developing' },
+  { id: 'people', title: 'People', emoji: '👥', order: 3, source: 'preset', minStage: 'expanded' },
+  { id: 'places', title: 'Places', emoji: '🏠', order: 4, source: 'preset', minStage: 'expanded' },
+  { id: 'signs', title: 'ASL Signs', emoji: '✋', order: 5, source: 'preset', minStage: 'expanded' },
+  { id: 'needs', title: 'Needs', emoji: '🛟', order: 6, source: 'preset', minStage: 'developing' },
+  { id: 'actions', title: 'Actions', emoji: '🏃', order: 7, source: 'preset', minStage: 'expanded' },
+  { id: 'family', title: 'Family words', emoji: '📷', order: 8, source: 'preset', minStage: 'developing' },
 ]
 
-function b(
+const STAGE_RANK: Record<AacStage, number> = {
+  starter: 0,
+  developing: 1,
+  expanded: 2,
+}
+
+export function stageAtLeast(current: AacStage, needed: AacStage) {
+  return STAGE_RANK[current] >= STAGE_RANK[needed]
+}
+
+function core(
+  id: string,
+  label: string,
+  emoji: string,
+  row: number,
+  col: number,
+  partOfSpeech: AacPartOfSpeech,
+  minStage: AacStage,
+  speak?: string,
+): AacButton {
+  return {
+    id,
+    label,
+    emoji,
+    categoryId: 'core',
+    order: row * AAC_MASTER_COLS + col,
+    row,
+    col,
+    partOfSpeech,
+    minStage,
+    source: 'preset',
+    speak,
+  }
+}
+
+function fringe(
   id: string,
   label: string,
   emoji: string,
   categoryId: AacCategoryId,
   order: number,
   partOfSpeech: AacPartOfSpeech,
+  minStage: AacStage,
   speak?: string,
 ): AacButton {
-  return { id, label, emoji, categoryId, order, source: 'preset', partOfSpeech, speak }
+  return {
+    id,
+    label,
+    emoji,
+    categoryId,
+    order,
+    partOfSpeech,
+    minStage,
+    source: 'preset',
+    speak,
+  }
 }
 
 /**
- * Core = high-frequency words always reachable without digging through folders.
- * Fringe (other categories) = specific snacks, toys, places, people names, etc.
- * Order within each category is fixed for motor planning / muscle memory.
+ * Essential core — permanent (row, col) on a 4×6 master board.
+ * Growing the stage only unlocks more cells; coordinates never change.
+ *
+ * Starter viewport (2×3 top-left): Want, Help / More, All Done / Yes, No
+ * Developing adds pronouns + actions in the next columns/rows
+ * Expanded fills the full 4×6 + folders
  */
 export const PRESET_BUTTONS: AacButton[] = [
-  // Core — always accessible
-  b('i', 'I', '👆', 'core', 0, 'pronoun'),
-  b('you', 'You', '👉', 'core', 1, 'pronoun'),
-  b('yes', 'Yes', '👍', 'core', 2, 'misc'),
-  b('no', 'No', '👎', 'core', 3, 'misc'),
-  b('want', 'Want', '🤲', 'core', 4, 'verb', 'want'),
-  b('help', 'Help', '🤝', 'core', 5, 'verb'),
-  b('more', 'More', '➕', 'core', 6, 'misc'),
-  b('stop', 'Stop', '🛑', 'core', 7, 'verb'),
-  b('go', 'Go', '➡️', 'core', 8, 'verb'),
-  b('alldone', 'All done', '✅', 'core', 9, 'misc', 'all done'),
-  b('wait', 'Wait', '⏳', 'core', 10, 'verb'),
-  b('please', 'Please', '🙏', 'core', 11, 'social'),
-  // Feelings (fringe / adjectives)
-  b('happy', 'Happy', '😊', 'feelings', 0, 'adjective'),
-  b('sad', 'Sad', '😢', 'feelings', 1, 'adjective'),
-  b('mad', 'Mad', '😠', 'feelings', 2, 'adjective'),
-  b('scared', 'Scared', '😨', 'feelings', 3, 'adjective'),
-  b('tired', 'Tired', '😴', 'feelings', 4, 'adjective'),
-  b('okay', 'Okay', '🙂', 'feelings', 5, 'adjective'),
-  b('excited', 'Excited', '🤩', 'feelings', 6, 'adjective'),
-  b('calm', 'Calm', '😌', 'feelings', 7, 'adjective'),
-  // Needs
-  b('bathroom', 'Bathroom', '🚽', 'needs', 0, 'noun'),
-  b('break', 'Break', '⏸️', 'needs', 1, 'noun'),
-  b('quiet', 'Quiet', '🤫', 'needs', 2, 'adjective'),
-  b('hurt', 'I hurt', '🤕', 'needs', 3, 'adjective', 'I hurt'),
-  b('sick', 'Sick', '🤒', 'needs', 4, 'adjective'),
-  b('space', 'Space', '🫧', 'needs', 5, 'noun', 'I need space'),
-  b('hug', 'Hug', '🤗', 'needs', 6, 'verb'),
-  b('home-need', 'Home', '🏠', 'needs', 7, 'noun', 'I want to go home'),
-  // People (fringe names / roles — I/You stay on core)
-  b('mom', 'Mom', '👩', 'people', 0, 'pronoun'),
-  b('dad', 'Dad', '👨', 'people', 1, 'pronoun'),
-  b('teacher', 'Teacher', '👩‍🏫', 'people', 2, 'pronoun'),
-  b('friend', 'Friend', '🤝', 'people', 3, 'pronoun'),
-  b('me', 'Me', '🧒', 'people', 4, 'pronoun'),
-  // Food
-  b('eat', 'Eat', '🍽️', 'food', 0, 'verb'),
-  b('drink', 'Drink', '🥛', 'food', 1, 'verb'),
-  b('water', 'Water', '💧', 'food', 2, 'noun'),
-  b('snack', 'Snack', '🍎', 'food', 3, 'noun'),
-  b('hungry', 'Hungry', '😋', 'food', 4, 'adjective'),
-  b('thirsty', 'Thirsty', '🥤', 'food', 5, 'adjective'),
-  // Actions
-  b('play', 'Play', '🧩', 'actions', 0, 'verb'),
-  b('look', 'Look', '👀', 'actions', 1, 'verb'),
-  b('listen', 'Listen', '👂', 'actions', 2, 'verb'),
-  b('come', 'Come', '🤙', 'actions', 3, 'verb'),
-  b('sit', 'Sit', '🪑', 'actions', 4, 'verb'),
-  b('walk', 'Walk', '🚶', 'actions', 5, 'verb'),
-  b('read', 'Read', '📖', 'actions', 6, 'verb'),
-  b('music', 'Music', '🎵', 'actions', 7, 'noun'),
-  // Places
-  b('school', 'School', '🏫', 'places', 0, 'noun'),
-  b('park', 'Park', '🌳', 'places', 1, 'noun'),
-  b('outside', 'Outside', '☀️', 'places', 2, 'noun'),
-  b('car', 'Car', '🚗', 'places', 3, 'noun'),
-  b('bed', 'Bed', '🛏️', 'places', 4, 'noun'),
-  b('class', 'Classroom', '📚', 'places', 5, 'noun'),
+  // —— Core board (fixed slots) ——
+  // Row 0
+  core('want', 'Want', '🤲', 0, 0, 'verb', 'starter'),
+  core('help', 'Help', '🤝', 0, 1, 'verb', 'starter'),
+  core('i', 'I', '👆', 0, 2, 'pronoun', 'developing'),
+  core('you', 'You', '👉', 0, 3, 'pronoun', 'developing'),
+  // Row 1
+  core('more', 'More', '➕', 1, 0, 'verb', 'starter'),
+  core('alldone', 'All Done', '✅', 1, 1, 'social', 'starter', 'all done'),
+  core('me', 'Me', '🧒', 1, 2, 'pronoun', 'expanded'),
+  core('my', 'My', '📎', 1, 3, 'pronoun', 'expanded'),
+  // Row 2
+  core('yes', 'Yes', '👍', 2, 0, 'social', 'starter'),
+  core('no', 'No', '👎', 2, 1, 'social', 'starter'),
+  core('go', 'Go', '➡️', 2, 2, 'verb', 'developing'),
+  core('stop', 'Stop', '🛑', 2, 3, 'verb', 'developing'),
+  // Row 3
+  core('eat', 'Eat', '🍽️', 3, 0, 'verb', 'developing'),
+  core('drink', 'Drink', '🥛', 3, 1, 'verb', 'developing'),
+  core('play', 'Play', '🧩', 3, 2, 'verb', 'developing'),
+  core('bathroom', 'Bathroom', '🚽', 3, 3, 'noun', 'developing'),
+  // Row 4 — more verbs + social
+  core('need', 'Need', '🆘', 4, 0, 'verb', 'expanded'),
+  core('look', 'Look', '👀', 4, 1, 'verb', 'expanded'),
+  core('like', 'Like', '💛', 4, 2, 'verb', 'expanded'),
+  core('wait', 'Wait', '⏳', 4, 3, 'social', 'expanded'),
+  // Row 5 — social + feelings on main
+  core('please', 'Please', '🙏', 5, 0, 'social', 'expanded'),
+  core('thankyou', 'Thank You', '💜', 5, 1, 'social', 'expanded', 'thank you'),
+  core('happy', 'Happy', '😊', 5, 2, 'adjective', 'expanded'),
+  core('sad', 'Sad', '😢', 5, 3, 'adjective', 'expanded'),
+
+  // —— Fringe folders (extra descriptors + vocabulary) ——
+  fringe('mad', 'Mad', '😠', 'feelings', 0, 'adjective', 'expanded'),
+  fringe('scared', 'Scared', '😨', 'feelings', 1, 'adjective', 'expanded'),
+  fringe('tired', 'Tired', '😴', 'feelings', 2, 'adjective', 'expanded'),
+  fringe('hurt', 'Hurt', '🤕', 'feelings', 3, 'adjective', 'expanded'),
+  fringe('good', 'Good', '👍', 'feelings', 4, 'adjective', 'expanded'),
+  fringe('bad', 'Bad', '👎', 'feelings', 5, 'adjective', 'expanded'),
+  fringe('excited', 'Excited', '🤩', 'feelings', 6, 'adjective', 'expanded'),
+  fringe('calm', 'Calm', '😌', 'feelings', 7, 'adjective', 'expanded'),
+
+  fringe('water', 'Water', '💧', 'food', 0, 'noun', 'developing'),
+  fringe('snack', 'Snack', '🍎', 'food', 1, 'noun', 'developing'),
+  fringe('hungry', 'Hungry', '😋', 'food', 2, 'adjective', 'expanded'),
+  fringe('thirsty', 'Thirsty', '🥤', 'food', 3, 'adjective', 'expanded'),
+
+  fringe('mom', 'Mom', '👩', 'people', 0, 'pronoun', 'expanded'),
+  fringe('dad', 'Dad', '👨', 'people', 1, 'pronoun', 'expanded'),
+  fringe('teacher', 'Teacher', '👩‍🏫', 'people', 2, 'pronoun', 'expanded'),
+  fringe('friend', 'Friend', '🤝', 'people', 3, 'pronoun', 'expanded'),
+
+  fringe('school', 'School', '🏫', 'places', 0, 'noun', 'expanded'),
+  fringe('park', 'Park', '🌳', 'places', 1, 'noun', 'expanded'),
+  fringe('outside', 'Outside', '☀️', 'places', 2, 'noun', 'expanded'),
+  fringe('car', 'Car', '🚗', 'places', 3, 'noun', 'expanded'),
+  fringe('bed', 'Bed', '🛏️', 'places', 4, 'noun', 'expanded'),
+  fringe('class', 'Classroom', '📚', 'places', 5, 'noun', 'expanded'),
+  fringe('home-place', 'Home', '🏠', 'places', 6, 'noun', 'developing', 'home'),
+
+  fringe('sign-more', 'More (sign)', '✋', 'signs', 0, 'misc', 'expanded', 'more'),
+  fringe('sign-help', 'Help (sign)', '🤝', 'signs', 1, 'misc', 'expanded', 'help'),
+  fringe('sign-alldone', 'All done (sign)', '✅', 'signs', 2, 'misc', 'expanded', 'all done'),
+  fringe('sign-want', 'Want (sign)', '🤲', 'signs', 3, 'misc', 'expanded', 'want'),
+
+  fringe('break', 'Break', '⏸️', 'needs', 0, 'noun', 'developing'),
+  fringe('quiet', 'Quiet', '🤫', 'needs', 1, 'adjective', 'developing'),
+  fringe('sick', 'Sick', '🤒', 'needs', 2, 'adjective', 'expanded'),
+  fringe('space', 'Space', '🫧', 'needs', 3, 'noun', 'expanded', 'I need space'),
+  fringe('hug', 'Hug', '🤗', 'needs', 4, 'verb', 'expanded'),
+
+  fringe('listen', 'Listen', '👂', 'actions', 0, 'verb', 'expanded'),
+  fringe('come', 'Come', '🤙', 'actions', 1, 'verb', 'expanded'),
+  fringe('sit', 'Sit', '🪑', 'actions', 2, 'verb', 'expanded'),
+  fringe('walk', 'Walk', '🚶', 'actions', 3, 'verb', 'expanded'),
+  fringe('read', 'Read', '📖', 'actions', 4, 'verb', 'expanded'),
+  fringe('music', 'Music', '🎵', 'actions', 5, 'noun', 'expanded'),
 ]
 
 export function createDefaultAacLibrary(): AacLibrary {
@@ -246,15 +379,48 @@ export function createDefaultAacLibrary(): AacLibrary {
   }
 }
 
+/** Apply an age-stage recommendation — unlocks growth without moving slots. */
+export function prefsForStage(stage: AacStage, layout?: AacGridLayout): Partial<AacPrefs> {
+  const meta = AAC_STAGES.find((s) => s.id === stage) ?? AAC_STAGES[0]
+  const gridLayout =
+    layout && meta.recommendedLayouts.includes(layout) ? layout : meta.defaultLayout
+  return {
+    stage,
+    ageRange: meta.ageRange,
+    gridLayout,
+    largeButtons: stage !== 'expanded',
+    highContrast: stage === 'starter',
+    audioLabels: stage !== 'expanded',
+    showFolders: stage !== 'starter',
+    messageBar: true,
+    colorCoding: true,
+    corePinned: true,
+    setupComplete: true,
+  }
+}
+
+export function applyStageToLibrary(library: AacLibrary, stage: AacStage, layout?: AacGridLayout): AacLibrary {
+  return {
+    ...library,
+    prefs: { ...library.prefs, ...prefsForStage(stage, layout) },
+  }
+}
+
 function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   const merged = { ...DEFAULT_AAC_PREFS, ...(saved || {}) }
-  // Migrate legacy `columns` if present on old saves
   const legacy = saved as Partial<AacPrefs> & { columns?: 2 | 3 | 4 }
   if (!saved?.gridLayout && legacy?.columns) {
-    merged.gridLayout = legacy.columns === 2 ? '2x3' : legacy.columns === 4 ? '4x4' : '3x3'
+    merged.gridLayout = legacy.columns === 2 ? '2x3' : legacy.columns === 4 ? '4x6' : '3x4'
   }
   if (!GRID_LAYOUTS.some((g) => g.id === merged.gridLayout)) {
     merged.gridLayout = DEFAULT_AAC_PREFS.gridLayout
+  }
+  if (!['starter', 'developing', 'expanded'].includes(merged.stage)) {
+    merged.stage = DEFAULT_AAC_PREFS.stage
+  }
+  if (!['3-4', '5-7', '8-12'].includes(merged.ageRange)) {
+    const fromStage = AAC_STAGES.find((s) => s.id === merged.stage)
+    merged.ageRange = fromStage?.ageRange ?? '3-4'
   }
   merged.speechPitch = clamp(merged.speechPitch, 0.7, 1.6)
   merged.speechRate = clamp(merged.speechRate, 0.6, 1.2)
@@ -276,11 +442,14 @@ function inferPartOfSpeech(btn: Partial<AacButton>): AacPartOfSpeech {
   const cat = btn.categoryId
   if (cat === 'people' || cat === 'core') {
     const id = (btn.id || '').toLowerCase()
-    if (['i', 'you', 'me', 'mom', 'dad', 'teacher', 'friend'].includes(id)) return 'pronoun'
+    if (['i', 'you', 'me', 'my', 'mom', 'dad', 'teacher', 'friend'].includes(id)) return 'pronoun'
   }
   if (cat === 'feelings') return 'adjective'
   if (cat === 'actions') return 'verb'
   if (cat === 'food' || cat === 'places' || cat === 'needs' || cat === 'family') return 'noun'
+  if (['yes', 'no', 'please', 'thankyou', 'alldone', 'wait'].includes((btn.id || '').toLowerCase())) {
+    return 'social'
+  }
   return 'misc'
 }
 
@@ -307,7 +476,27 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
         ? {
             ...prev,
             ...btn,
-            partOfSpeech: btn.partOfSpeech ?? prev.partOfSpeech ?? partOfSpeech,
+            // Preset motor-planning slots + category win so growth never relocates words
+            ...(prev.source === 'preset'
+              ? {
+                  categoryId: prev.categoryId,
+                  row: prev.row,
+                  col: prev.col,
+                  order: prev.order,
+                  minStage: prev.minStage,
+                  partOfSpeech: prev.partOfSpeech,
+                }
+              : {
+                  row: btn.row ?? prev.row,
+                  col: btn.col ?? prev.col,
+                  minStage: btn.minStage ?? prev.minStage,
+                  partOfSpeech: btn.partOfSpeech ?? prev.partOfSpeech ?? partOfSpeech,
+                }),
+            // Keep family media / labels from save
+            label: btn.label || prev.label,
+            speak: btn.speak ?? prev.speak,
+            emoji: btn.emoji || prev.emoji,
+            hidden: btn.hidden ?? prev.hidden,
             photoDataUrl: btn.photoDataUrl ?? prev.photoDataUrl,
             signPhotoDataUrl: btn.signPhotoDataUrl ?? prev.signPhotoDataUrl,
             audioDataUrl: btn.audioDataUrl ?? prev.audioDataUrl,
@@ -319,13 +508,13 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
             order: typeof btn.order === 'number' ? btn.order : 999,
             source: btn.source ?? 'custom',
             partOfSpeech,
+            minStage: btn.minStage ?? 'developing',
           },
     )
   }
 
   return {
     categories: [...catById.values()].sort((a, b) => a.order - b.order),
-    // Fixed order only — never frequency / recency
     buttons: [...btnById.values()].sort(
       (a, b) => a.categoryId.localeCompare(b.categoryId) || a.order - b.order,
     ),
@@ -333,23 +522,67 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
   }
 }
 
+export function layoutMeta(layout: AacGridLayout) {
+  return GRID_LAYOUTS.find((g) => g.id === layout) ?? GRID_LAYOUTS[1]
+}
+
+export function gridColumns(layout: AacGridLayout): number {
+  return layoutMeta(layout).columns
+}
+
+export function gridRows(layout: AacGridLayout): number {
+  return layoutMeta(layout).rows
+}
+
+/** Core words unlocked for the current stage, still at permanent coordinates. */
+export function coreButtonsForStage(library: AacLibrary) {
+  const stage = library.prefs.stage
+  return library.buttons
+    .filter(
+      (b) =>
+        !b.hidden &&
+        b.categoryId === 'core' &&
+        typeof b.row === 'number' &&
+        typeof b.col === 'number' &&
+        stageAtLeast(stage, b.minStage ?? 'starter'),
+    )
+    .sort((a, b) => (a.row! - b.row!) * AAC_MASTER_COLS + (a.col! - b.col!))
+}
+
+/** Core cells visible in the active grid viewport (absolute positions). */
+export function coreButtonsInViewport(library: AacLibrary) {
+  const { columns, rows } = layoutMeta(library.prefs.gridLayout)
+  return coreButtonsForStage(library).filter(
+    (b) => b.row! < rows && b.col! < columns,
+  )
+}
+
 export function visibleCategories(library: AacLibrary) {
-  return library.categories.filter((c) => !c.hidden).sort((a, b) => a.order - b.order)
+  const stage = library.prefs.stage
+  return library.categories
+    .filter((c) => {
+      if (c.hidden) return false
+      if (c.id === 'core') return true
+      if (!library.prefs.showFolders) return false
+      return stageAtLeast(stage, c.minStage ?? 'expanded')
+    })
+    .sort((a, b) => a.order - b.order)
 }
 
 export function fringeCategories(library: AacLibrary) {
   return visibleCategories(library).filter((c) => c.id !== 'core')
 }
 
-/** Buttons in a category — sorted by fixed `order` only (motor planning). */
 export function buttonsForCategory(library: AacLibrary, categoryId: string) {
+  const stage = library.prefs.stage
   return library.buttons
-    .filter((b) => !b.hidden && b.categoryId === categoryId)
+    .filter(
+      (b) =>
+        !b.hidden &&
+        b.categoryId === categoryId &&
+        stageAtLeast(stage, b.minStage ?? 'starter'),
+    )
     .sort((a, b) => a.order - b.order)
-}
-
-export function gridColumns(layout: AacGridLayout): number {
-  return GRID_LAYOUTS.find((g) => g.id === layout)?.columns ?? 3
 }
 
 export function resolveAacVisual(

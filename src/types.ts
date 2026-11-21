@@ -66,6 +66,7 @@ export type CustomAacCard = {
 }
 
 export type {
+  AacAgeRange,
   AacButton,
   AacCategory,
   AacDisplayMode,
@@ -73,6 +74,7 @@ export type {
   AacLibrary,
   AacPartOfSpeech,
   AacPrefs,
+  AacStage,
 } from './data/aacPresets'
 
 export type CareStats = {
