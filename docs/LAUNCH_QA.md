@@ -29,7 +29,7 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 
 ## Videos & network
 - [ ] Offline topic lessons play without Wi‑Fi
-- [ ] Family YouTube Kids embed plays on Wi‑Fi (or “Open in YouTube Kids” works)
+- [ ] Learning videos: offline topic lessons only (no YouTube Kids)
 - [ ] No billing / purchase screens anywhere in the app
 
 ## Profiles & content

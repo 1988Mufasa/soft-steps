@@ -27,7 +27,7 @@
 
 **Description (short):** Soft Steps helps kids practice ABCs, signs, foods, routines, AAC communication, and social stories with sensory-friendly controls. Talk AAC works 100% offline — no account, no in-app purchases, no cloud tracking of taps. Grown-ups unlock editing with a PIN.
 
-**Description (long — AAC / COPPA trust angle):** Soft Steps includes a full AAC talk board for non-verbal communicators: fixed button positions for motor planning, core + fringe vocabulary, Fitzgerald Key colors, sentence strip, real photo & voice uploads, and an About Me emergency message. Speech uses on-device text-to-speech (works offline). Soft Steps does not require an internet connection for Talk, does not create child accounts, does not collect payments, and does not send AAC usage to the cloud — which keeps COPPA compliance simpler for families and schools. Optional Wi‑Fi features (YouTube Kids embeds you choose) are separate and clearly labeled.
+**Description (long — AAC / COPPA trust angle):** Soft Steps includes a full AAC talk board for non-verbal communicators: fixed button positions for motor planning, core + fringe vocabulary, Fitzgerald Key colors, sentence strip, real photo & voice uploads, and an About Me emergency message. Speech uses on-device text-to-speech (works offline). Soft Steps does not require an internet connection for Talk, does not create child accounts, does not collect payments, and does not send AAC usage to the cloud — which keeps COPPA compliance simpler for families and schools. Learning videos are on-device offline lessons only (no YouTube Kids embeds).
 
 **Keywords:** autism, AAC, non-verbal, social stories, first then, calm, offline learning, ASL practice, COPPA
 

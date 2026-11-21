@@ -1,29 +1,27 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { speakText } from '../../audio/calmAudio'
 import {
   VIDEO_CATEGORIES,
-  parseYoutubeId,
   videosForAge,
   type BuiltInVideo,
   type VideoCategory,
 } from '../../data/videos'
 import { useApp } from '../../store/AppContext'
 import { GameCelebration } from '../../components/GameCelebration'
-import { GatedExternalLink } from '../../components/GatedExternalLink'
 
 type View =
   | { kind: 'hub' }
-  | { kind: 'list'; category: VideoCategory | 'family' }
+  | { kind: 'list'; category: VideoCategory }
   | { kind: 'play-offline'; video: BuiltInVideo }
-  | { kind: 'play-youtube'; id: string; title: string; emoji: string }
   | { kind: 'done'; title: string }
 
 const FRAME_MS = 2200
 const CAT_IDS = new Set(VIDEO_CATEGORIES.map((c) => c.id))
 
+/** Offline watch lessons only — no YouTube Kids / external video embeds. */
 export function LearningVideos() {
-  const { settings, online, updateSettings } = useApp()
+  const { settings } = useApp()
   const [params] = useSearchParams()
   const [view, setView] = useState<View>(() => {
     const cat = params.get('cat')
@@ -39,24 +37,18 @@ export function LearningVideos() {
       setView({ kind: 'list', category: cat as VideoCategory })
     }
   }, [params])
+
   const [frame, setFrame] = useState(0)
   const [playing, setPlaying] = useState(true)
-  const [adding, setAdding] = useState(false)
-  const [title, setTitle] = useState('')
-  const [url, setUrl] = useState('')
-  const [emoji, setEmoji] = useState('📺')
-  const [error, setError] = useState('')
 
-  const family = settings.customVideos
   const reduced =
     settings.sensory.reducedMotion || settings.sensory.disableSuddenAnimations
 
   const list = useMemo(() => {
-    if (view.kind !== 'list' || view.category === 'family') return []
+    if (view.kind !== 'list') return []
     return videosForAge(settings.ageBand, view.category)
   }, [view, settings.ageBand])
 
-  // Offline lesson autoplay
   useEffect(() => {
     if (view.kind !== 'play-offline' || !playing || reduced) return
     const frames = view.video.frames
@@ -76,27 +68,6 @@ export function LearningVideos() {
     setFrame(0)
     setPlaying(true)
   }, [playingVideoId])
-
-  const addFamilyVideo = (e: FormEvent) => {
-    e.preventDefault()
-    const yt = parseYoutubeId(url)
-    if (!yt) {
-      setError('Paste a YouTube Kids link (or YouTube link/id that works in Kids).')
-      return
-    }
-    const trimmed = title.trim() || 'Family video'
-    updateSettings({
-      customVideos: [
-        { id: `vid-${Date.now()}`, title: trimmed, emoji: emoji.trim() || '📺', youtubeId: yt },
-        ...family,
-      ].slice(0, 20),
-    })
-    setTitle('')
-    setUrl('')
-    setEmoji('📺')
-    setError('')
-    setAdding(false)
-  }
 
   if (view.kind === 'done') {
     return (
@@ -118,65 +89,6 @@ export function LearningVideos() {
             Home
           </Link>
         </GameCelebration>
-      </section>
-    )
-  }
-
-  if (view.kind === 'play-youtube') {
-    return (
-      <section className="care-page video-page">
-        <header className="activity-header">
-          <button type="button" className="back-link" onClick={() => setView({ kind: 'list', category: 'family' })}>
-            ← Family
-          </button>
-          <div className="activity-meta">
-            <p className="eyebrow online-tag">YouTube Kids</p>
-            <h1>
-              {view.emoji} {view.title}
-            </h1>
-          </div>
-        </header>
-        <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
-          {online
-            ? 'Wi‑Fi connected — YouTube Kids can play.'
-            : 'Wi‑Fi required — connect to watch YouTube Kids videos.'}
-        </aside>
-        {!online ? (
-          <p className="empty-note">
-            You’re offline. Topic lessons (Letters, Numbers, and more) still work without Wi‑Fi from the
-            Videos home.
-          </p>
-        ) : (
-          <>
-            <div className="video-embed-wrap">
-              <iframe
-                title={view.title}
-                src={`https://www.youtubekids.com/embed/${view.id}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-            <GatedExternalLink
-              className="btn btn-secondary"
-              href={`https://www.youtubekids.com/watch?v=${view.id}`}
-            >
-              Open in YouTube Kids
-            </GatedExternalLink>
-          </>
-        )}
-        <p className="fine-print">
-          YouTube Kids needs Wi‑Fi. Soft Steps embeds Kids pages only (not regular YouTube) and does
-          not host the file. If the embed is blank, use Open in YouTube Kids.
-        </p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => setView({ kind: 'done', title: view.title })}
-        >
-          I’m done watching
-        </button>
       </section>
     )
   }
@@ -250,7 +162,6 @@ export function LearningVideos() {
 
   if (view.kind === 'list') {
     const catMeta = VIDEO_CATEGORIES.find((c) => c.id === view.category)
-    const isFamily = view.category === 'family'
     return (
       <section className="care-page video-page">
         <header className="activity-header">
@@ -259,125 +170,36 @@ export function LearningVideos() {
           </button>
           <div className="activity-meta">
             <p className="eyebrow offline-tag">Learning videos</p>
-            <h1>{isFamily ? 'Family videos' : catMeta?.title}</h1>
+            <h1>{catMeta?.title}</h1>
           </div>
           <span className="age-badge">Ages {settings.ageBand}</span>
         </header>
 
-        {isFamily ? (
-          <>
-            <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
-              {online
-                ? 'Wi‑Fi connected — tap a video to watch on YouTube Kids.'
-                : 'Wi‑Fi required for YouTube Kids. You can still add videos; play them when connected.'}
-            </aside>
-            <p className="prompt">Grown-up YouTube Kids picks. These need Wi‑Fi to play.</p>
-            <div className="video-card-grid">
-              {family.map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  className={`video-pick-card ${online ? '' : 'is-wifi-locked'}`}
-                  disabled={!online}
-                  onClick={() => {
-                    if (!online) return
-                    setView({ kind: 'play-youtube', id: v.youtubeId, title: v.title, emoji: v.emoji })
-                  }}
-                >
-                  <span className="sign-mode-emoji" aria-hidden="true">
-                    {v.emoji}
-                  </span>
-                  <strong>{v.title}</strong>
-                  <span className="fine-print">{online ? 'YouTube Kids' : 'Needs Wi‑Fi'}</span>
-                </button>
-              ))}
-            </div>
-            {family.length === 0 ? <p className="empty-note">No family videos yet.</p> : null}
-
-            {!adding ? (
-              <button type="button" className="btn btn-secondary" onClick={() => setAdding(true)}>
-                Add YouTube Kids video
-              </button>
-            ) : (
-              <form className="aac-add-form" onSubmit={addFamilyVideo}>
-                <label>
-                  Title
-                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={48} />
-                </label>
-                <label>
-                  Emoji
-                  <input type="text" value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={8} />
-                </label>
-                <label>
-                  YouTube Kids link or video id
-                  <input
-                    type="text"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://www.youtubekids.com/watch?v=… or video id"
-                    required
-                  />
-                </label>
-                {error ? <p className="form-error">{error}</p> : null}
-                <div className="confirm-row">
-                  <button type="submit" className="btn btn-primary">
-                    Save video
-                  </button>
-                  <button type="button" className="btn btn-ghost" onClick={() => setAdding(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {family.length > 0 ? (
-              <ul className="module-toggles" style={{ marginTop: '1rem' }}>
-                {family.map((v) => (
-                  <li key={`rm-${v.id}`}>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() =>
-                        updateSettings({ customVideos: family.filter((x) => x.id !== v.id) })
-                      }
-                    >
-                      Remove {v.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <aside className="video-wifi-banner is-online" role="status">
-              No Wi‑Fi needed — these watch lessons work offline.
-            </aside>
-            <p className="prompt">Short offline watch lessons — tap to play.</p>
-            <div className="video-card-grid">
-              {list.map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  className="video-pick-card"
-                  onClick={() => setView({ kind: 'play-offline', video: v })}
-                >
-                  <span className="sign-mode-emoji" aria-hidden="true">
-                    {v.emoji}
-                  </span>
-                  <strong>{v.title}</strong>
-                  <span>{v.blurb}</span>
-                </button>
-              ))}
-            </div>
-            {list.length === 0 ? <p className="empty-note">No lessons in this age band yet.</p> : null}
-          </>
-        )}
+        <aside className="video-wifi-banner is-online" role="status">
+          No Wi‑Fi needed — these watch lessons work offline.
+        </aside>
+        <p className="prompt">Short offline watch lessons — tap to play.</p>
+        <div className="video-card-grid">
+          {list.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              className="video-pick-card"
+              onClick={() => setView({ kind: 'play-offline', video: v })}
+            >
+              <span className="sign-mode-emoji" aria-hidden="true">
+                {v.emoji}
+              </span>
+              <strong>{v.title}</strong>
+              <span>{v.blurb}</span>
+            </button>
+          ))}
+        </div>
+        {list.length === 0 ? <p className="empty-note">No lessons in this age band yet.</p> : null}
       </section>
     )
   }
 
-  // hub
   return (
     <section className="care-page video-page">
       <header className="activity-header">
@@ -388,18 +210,11 @@ export function LearningVideos() {
           <p className="eyebrow offline-tag">Watch & learn</p>
           <h1>Learning videos</h1>
         </div>
-        <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
-          {online ? 'Online' : 'Offline'}
-        </span>
       </header>
-      <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
-        {online
-          ? 'Online: topic lessons work anytime · YouTube Kids ready.'
-          : 'Offline: topic lessons work now · YouTube Kids needs Wi‑Fi.'}
+      <aside className="video-wifi-banner is-online" role="status">
+        All topic lessons work offline — Soft Steps does not use YouTube Kids.
       </aside>
-      <p className="prompt">
-        Topic lessons work without Wi‑Fi. Family YouTube Kids videos require a Wi‑Fi connection.
-      </p>
+      <p className="prompt">Pick a topic for a short offline watch lesson.</p>
       <div className="sign-mode-grid">
         {VIDEO_CATEGORIES.map((c) => (
           <button
@@ -415,17 +230,6 @@ export function LearningVideos() {
             <span>Works offline</span>
           </button>
         ))}
-        <button
-          type="button"
-          className={`sign-mode-card ${online ? '' : 'is-wifi-needed'}`}
-          onClick={() => setView({ kind: 'list', category: 'family' })}
-        >
-          <span className="sign-mode-emoji" aria-hidden="true">
-            📺
-          </span>
-          <strong>Family videos</strong>
-          <span>{online ? 'YouTube Kids · Wi‑Fi on' : 'Requires Wi‑Fi to play'}</span>
-        </button>
       </div>
     </section>
   )

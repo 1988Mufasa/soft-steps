@@ -55,7 +55,7 @@ const CARE: {
   { id: 'feelings', title: 'Feelings', blurb: 'Quick emotion check-in', path: '/feelings' },
   { id: 'schedule', title: 'First / Then', blurb: 'Routine · timer · rewards', path: '/schedule' },
   { id: 'stories', title: 'What to expect', blurb: 'Picture social stories', path: '/stories' },
-  { id: 'videos', title: 'Learning videos', blurb: 'Watch lessons · YouTube Kids', path: '/videos' },
+  { id: 'videos', title: 'Learning videos', blurb: 'Offline watch lessons', path: '/videos' },
   {
     id: 'talk',
     title: 'Talk (AAC)',

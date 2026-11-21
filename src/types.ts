@@ -15,12 +15,12 @@ export type CareModuleId =
   | 'interest'
   | 'videos'
 
-/** Parent-added learning video (YouTube Kids) for online watch */
+/** @deprecated Legacy custom video entries — Soft Steps no longer embeds YouTube Kids. */
 export type CustomLearningVideo = {
   id: string
   title: string
   emoji: string
-  /** YouTube / YouTube Kids video id (11 chars) */
+  /** Legacy external id (unused; kept for backup restore compatibility) */
   youtubeId: string
 }
 

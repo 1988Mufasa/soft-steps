@@ -55,9 +55,10 @@ export function Privacy() {
       <article className="privacy-block">
         <h2>Network</h2>
         <p>
-          Most tools work offline after install. Optional online extras (YouTube Kids embeds you
-          choose) need Wi‑Fi. Soft Steps has no in-app purchases and does not collect payments.
-          Soft Steps does not sell personal data and does not show third-party ads.
+          Soft Steps is built to work offline after install. Soft Steps has no in-app purchases and
+          does not collect payments. Soft Steps does not sell personal data and does not show
+          third-party ads. Learning videos are on-device lessons only — Soft Steps does not embed
+          YouTube Kids or other external video hosts.
         </p>
       </article>
 
