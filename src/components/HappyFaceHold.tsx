@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 
-const HOLD_MS = 8_000
+const HOLD_MS = 6_000
 
 type Props = {
   onUnlock: () => void
@@ -8,10 +8,10 @@ type Props = {
   className?: string
 }
 
-/** Discreet happy-face: parents must hold ~8s to reach child profile settings. */
+/** Discreet happy-face: parents must hold ~6s to reach child profile settings. */
 export function HappyFaceHold({
   onUnlock,
-  label = 'Hold the happy face for 8 seconds to open grown-up settings',
+  label = 'Hold the happy face for 6 seconds to open grown-up settings',
   className = '',
 }: Props) {
   const [pct, setPct] = useState(0)
@@ -93,7 +93,7 @@ export function HappyFaceHold({
           ? `Keep holding… ${secondsLeft}s`
           : pct >= 100
             ? 'Unlocked'
-            : 'Grown-ups: hold 😊 for 8 seconds'}
+            : 'Grown-ups: hold 😊 for 6 seconds'}
       </p>
     </div>
   )
