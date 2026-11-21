@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { GuidedAccessGuide } from '../components/GuidedAccessGuide'
 import { TherapistEducatorGuideModal } from '../components/TherapistEducatorGuideModal'
 import { VoicePicker } from '../components/VoicePicker'
+import { useParentalGate } from '../hooks/useParentalGate'
 import { getGuidedAccessStatus, type GuidedAccessStatus } from '../native/guidedAccess'
 import { loadCheckInHistory, replaceCheckInHistory } from '../data/checkIn'
 import { useParentSessionGuard } from '../hooks/useParentSessionGuard'
@@ -102,6 +103,10 @@ export function ParentDashboard() {
   const [gaStatus, setGaStatus] = useState<GuidedAccessStatus | null>(null)
   const [showGaGuide, setShowGaGuide] = useState(false)
   const [showTherapistGuide, setShowTherapistGuide] = useState(false)
+  const { requestGate: requestPrivacyGate, gateModal: privacyGateModal } = useParentalGate({
+    title: 'Privacy',
+    blurb: 'Grown-ups confirm before opening the privacy policy.',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -1228,13 +1233,33 @@ export function ParentDashboard() {
             Soft Steps has no in-app purchases and never collects payments. Learning data stays on
             this device unless you export a backup yourself.
           </p>
-          <Link to="/privacy" className="btn btn-ghost">
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => requestPrivacyGate(() => navigate('/privacy'))}
+          >
             Privacy for stores
-          </Link>
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() =>
+              requestPrivacyGate(() => {
+                window.open(
+                  'https://github.com/1988Mufasa/soft-steps/issues',
+                  '_blank',
+                  'noopener,noreferrer',
+                )
+              })
+            }
+          >
+            Support / feedback
+          </button>
         </article>
       </div>
 
       {showGaGuide ? <GuidedAccessGuide onClose={() => setShowGaGuide(false)} /> : null}
+      {privacyGateModal}
 
       {saved ? (
         <p className="save-toast" role="status">

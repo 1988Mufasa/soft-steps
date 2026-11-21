@@ -4,6 +4,7 @@ import {
   SOFT_STEPS_APP_LINK,
   buildTherapistEducatorGuideText,
 } from '../utils/therapistGuideShare'
+import { useParentalGate } from '../hooks/useParentalGate'
 
 type Props = {
   onClose: () => void
@@ -34,9 +35,14 @@ const HIGHLIGHTS: { icon: string; title: string; body: string }[] = [
 
 /**
  * Shareable clinic / classroom overview — opened from unlocked Parent Controls.
+ * Share Guide is re-gated (Kids Category) before the system share sheet.
  */
 export function TherapistEducatorGuideModal({ onClose }: Props) {
   const [shareStatus, setShareStatus] = useState('')
+  const { requestGate, gateModal } = useParentalGate({
+    title: 'Share Guide',
+    blurb: 'Grown-ups confirm before Soft Steps opens sharing (text, email, or Messages).',
+  })
 
   const shareGuide = async () => {
     const text = buildTherapistEducatorGuideText()
@@ -50,7 +56,6 @@ export function TherapistEducatorGuideModal({ onClose }: Props) {
         setShareStatus('Guide shared.')
         return
       } catch (err) {
-        // User cancel — stay quiet; other errors fall through
         if (err instanceof DOMException && err.name === 'AbortError') return
       }
     }
@@ -98,7 +103,11 @@ export function TherapistEducatorGuideModal({ onClose }: Props) {
         </ul>
 
         <div className="therapist-guide-actions">
-          <button type="button" className="btn btn-primary" onClick={() => void shareGuide()}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => requestGate(() => void shareGuide())}
+          >
             Share Guide
           </button>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
@@ -112,10 +121,11 @@ export function TherapistEducatorGuideModal({ onClose }: Props) {
         ) : (
           <p className="fine-print">
             Share opens your device share sheet so you can text or email this summary to an SLP or
-            teacher.
+            teacher. A grown-up check appears first.
           </p>
         )}
       </div>
+      {gateModal}
     </div>
   )
 }

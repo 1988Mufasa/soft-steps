@@ -10,6 +10,7 @@ import {
 } from '../../data/videos'
 import { useApp } from '../../store/AppContext'
 import { GameCelebration } from '../../components/GameCelebration'
+import { GatedExternalLink } from '../../components/GatedExternalLink'
 
 type View =
   | { kind: 'hub' }
@@ -157,14 +158,12 @@ export function LearningVideos() {
                 referrerPolicy="strict-origin-when-cross-origin"
               />
             </div>
-            <a
+            <GatedExternalLink
               className="btn btn-secondary"
               href={`https://www.youtubekids.com/watch?v=${view.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
             >
               Open in YouTube Kids
-            </a>
+            </GatedExternalLink>
           </>
         )}
         <p className="fine-print">

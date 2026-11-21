@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { InstallPrompt } from '../components/InstallPrompt'
+import { ParentalGateModal } from '../components/ParentalGateModal'
 import { themeForDate } from '../data/themes'
 import { useApp } from '../store/AppContext'
 import type { CareModuleId, ModuleId } from '../types'
@@ -66,6 +67,7 @@ const CARE: {
 ]
 
 export function Home() {
+  const navigate = useNavigate()
   const {
     settings,
     online,
@@ -75,6 +77,8 @@ export function Home() {
     switchProfile,
   } = useApp()
   const [showMore, setShowMore] = useState(false)
+  const [showParentGate, setShowParentGate] = useState(false)
+  const [privacyPending, setPrivacyPending] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
       return localStorage.getItem('soft-steps-onboard-v1') !== '1'
@@ -448,10 +452,48 @@ export function Home() {
       </section>
 
       <footer className="home-footer home-footer-secure">
-        <Link to="/parent" className="grownups-link">
+        <button
+          type="button"
+          className="grownups-link"
+          onClick={() => {
+            setPrivacyPending(false)
+            setShowParentGate(true)
+          }}
+        >
           Grown-ups
-        </Link>
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost home-privacy-link"
+          onClick={() => {
+            setPrivacyPending(true)
+            setShowParentGate(true)
+          }}
+        >
+          Privacy
+        </button>
       </footer>
+
+      {showParentGate ? (
+        <ParentalGateModal
+          title={privacyPending ? 'Privacy' : 'Parent Controls'}
+          blurb={
+            privacyPending
+              ? 'Grown-ups confirm before opening the privacy policy.'
+              : 'Grown-ups confirm before opening Parent Controls.'
+          }
+          onCancel={() => {
+            setShowParentGate(false)
+            setPrivacyPending(false)
+          }}
+          onVerified={() => {
+            const goPrivacy = privacyPending
+            setShowParentGate(false)
+            setPrivacyPending(false)
+            navigate(goPrivacy ? '/privacy' : '/parent')
+          }}
+        />
+      ) : null}
     </div>
   )
 }

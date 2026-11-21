@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { GatedExternalLink } from '../components/GatedExternalLink'
 
 /**
  * Store-facing privacy copy for TestFlight / Play Internal / App Store review.
@@ -96,11 +97,14 @@ export function Privacy() {
       </article>
 
       <article className="privacy-block">
-        <h2>Contact</h2>
+        <h2>Contact &amp; support</h2>
         <p>
           Questions about privacy: use the contact email listed with your App Store / Play listing
-          when Soft Steps is published.
+          when Soft Steps is published. Project feedback opens behind a grown-up check.
         </p>
+        <GatedExternalLink href="https://github.com/1988Mufasa/soft-steps/issues">
+          Support / feedback
+        </GatedExternalLink>
       </article>
     </section>
   )

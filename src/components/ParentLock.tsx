@@ -7,6 +7,7 @@ import {
   recordPinFailure,
 } from '../security/pinGuard'
 import { Link } from 'react-router-dom'
+import { ParentalGateModal } from './ParentalGateModal'
 import { openParentSession } from '../security/parentSession'
 import { useApp } from '../store/AppContext'
 import { DEFAULT_PIN } from '../types'
@@ -129,7 +130,19 @@ export function LockedGate({
   onCancel?: () => void
   children: ReactNode
 }) {
+  const [ageVerified, setAgeVerified] = useState(false)
+
   if (!unlocked) {
+    if (!ageVerified) {
+      return (
+        <ParentalGateModal
+          title="Board editing"
+          blurb="Grown-ups confirm before editing the AAC board or other protected tools."
+          onVerified={() => setAgeVerified(true)}
+          onCancel={onCancel ?? (() => undefined)}
+        />
+      )
+    }
     return <ParentLock onUnlock={onUnlock} onCancel={onCancel} />
   }
   return <>{children}</>

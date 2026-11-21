@@ -981,7 +981,11 @@ html[data-no-sudden='true'] .sign-signer.is-live .sign-mover--stop-flat {
 }
 
 .home-footer-secure {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
   margin-top: 2.5rem;
   padding-top: 1rem;
 }
@@ -1005,12 +1009,109 @@ html[data-no-sudden='true'] .sign-signer.is-live .sign-mover--stop-flat {
   opacity: 0.55;
   text-decoration: none;
   border-radius: 10px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .grownups-link:hover,
 .grownups-link:focus-visible {
   opacity: 1;
   color: var(--accent-deep);
+}
+
+.home-privacy-link {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  min-height: 40px;
+}
+
+.parental-gate-modal {
+  width: min(400px, 100%);
+}
+
+.parental-gate-prompt {
+  margin: 0.65rem 0 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  background: rgba(54, 97, 176, 0.08);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.parental-gate-display {
+  min-height: 3rem;
+  margin: 0.35rem 0 0.5rem;
+  padding: 0.55rem;
+  border-radius: 12px;
+  border: 2px solid rgba(54, 97, 176, 0.2);
+  background: #fff;
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.parental-gate-display.is-error,
+.parental-gate-modal.is-error .parental-gate-display {
+  border-color: #c62828;
+  background: #ffebee;
+  animation: parental-gate-shake 0.35s ease;
+}
+
+@keyframes parental-gate-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.parental-gate-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  margin: 0.65rem 0 0.85rem;
+}
+
+.parental-gate-key {
+  min-height: 56px;
+  border-radius: 14px;
+  border: 2px solid rgba(54, 97, 176, 0.15);
+  background: linear-gradient(180deg, #ffffff, #f0f5fb);
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ink, #2c3a4a);
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: var(--shadow);
+}
+
+.parental-gate-key:active {
+  transform: scale(0.97);
+}
+
+.parental-gate-key.is-meta {
+  font-size: 0.95rem;
+  background: #eef2f7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parental-gate-display.is-error,
+  .parental-gate-modal.is-error .parental-gate-display {
+    animation: none;
+  }
 }
 
 .activity-shell,
