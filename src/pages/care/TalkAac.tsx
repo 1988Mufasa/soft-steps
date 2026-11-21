@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { speakAacButton, speakAacSentence, speakAboutMe } from '../../audio/aacSpeech'
+import { AacBoardLock } from '../../components/AacBoardLock'
 import {
   FITZGERALD_COLORS,
   buttonsForCategory,
@@ -21,12 +22,14 @@ import { AacSetup } from './AacSetup'
 /**
  * Age-adaptive AAC communicator — fixed motor-planning slots,
  * core on main screen, fringe folders as the child grows.
+ * Optional Lock-to-board hides Home/Edit until a grown-up holds the padlock.
  */
 export function TalkAac() {
   const navigate = useNavigate()
-  const { settings } = useApp()
+  const { settings, updateSettings } = useApp()
   const library = settings.aacLibrary
   const prefs = library.prefs
+  const locked = prefs.boardLocked
   const fringe = useMemo(() => fringeCategories(library), [library])
   const coreButtons = useMemo(() => coreButtonsInViewport(library), [library])
 
@@ -36,7 +39,6 @@ export function TalkAac() {
   const editTimer = useRef<number | null>(null)
   const editTick = useRef<number | null>(null)
 
-  // First visit: grown-up setup (if session already open) or prompt to hold Edit
   const needsSetup = !prefs.setupComplete
 
   const folderButtons = useMemo(
@@ -44,6 +46,26 @@ export function TalkAac() {
     [library, folderId],
   )
   const activeFolder = fringe.find((c) => c.id === folderId)
+
+  // Trap browser back while locked (Home/Edit controls are already hidden)
+  useEffect(() => {
+    if (!locked) return
+    const onPop = () => {
+      window.history.pushState(null, '', window.location.href)
+    }
+    window.history.pushState(null, '', window.location.href)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [locked])
+
+  const setBoardLocked = (boardLocked: boolean) => {
+    updateSettings({
+      aacLibrary: {
+        ...library,
+        prefs: { ...library.prefs, boardLocked },
+      },
+    })
+  }
 
   const activate = (btn: AacButton) => {
     if (prefs.speakOnTap || prefs.audioLabels) {
@@ -70,6 +92,7 @@ export function TalkAac() {
   }
 
   const startEditHold = () => {
+    if (locked) return
     clearEditHold()
     const started = Date.now()
     editTick.current = window.setInterval(() => {
@@ -81,7 +104,7 @@ export function TalkAac() {
     }, 3000)
   }
 
-  if (needsSetup && isParentSessionValid()) {
+  if (needsSetup && isParentSessionValid() && !locked) {
     return (
       <section className="care-page aac-comm">
         <header className="activity-header">
@@ -100,8 +123,16 @@ export function TalkAac() {
 
   return (
     <section
-      className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''}`}
+      className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''} ${
+        locked ? 'is-board-locked' : ''
+      }`}
     >
+      <AacBoardLock
+        locked={locked}
+        onLock={() => setBoardLocked(true)}
+        onUnlock={() => setBoardLocked(false)}
+      />
+
       {prefs.messageBar ? (
         <div className="aac-sentence-strip" aria-label="Sentence strip">
           <button
@@ -180,32 +211,43 @@ export function TalkAac() {
       ) : null}
 
       <header className="activity-header">
-        <Link to="/" className="back-link">
-          ← Home
-        </Link>
+        {locked ? (
+          <span className="back-link is-disabled" aria-hidden="true">
+            {/* Home hidden while locked */}
+          </span>
+        ) : (
+          <Link to="/" className="back-link">
+            ← Home
+          </Link>
+        )}
         <div className="activity-meta">
           <p className="eyebrow offline-tag">
             AAC · {meta.label} · {prefs.ageRange}
+            {locked ? ' · Locked' : ''}
           </p>
           <h1>Talk</h1>
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost aac-edit-link"
-          onPointerDown={startEditHold}
-          onPointerUp={clearEditHold}
-          onPointerLeave={clearEditHold}
-          onPointerCancel={clearEditHold}
-          aria-label="Hold 3 seconds to open AAC editor"
-        >
-          {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
-        </button>
+        {locked ? (
+          <span className="aac-edit-slot" aria-hidden="true" />
+        ) : (
+          <button
+            type="button"
+            className="btn btn-ghost aac-edit-link"
+            onPointerDown={startEditHold}
+            onPointerUp={clearEditHold}
+            onPointerLeave={clearEditHold}
+            onPointerCancel={clearEditHold}
+            aria-label="Hold 3 seconds to open AAC editor"
+          >
+            {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
+          </button>
+        )}
       </header>
 
-      {needsSetup ? (
+      {!locked && needsSetup ? (
         <p className="aac-setup-hint" role="status">
           Grown-ups: hold <strong>Edit</strong> for 3 seconds to pick an age-recommended grid
-          (2×2 / 2×3, 3×4, or 4×6).
+          (2×2 / 2×3, 3×4, or 4×6). Tap the padlock to lock the board for your child.
         </p>
       ) : null}
 
@@ -286,10 +328,16 @@ export function TalkAac() {
         ) : null}
       </div>
 
-      <p className="fine-print aac-motor-note">
-        Positions never shuffle by use. Grow the board in Edit when your child is ready — same
-        spots, more words.
-      </p>
+      {!locked ? (
+        <p className="fine-print aac-motor-note">
+          Positions never shuffle by use. Tap the padlock to lock Home &amp; Edit away. Grow the
+          board in Edit when your child is ready — same spots, more words.
+        </p>
+      ) : (
+        <p className="fine-print aac-motor-note">
+          Board locked — communication only. Grown-ups: hold the padlock to unlock.
+        </p>
+      )}
     </section>
   )
 }

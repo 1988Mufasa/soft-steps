@@ -2692,10 +2692,109 @@ html[data-dim-colors='true'] body {
   align-items: center;
 }
 
+.aac-comm {
+  position: relative;
+}
+
 .aac-edit-link {
   white-space: nowrap;
   user-select: none;
   touch-action: none;
+}
+
+.aac-edit-slot {
+  width: 4.5rem;
+  min-height: 1px;
+}
+
+.aac-comm .back-link.is-disabled {
+  visibility: hidden;
+  pointer-events: none;
+  min-width: 4.5rem;
+}
+
+/* —— Lock to AAC board —— */
+.aac-board-lock {
+  position: absolute;
+  top: max(0.35rem, var(--safe-top, 0px));
+  right: max(0.35rem, var(--safe-right, 0px));
+  z-index: 8;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+}
+
+.aac-lock-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.aac-lock-btn.is-holding {
+  transform: scale(1.06);
+}
+
+.aac-board-lock.is-locked .aac-lock-btn {
+  background: #e8eef8;
+}
+
+.aac-lock-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aac-lock-ring {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.aac-lock-track {
+  fill: none;
+  stroke: rgba(54, 97, 176, 0.2);
+  stroke-width: 3.5;
+}
+
+.aac-lock-progress {
+  fill: none;
+  stroke: var(--accent-deep, #3661b0);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 40ms linear;
+}
+
+.aac-lock-hint {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--accent-deep);
+  text-align: center;
+  max-width: 4.8rem;
+  line-height: 1.15;
+}
+
+.aac-lock-hint-idle {
+  opacity: 0.55;
+  font-weight: 700;
+}
+
+.aac-comm.is-board-locked .aac-sentence-strip {
+  margin-top: 0.35rem;
 }
 
 .aac-sentence-strip {

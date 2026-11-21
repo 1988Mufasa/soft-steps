@@ -105,6 +105,11 @@ export type AacPrefs = {
   audioLabels: boolean
   /** Show fringe category folders (Feelings, Food, …) */
   showFolders: boolean
+  /**
+   * Lock to AAC board — hides Home / Edit so the child stays on Talk.
+   * Grown-ups unlock with a 4-second padlock hold (parental gate).
+   */
+  boardLocked: boolean
 }
 
 export type AacLibrary = {
@@ -211,6 +216,7 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   highContrast: true,
   audioLabels: true,
   showFolders: false,
+  boardLocked: false,
 }
 
 export const PRESET_CATEGORIES: AacCategory[] = [
