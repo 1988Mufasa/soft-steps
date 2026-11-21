@@ -1,12 +1,18 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LockedGate } from '../../components/ParentLock'
+import { VoicePicker } from '../../components/VoicePicker'
 import {
+  DEFAULT_ABOUT_ME,
+  FITZGERALD_COLORS,
+  GRID_LAYOUTS,
   PRESET_CATEGORIES,
   type AacButton,
   type AacCategory,
   type AacDisplayMode,
+  type AacGridLayout,
   type AacLibrary,
+  type AacPartOfSpeech,
   type AacPrefs,
 } from '../../data/aacPresets'
 import { isParentSessionValid } from '../../security/parentSession'
@@ -17,9 +23,18 @@ function newId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`
 }
 
+const POS_OPTIONS: { id: AacPartOfSpeech; label: string }[] = [
+  { id: 'pronoun', label: 'Yellow · people / pronouns' },
+  { id: 'verb', label: 'Green · verbs / actions' },
+  { id: 'noun', label: 'Orange · nouns' },
+  { id: 'adjective', label: 'Blue · feelings / adjectives' },
+  { id: 'social', label: 'Pink · social' },
+  { id: 'misc', label: 'Gray · other' },
+]
+
 /**
- * Grown-up AAC editor — parents, SLPs, educators add words, photos, and sign images;
- * set display preferences for the kid Talk board.
+ * Grown-up AAC editor — parents, SLPs, educators customize the board.
+ * PIN-gated so kids cannot erase vocabulary.
  */
 export function AacEditor() {
   const navigate = useNavigate()
@@ -33,10 +48,21 @@ export function AacEditor() {
   const [draftSpeak, setDraftSpeak] = useState('')
   const [draftEmoji, setDraftEmoji] = useState('💬')
   const [draftCat, setDraftCat] = useState(categoryId)
+  const [draftPos, setDraftPos] = useState<AacPartOfSpeech>('noun')
   const [draftPhoto, setDraftPhoto] = useState<string | undefined>()
   const [draftSign, setDraftSign] = useState<string | undefined>()
+  const [draftAudio, setDraftAudio] = useState<string | undefined>()
+  const [recording, setRecording] = useState(false)
   const [msg, setMsg] = useState('')
   const [photoError, setPhotoError] = useState('')
+  const mediaRecorder = useRef<MediaRecorder | null>(null)
+  const chunks = useRef<Blob[]>([])
+
+  useEffect(() => {
+    return () => {
+      mediaRecorder.current?.stream.getTracks().forEach((t) => t.stop())
+    }
+  }, [])
 
   const saveLibrary = (next: AacLibrary) => {
     updateSettings({
@@ -66,9 +92,11 @@ export function AacEditor() {
     setDraftLabel('')
     setDraftSpeak('')
     setDraftEmoji('💬')
-    setDraftCat(categoryId === 'family' ? 'family' : categoryId)
+    setDraftCat(categoryId === 'core' ? 'family' : categoryId)
+    setDraftPos('noun')
     setDraftPhoto(undefined)
     setDraftSign(undefined)
+    setDraftAudio(undefined)
     setPhotoError('')
     setShowForm(true)
   }
@@ -79,8 +107,10 @@ export function AacEditor() {
     setDraftSpeak(btn.speak || '')
     setDraftEmoji(btn.emoji)
     setDraftCat(btn.categoryId)
+    setDraftPos(btn.partOfSpeech)
     setDraftPhoto(btn.photoDataUrl)
     setDraftSign(btn.signPhotoDataUrl)
+    setDraftAudio(btn.audioDataUrl)
     setPhotoError('')
     setShowForm(true)
   }
@@ -91,6 +121,8 @@ export function AacEditor() {
     setDraftLabel('')
     setDraftPhoto(undefined)
     setDraftSign(undefined)
+    setDraftAudio(undefined)
+    stopRecording()
   }
 
   const onImage = (kind: 'photo' | 'sign', file: File | null) => {
@@ -104,6 +136,45 @@ export function AacEditor() {
       if (kind === 'photo') setDraftPhoto(result.dataUrl)
       else setDraftSign(result.dataUrl)
     })
+  }
+
+  const stopRecording = () => {
+    try {
+      mediaRecorder.current?.stop()
+    } catch {
+      /* ignore */
+    }
+    mediaRecorder.current?.stream.getTracks().forEach((t) => t.stop())
+    mediaRecorder.current = null
+    setRecording(false)
+  }
+
+  const startRecording = async () => {
+    setPhotoError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      chunks.current = []
+      const rec = new MediaRecorder(stream)
+      mediaRecorder.current = rec
+      rec.ondataavailable = (e) => {
+        if (e.data.size) chunks.current.push(e.data)
+      }
+      rec.onstop = () => {
+        const blob = new Blob(chunks.current, { type: 'audio/webm' })
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') setDraftAudio(reader.result)
+        }
+        reader.readAsDataURL(blob)
+        stream.getTracks().forEach((t) => t.stop())
+        setRecording(false)
+      }
+      rec.start()
+      setRecording(true)
+      setMsg('Recording… tap Stop when done.')
+    } catch {
+      setPhotoError('Microphone permission needed to record a voice clip.')
+    }
   }
 
   const saveButton = (e: FormEvent) => {
@@ -122,8 +193,10 @@ export function AacEditor() {
               speak: draftSpeak.trim() || undefined,
               emoji: draftEmoji.trim() || '💬',
               categoryId: draftCat,
+              partOfSpeech: draftPos,
               photoDataUrl: draftPhoto,
               signPhotoDataUrl: draftSign,
+              audioDataUrl: draftAudio,
             }
           : b,
       )
@@ -136,8 +209,10 @@ export function AacEditor() {
         speak: draftSpeak.trim() || undefined,
         emoji: draftEmoji.trim() || '💬',
         categoryId: draftCat,
+        partOfSpeech: draftPos,
         photoDataUrl: draftPhoto,
         signPhotoDataUrl: draftSign,
+        audioDataUrl: draftAudio,
         order: library.buttons.filter((b) => b.categoryId === draftCat).length,
         source: 'custom',
       }
@@ -201,26 +276,87 @@ export function AacEditor() {
         </header>
 
         <p className="prompt">
-          Upload words, photos, and sign-language pictures. Soft Steps starts with basics — customize
-          what your learner sees and hears.
+          Customize words, real photos, sign pictures, and voice clips. Positions stay fixed for
+          motor planning — Soft Steps never rearranges by how often a word is tapped.
         </p>
 
         <article className="dash-card">
-          <h2>Board preferences</h2>
-          <p className="fine-print">These control the kid Talk board.</p>
+          <h2>Board layout &amp; core words</h2>
+          <p className="fine-print">Scale the grid as skills grow. Core words stay on the main board.</p>
           <div className="toggle-row wrap">
-            {([2, 3, 4] as const).map((n) => (
+            {GRID_LAYOUTS.map((g) => (
               <button
-                key={n}
+                key={g.id}
                 type="button"
-                className={`chip ${library.prefs.columns === n ? 'is-active' : ''}`}
-                onClick={() => updatePrefs({ columns: n })}
+                className={`chip ${library.prefs.gridLayout === g.id ? 'is-active' : ''}`}
+                onClick={() => updatePrefs({ gridLayout: g.id as AacGridLayout })}
+                title={g.hint}
               >
-                {n} columns
+                {g.label}
               </button>
             ))}
           </div>
-          <p className="fine-print">Preferred picture</p>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.corePinned}
+              onChange={(e) => updatePrefs({ corePinned: e.target.checked })}
+            />
+            Pin core words above fringe folders
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.colorCoding}
+              onChange={(e) => updatePrefs({ colorCoding: e.target.checked })}
+            />
+            Fitzgerald Key color coding
+          </label>
+          {library.prefs.colorCoding ? (
+            <ul className="aac-fitz-legend">
+              {POS_OPTIONS.map((p) => (
+                <li key={p.id} style={{ background: FITZGERALD_COLORS[p.id].bg }}>
+                  {p.label}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.largeButtons}
+              onChange={(e) => updatePrefs({ largeButtons: e.target.checked })}
+            />
+            Large buttons
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.showLabels}
+              onChange={(e) => updatePrefs({ showLabels: e.target.checked })}
+            />
+            Show word labels
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.messageBar}
+              onChange={(e) => updatePrefs({ messageBar: e.target.checked })}
+            />
+            Sentence strip (message window)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.speakOnTap}
+              onChange={(e) => updatePrefs({ speakOnTap: e.target.checked })}
+            />
+            Speak each word when activated
+          </label>
+        </article>
+
+        <article className="dash-card">
+          <h2>Pictures &amp; display</h2>
           <div className="toggle-row wrap">
             {(
               [
@@ -240,38 +376,150 @@ export function AacEditor() {
               </button>
             ))}
           </div>
+        </article>
+
+        <article className="dash-card">
+          <h2>Voice (on-device TTS)</h2>
+          <p className="fine-print">
+            Uses the device speech engine (offline). Pick a kid-friendly system voice in Grown-ups,
+            then tune pitch &amp; speed for Talk.
+          </p>
+          <VoicePicker
+            voiceURI={settings.sensory.voiceURI}
+            voiceStyle={settings.sensory.voiceStyle}
+            onChange={({ voiceURI, voiceStyle }) => {
+              updateSettings({
+                sensory: { ...settings.sensory, voiceURI, voiceStyle },
+              })
+              setMsg('Voice updated.')
+            }}
+          />
+          <label className="field-label">
+            Pitch ({library.prefs.speechPitch.toFixed(2)})
+            <input
+              type="range"
+              min={0.7}
+              max={1.6}
+              step={0.02}
+              value={library.prefs.speechPitch}
+              onChange={(e) => updatePrefs({ speechPitch: Number(e.target.value) })}
+            />
+          </label>
+          <label className="field-label">
+            Speed ({library.prefs.speechRate.toFixed(2)})
+            <input
+              type="range"
+              min={0.6}
+              max={1.2}
+              step={0.02}
+              value={library.prefs.speechRate}
+              onChange={(e) => updatePrefs({ speechRate: Number(e.target.value) })}
+            />
+          </label>
+        </article>
+
+        <article className="dash-card">
+          <h2>Touch &amp; sensory</h2>
+          <p className="fine-print">Hold delay and speak-on-release help accidental taps.</p>
+          <div className="toggle-row wrap">
+            {([0, 200, 400, 600] as const).map((ms) => (
+              <button
+                key={ms}
+                type="button"
+                className={`chip ${library.prefs.touchDelayMs === ms ? 'is-active' : ''}`}
+                onClick={() => updatePrefs({ touchDelayMs: ms })}
+              >
+                {ms === 0 ? 'No delay' : `${ms} ms hold`}
+              </button>
+            ))}
+          </div>
+          <div className="toggle-row wrap">
+            <button
+              type="button"
+              className={`chip ${library.prefs.touchTrigger === 'press' ? 'is-active' : ''}`}
+              onClick={() => updatePrefs({ touchTrigger: 'press' })}
+            >
+              Speak on press
+            </button>
+            <button
+              type="button"
+              className={`chip ${library.prefs.touchTrigger === 'release' ? 'is-active' : ''}`}
+              onClick={() => updatePrefs({ touchTrigger: 'release' })}
+            >
+              Speak on release
+            </button>
+          </div>
           <label className="check-line">
             <input
               type="checkbox"
-              checked={library.prefs.showLabels}
-              onChange={(e) => updatePrefs({ showLabels: e.target.checked })}
+              checked={library.prefs.buttonAnimations}
+              onChange={(e) => updatePrefs({ buttonAnimations: e.target.checked })}
             />
-            Show word labels
+            Soft button press animation
           </label>
           <label className="check-line">
             <input
               type="checkbox"
-              checked={library.prefs.speakOnTap}
-              onChange={(e) => updatePrefs({ speakOnTap: e.target.checked })}
+              checked={library.prefs.tapSounds}
+              onChange={(e) => updatePrefs({ tapSounds: e.target.checked })}
             />
-            Speak each tap
+            Soft tap sound (off by default — calmer)
           </label>
+        </article>
+
+        <article className="dash-card">
+          <h2>About me (emergency)</h2>
           <label className="check-line">
             <input
               type="checkbox"
-              checked={library.prefs.messageBar}
-              onChange={(e) => updatePrefs({ messageBar: e.target.checked })}
+              checked={library.prefs.aboutMeEnabled}
+              onChange={(e) => updatePrefs({ aboutMeEnabled: e.target.checked })}
             />
-            Message bar (build a sentence)
+            Show “About me” button on Talk
           </label>
-          <label className="check-line">
-            <input
-              type="checkbox"
-              checked={library.prefs.largeButtons}
-              onChange={(e) => updatePrefs({ largeButtons: e.target.checked })}
+          <label className="field-label">
+            Spoken message
+            <textarea
+              className="text-input"
+              rows={3}
+              value={library.prefs.aboutMeText}
+              onChange={(e) => updatePrefs({ aboutMeText: e.target.value })}
+              maxLength={400}
             />
-            Large buttons
           </label>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => updatePrefs({ aboutMeText: DEFAULT_ABOUT_ME })}
+          >
+            Reset to default message
+          </button>
+        </article>
+
+        <article className="dash-card aac-guided-access">
+          <h2>Keep Talk open (Guided Access / App Pinning)</h2>
+          <p>
+            Lock the device to Soft Steps so your child can’t accidentally leave their communication
+            board.
+          </p>
+          <h3>iPhone / iPad — Guided Access</h3>
+          <ol>
+            <li>Settings → Accessibility → Guided Access → turn On</li>
+            <li>Open Soft Steps → Talk</li>
+            <li>Triple-click the Side (or Home) button → Start</li>
+            <li>To exit: triple-click → enter your Guided Access passcode</li>
+          </ol>
+          <h3>Android — App Pinning</h3>
+          <ol>
+            <li>Settings → Security (or Biometrics) → App pinning → On</li>
+            <li>Open Soft Steps → Talk</li>
+            <li>Recents / Overview → pin Soft Steps</li>
+            <li>Unpin with the gesture your phone shows (often hold Back + Overview)</li>
+          </ol>
+          <p className="fine-print">
+            Soft Steps itself stays 100% offline for Talk — no account, no cloud tracking of AAC
+            taps.
+          </p>
         </article>
 
         <div className="tool-picker wrap">
@@ -346,10 +594,24 @@ export function AacEditor() {
                 ))}
               </select>
             </label>
+            <label className="field-label">
+              Fitzgerald color
+              <select
+                className="text-input"
+                value={draftPos}
+                onChange={(e) => setDraftPos(e.target.value as AacPartOfSpeech)}
+              >
+                {POS_OPTIONS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <div className="aac-upload-row">
               <div>
-                <p className="fine-print">Photo (object / person)</p>
+                <p className="fine-print">Photo (cup, toy, pet, person…)</p>
                 {draftPhoto ? <img src={draftPhoto} alt="" className="aac-photo-preview" /> : null}
                 <label className="btn btn-ghost upload-btn">
                   Upload photo
@@ -362,7 +624,11 @@ export function AacEditor() {
                   />
                 </label>
                 {draftPhoto ? (
-                  <button type="button" className="btn btn-ghost" onClick={() => setDraftPhoto(undefined)}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setDraftPhoto(undefined)}
+                  >
                     Remove photo
                   </button>
                 ) : null}
@@ -381,15 +647,49 @@ export function AacEditor() {
                   />
                 </label>
                 {draftSign ? (
-                  <button type="button" className="btn btn-ghost" onClick={() => setDraftSign(undefined)}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setDraftSign(undefined)}
+                  >
                     Remove sign
                   </button>
                 ) : null}
               </div>
             </div>
+
+            <div className="aac-voice-record">
+              <p className="fine-print">Custom voice clip (optional — plays instead of TTS)</p>
+              {draftAudio ? (
+                <audio controls src={draftAudio} className="aac-audio-preview">
+                  <track kind="captions" />
+                </audio>
+              ) : null}
+              <div className="confirm-row">
+                {recording ? (
+                  <button type="button" className="btn btn-primary" onClick={stopRecording}>
+                    Stop recording
+                  </button>
+                ) : (
+                  <button type="button" className="btn btn-ghost" onClick={() => void startRecording()}>
+                    Record voice
+                  </button>
+                )}
+                {draftAudio ? (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setDraftAudio(undefined)}
+                  >
+                    Remove clip
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
             {photoError ? <p className="form-error">{photoError}</p> : null}
             <p className="fine-print">
-              Photos stay on this device. Use clear signs / real objects your learner recognizes.
+              Photos and voice clips stay on this device. Nothing is uploaded to Soft Steps servers.
             </p>
             <div className="confirm-row">
               <button type="submit" className="btn btn-primary">
@@ -411,14 +711,21 @@ export function AacEditor() {
                 ) : btn.signPhotoDataUrl ? (
                   <img src={btn.signPhotoDataUrl} alt="" className="aac-edit-thumb" />
                 ) : (
-                  <span aria-hidden="true">{btn.emoji}</span>
+                  <span
+                    className="aac-edit-swatch"
+                    style={{ background: FITZGERALD_COLORS[btn.partOfSpeech].bg }}
+                    aria-hidden="true"
+                  >
+                    {btn.emoji}
+                  </span>
                 )}
                 <span>
                   <strong>{btn.label}</strong>
                   <span className="fine-print">
-                    {btn.source === 'preset' ? 'Preset' : 'Custom'}
+                    {btn.source === 'preset' ? 'Preset' : 'Custom'} · {btn.partOfSpeech}
                     {btn.photoDataUrl ? ' · photo' : ''}
                     {btn.signPhotoDataUrl ? ' · sign' : ''}
+                    {btn.audioDataUrl ? ' · voice' : ''}
                     {btn.hidden ? ' · hidden' : ''}
                   </span>
                 </span>
@@ -444,8 +751,8 @@ export function AacEditor() {
         ) : null}
 
         <p className="fine-print">
-          Tip: hide unused presets, add classroom / home words, and attach the sign stills your team
-          uses. Categories include {PRESET_CATEGORIES.map((c) => c.title).join(', ')}.
+          Parental gate: Edit requires a 3-second hold on Talk, then this PIN unlock. Preset
+          categories: {PRESET_CATEGORIES.map((c) => c.title).join(', ')}.
         </p>
       </LockedGate>
     </section>

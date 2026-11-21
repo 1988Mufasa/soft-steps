@@ -2777,6 +2777,118 @@ html[data-dim-colors='true'] body {
 
 .aac-edit-link {
   white-space: nowrap;
+  user-select: none;
+  touch-action: none;
+}
+
+.aac-sentence-strip {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  margin: 0 0 0.75rem;
+  border-radius: 18px;
+  background: rgba(244, 251, 247, 0.97);
+  box-shadow: var(--shadow);
+  border: 2px solid rgba(54, 97, 176, 0.2);
+}
+
+.aac-sentence-window {
+  min-height: 3.4rem;
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.aac-sentence-window:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.aac-sentence-placeholder {
+  font-weight: 700;
+  color: var(--ink-soft, #4a5568);
+  opacity: 0.75;
+}
+
+.aac-sentence-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 12px;
+  border: 2px solid rgba(54, 97, 176, 0.2);
+  background: rgba(54, 97, 176, 0.1);
+  font-weight: 800;
+}
+
+.aac-sentence-chip img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.aac-sentence-chip em {
+  font-style: normal;
+  font-size: 0.9rem;
+}
+
+.aac-sentence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.aac-about-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 14px;
+  border: 2px solid rgba(54, 97, 176, 0.35);
+  background: linear-gradient(145deg, #e8f0fb, #fff);
+  font: inherit;
+  font-weight: 800;
+  color: var(--accent-deep);
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.aac-section-label {
+  margin: 0.35rem 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  opacity: 0.85;
+}
+
+.aac-core-pin {
+  margin-bottom: 0.75rem;
+  padding: 0.55rem;
+  border-radius: 16px;
+  background: rgba(255, 243, 176, 0.35);
+  border: 2px dashed rgba(230, 194, 0, 0.45);
+}
+
+.aac-core-pin .aac-comm-grid {
+  margin-bottom: 0;
 }
 
 .aac-cat-tabs {
@@ -2789,7 +2901,7 @@ html[data-dim-colors='true'] body {
 .aac-comm-grid {
   display: grid;
   gap: 0.65rem;
-  margin-bottom: 5.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .aac-comm-grid.cols-2 {
@@ -2804,10 +2916,15 @@ html[data-dim-colors='true'] body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.aac-comm-grid.layout-2x2 .aac-comm-card,
+.aac-comm-grid.layout-2x3 .aac-comm-card {
+  min-height: 140px;
+}
+
 .aac-comm-card {
   position: relative;
   min-height: 108px;
-  border: none;
+  border: 3px solid transparent;
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -2818,14 +2935,26 @@ html[data-dim-colors='true'] body {
   cursor: pointer;
   font: inherit;
   color: inherit;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .aac-comm-grid.is-large .aac-comm-card {
   min-height: 132px;
 }
 
-.aac-comm-card:active {
+.aac-comm-grid.is-core .aac-comm-card {
+  min-height: 88px;
+  padding: 0.4rem 0.25rem;
+}
+
+.aac-touchable:not(.no-anim):active {
   transform: scale(0.97);
+}
+
+.aac-touchable.no-anim:active {
+  transform: none;
 }
 
 .aac-comm-emoji {
@@ -2842,6 +2971,7 @@ html[data-dim-colors='true'] body {
   max-height: 72px;
   object-fit: cover;
   border-radius: 12px;
+  pointer-events: none;
 }
 
 .aac-comm-grid.is-large .aac-comm-img {
@@ -2861,50 +2991,26 @@ html[data-dim-colors='true'] body {
   color: var(--accent-deep);
 }
 
-.aac-sign-badge {
+.aac-sign-badge,
+.aac-voice-badge {
   position: absolute;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.aac-sign-badge {
   top: 0.35rem;
   right: 0.35rem;
-  font-size: 0.85rem;
-  opacity: 0.85;
 }
 
-.aac-message-bar {
-  position: sticky;
-  bottom: max(0.5rem, var(--safe-bottom));
-  z-index: 5;
-  display: grid;
-  gap: 0.55rem;
-  padding: 0.75rem;
-  border-radius: 18px;
-  background: rgba(244, 251, 247, 0.96);
-  box-shadow: var(--shadow);
-  border: 2px solid rgba(54, 97, 176, 0.18);
+.aac-voice-badge {
+  top: 0.35rem;
+  left: 0.35rem;
 }
 
-.aac-message-words {
-  min-height: 2.4rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
-  font-weight: 700;
-  color: var(--ink-soft, #4a5568);
-}
-
-.aac-message-chip {
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(54, 97, 176, 0.12);
-  color: var(--accent-deep);
-  font-weight: 800;
-}
-
-.aac-message-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  justify-content: flex-end;
+.aac-motor-note {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 /* —— AAC grown-up editor —— */
@@ -2914,13 +3020,63 @@ html[data-dim-colors='true'] body {
   gap: 0.75rem;
 }
 
+.aac-fitz-legend {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.aac-fitz-legend li {
+  padding: 0.25rem 0.55rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.aac-guided-access ol {
+  margin: 0.35rem 0 0.85rem 1.1rem;
+  padding: 0;
+}
+
+.aac-guided-access h3 {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.aac-voice-record {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.aac-audio-preview {
+  width: 100%;
+  max-width: 320px;
+}
+
+.aac-edit-swatch {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
 @media (max-width: 560px) {
   .aac-upload-row {
     grid-template-columns: 1fr;
   }
 
-  .aac-comm-grid.cols-4 {
+  .aac-comm-grid.cols-4:not(.is-core) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .aac-comm-grid.is-core.cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -2977,6 +3133,12 @@ html[data-dim-colors='true'] body {
 .aac-edit-actions {
   display: flex;
   gap: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aac-touchable:active {
+    transform: none !important;
+  }
 }
 
 .offline-ready-dot {

@@ -86,6 +86,7 @@ function migrateAacLibrary(parsed: Partial<ParentSettings>) {
       label: card.label,
       emoji: card.emoji || '💬',
       categoryId: 'family',
+      partOfSpeech: 'noun',
       photoDataUrl: card.photoDataUrl,
       order: order++,
       source: 'custom',

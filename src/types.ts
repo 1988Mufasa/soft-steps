@@ -69,7 +69,9 @@ export type {
   AacButton,
   AacCategory,
   AacDisplayMode,
+  AacGridLayout,
   AacLibrary,
+  AacPartOfSpeech,
   AacPrefs,
 } from './data/aacPresets'
 

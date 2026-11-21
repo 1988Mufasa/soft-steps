@@ -21,8 +21,8 @@ export function Privacy() {
         <h2>Who Soft Steps is for</h2>
         <p>
           Soft Steps is a calm learning and care app for children (roughly ages 3–12) and the
-          grown-ups who support them. Practice games, routines, AAC check-ins, and social stories
-          run on the device.
+          grown-ups who support them. Practice games, routines, AAC Talk, check-ins, and social
+          stories run on the device — no child account required.
         </p>
       </article>
 
@@ -35,8 +35,9 @@ export function Privacy() {
           <li>Optional check-in history and sensory / accessibility prefs</li>
         </ul>
         <p>
-          Soft Steps does not create child accounts on our servers. Learning data stays in this
-          browser or app install unless you export a backup file yourself.
+          Soft Steps does not create child accounts on our servers and does not collect AAC taps or
+          vocabulary use in the cloud. Learning data stays in this browser or app install unless
+          you export a backup file yourself.
         </p>
       </article>
 
@@ -44,9 +45,9 @@ export function Privacy() {
         <h2>Camera &amp; microphone</h2>
         <p>
           Camera is used only when a grown-up or caregiver adds a photo (stories, AAC, routines).
-          Microphone is used for on-device speech synthesis / practice — Soft Steps does not upload
-          audio recordings to Soft Steps servers. Permissions are requested by the OS when you tap
-          those features.
+          Microphone is used for on-device custom AAC voice clips and speech — Soft Steps does not
+          upload audio recordings to Soft Steps servers. Permissions are requested by the OS when
+          you tap those features.
         </p>
       </article>
 
