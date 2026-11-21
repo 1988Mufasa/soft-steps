@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AacPhotoCapture } from '../../components/AacPhotoCapture'
 import { LockedGate } from '../../components/ParentLock'
 import { VoicePicker } from '../../components/VoicePicker'
 import {
+  AAC_BOARD_CONTEXTS,
   AAC_STAGES,
   DEFAULT_ABOUT_ME,
+  DEFAULT_ATTENTION_PHRASE,
   FITZGERALD_COLORS,
   GRID_LAYOUTS,
   PRESET_CATEGORIES,
   applyStageToLibrary,
   buttonsForCategoryEditor,
+  type AacBoardContextId,
   type AacButton,
   type AacCategory,
   type AacDisplayMode,
@@ -62,7 +66,9 @@ export function AacEditor() {
   const [draftPhoto, setDraftPhoto] = useState<string | undefined>()
   const [draftSign, setDraftSign] = useState<string | undefined>()
   const [draftAudio, setDraftAudio] = useState<string | undefined>()
+  const [draftBoardContext, setDraftBoardContext] = useState<AacBoardContextId | 'both'>('both')
   const [recording, setRecording] = useState(false)
+  const [photoCapture, setPhotoCapture] = useState<'photo' | 'sign' | null>(null)
   const [msg, setMsg] = useState('')
   const [photoError, setPhotoError] = useState('')
   const mediaRecorder = useRef<MediaRecorder | null>(null)
@@ -105,6 +111,7 @@ export function AacEditor() {
     setDraftPhoto(undefined)
     setDraftSign(undefined)
     setDraftAudio(undefined)
+    setDraftBoardContext(library.prefs.activeBoardContext)
     setPhotoError('')
     setShowForm(true)
   }
@@ -119,6 +126,9 @@ export function AacEditor() {
     setDraftPhoto(btn.photoDataUrl)
     setDraftSign(btn.signPhotoDataUrl)
     setDraftAudio(btn.audioDataUrl)
+    setDraftBoardContext(
+      btn.categoryId === 'core' ? 'both' : (btn.boardContext ?? 'both'),
+    )
     setPhotoError('')
     setShowForm(true)
   }
@@ -130,6 +140,7 @@ export function AacEditor() {
     setDraftPhoto(undefined)
     setDraftSign(undefined)
     setDraftAudio(undefined)
+    setPhotoCapture(null)
     stopRecording()
   }
 
@@ -179,10 +190,20 @@ export function AacEditor() {
       }
       rec.start()
       setRecording(true)
-      setMsg('Recording… tap Stop when done.')
+      setMsg('Recording… release the mic when done.')
     } catch {
       setPhotoError('Microphone permission needed to record a voice clip.')
     }
+  }
+
+  const onMicPointerDown = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    void startRecording()
+  }
+
+  const onMicPointerUp = () => {
+    if (recording) stopRecording()
   }
 
   const saveButton = (e: FormEvent) => {
@@ -205,6 +226,7 @@ export function AacEditor() {
               photoDataUrl: draftPhoto,
               signPhotoDataUrl: draftSign,
               audioDataUrl: draftAudio,
+              boardContext: draftCat === 'core' ? 'both' : draftBoardContext,
             }
           : b,
       )
@@ -221,6 +243,7 @@ export function AacEditor() {
         photoDataUrl: draftPhoto,
         signPhotoDataUrl: draftSign,
         audioDataUrl: draftAudio,
+        boardContext: draftCat === 'core' ? 'both' : draftBoardContext,
         order: library.buttons.filter((b) => b.categoryId === draftCat).length,
         source: 'custom',
       }
@@ -340,6 +363,67 @@ export function AacEditor() {
         </article>
 
         <AacSetup embedded />
+
+        <article className="dash-card">
+          <h2>Home / School board</h2>
+          <p className="fine-print">
+            Switch fringe vocabulary for clinic vs home. Core words (Want, Help, More…) stay in the
+            exact same slots on both boards.
+          </p>
+          <div className="toggle-row wrap">
+            {AAC_BOARD_CONTEXTS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`chip ${library.prefs.activeBoardContext === c.id ? 'is-active' : ''}`}
+                onClick={() => updatePrefs({ activeBoardContext: c.id })}
+                title={c.blurb}
+              >
+                {c.emoji} {c.label}
+              </button>
+            ))}
+          </div>
+          <p className="fine-print">
+            Editing list below shows the <strong>{library.prefs.activeBoardContext}</strong> board
+            plus shared words.
+          </p>
+        </article>
+
+        <article className="dash-card">
+          <h2>Attention &amp; body check</h2>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.attentionEnabled}
+              onChange={(e) => updatePrefs({ attentionEnabled: e.target.checked })}
+            />
+            Show “Excuse me / Look!” attention bell on Talk
+          </label>
+          <label className="field-label">
+            Attention phrase
+            <input
+              className="text-input"
+              value={library.prefs.attentionPhrase}
+              onChange={(e) => updatePrefs({ attentionPhrase: e.target.value })}
+              maxLength={80}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => updatePrefs({ attentionPhrase: DEFAULT_ATTENTION_PHRASE })}
+          >
+            Reset phrase
+          </button>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.bodyCheckEnabled}
+              onChange={(e) => updatePrefs({ bodyCheckEnabled: e.target.checked })}
+            />
+            Show Pain &amp; Body Check on Talk (one-tap, no folders)
+          </label>
+        </article>
 
         <article className="dash-card">
           <h2>Board layout &amp; core words</h2>
@@ -751,20 +835,46 @@ export function AacEditor() {
               </select>
             </label>
 
+            {draftCat !== 'core' ? (
+              <label className="field-label">
+                Show on board
+                <select
+                  className="text-input"
+                  value={draftBoardContext}
+                  onChange={(e) =>
+                    setDraftBoardContext(e.target.value as AacBoardContextId | 'both')
+                  }
+                >
+                  <option value="both">Both Home &amp; School</option>
+                  <option value="home">Home board only</option>
+                  <option value="school">School board only</option>
+                </select>
+              </label>
+            ) : null}
+
             <div className="aac-upload-row">
               <div>
-                <p className="fine-print">Photo (cup, toy, pet, person…)</p>
+                <p className="fine-print">Photo (cup, toy, pet, Grandma…)</p>
                 {draftPhoto ? <img src={draftPhoto} alt="" className="aac-photo-preview" /> : null}
-                <label className="btn btn-ghost upload-btn">
-                  Upload photo
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    hidden
-                    onChange={(e) => onImage('photo', e.target.files?.[0] ?? null)}
-                  />
-                </label>
+                <div className="confirm-row">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setPhotoCapture('photo')}
+                  >
+                    Snap &amp; crop
+                  </button>
+                  <label className="btn btn-ghost upload-btn">
+                    Choose file
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      hidden
+                      onChange={(e) => onImage('photo', e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </div>
                 {draftPhoto ? (
                   <button
                     type="button"
@@ -778,16 +888,25 @@ export function AacEditor() {
               <div>
                 <p className="fine-print">Sign language image</p>
                 {draftSign ? <img src={draftSign} alt="" className="aac-photo-preview" /> : null}
-                <label className="btn btn-ghost upload-btn">
-                  Upload sign
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    hidden
-                    onChange={(e) => onImage('sign', e.target.files?.[0] ?? null)}
-                  />
-                </label>
+                <div className="confirm-row">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setPhotoCapture('sign')}
+                  >
+                    Snap &amp; crop
+                  </button>
+                  <label className="btn btn-ghost upload-btn">
+                    Choose file
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      hidden
+                      onChange={(e) => onImage('sign', e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </div>
                 {draftSign ? (
                   <button
                     type="button"
@@ -801,22 +920,27 @@ export function AacEditor() {
             </div>
 
             <div className="aac-voice-record">
-              <p className="fine-print">Custom voice clip (optional — plays instead of TTS)</p>
+              <p className="fine-print">
+                Family voice — hold the mic, say the word, release. Plays instead of TTS.
+              </p>
               {draftAudio ? (
                 <audio controls src={draftAudio} className="aac-audio-preview">
                   <track kind="captions" />
                 </audio>
               ) : null}
               <div className="confirm-row">
-                {recording ? (
-                  <button type="button" className="btn btn-primary" onClick={stopRecording}>
-                    Stop recording
-                  </button>
-                ) : (
-                  <button type="button" className="btn btn-ghost" onClick={() => void startRecording()}>
-                    Record voice
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={`btn aac-mic-hold ${recording ? 'is-recording btn-primary' : 'btn-ghost'}`}
+                  onPointerDown={onMicPointerDown}
+                  onPointerUp={onMicPointerUp}
+                  onPointerCancel={onMicPointerUp}
+                  onPointerLeave={onMicPointerUp}
+                  aria-pressed={recording}
+                  aria-label="Hold to record family voice"
+                >
+                  {recording ? '🎙️ Recording… release' : '🎙️ Hold to record'}
+                </button>
                 {draftAudio ? (
                   <button
                     type="button"
@@ -900,6 +1024,20 @@ export function AacEditor() {
           Parental gate: Edit requires a 3-second hold on Talk, then this PIN unlock. Preset
           categories: {PRESET_CATEGORIES.map((c) => c.title).join(', ')}.
         </p>
+
+        {photoCapture ? (
+          <AacPhotoCapture
+            title={photoCapture === 'photo' ? 'Snap a real-life photo' : 'Snap a sign photo'}
+            onCancel={() => setPhotoCapture(null)}
+            onCapture={(dataUrl) => {
+              if (photoCapture === 'photo') setDraftPhoto(dataUrl)
+              else setDraftSign(dataUrl)
+              setPhotoCapture(null)
+              setPhotoError('')
+              setMsg('Photo cropped and ready — Save word to keep it.')
+            }}
+          />
+        ) : null}
       </LockedGate>
     </section>
   )

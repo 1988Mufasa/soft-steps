@@ -51,6 +51,10 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Hold a verb (eat/go) → word-forms popup; pick a form
 - [ ] Model mode: taps glow + speak without filling sentence strip
 - [ ] Export AAC board JSON → import on another device restores layout/masks/media
+- [ ] Editor Snap & crop photo + Hold-to-record family voice on a word
+- [ ] Attention bell speaks “Excuse me / Look!” from Talk (even when board-locked)
+- [ ] Body check opens one-tap pain/sensory screen without folders
+- [ ] Home ↔ School board switch (parental gate); core slots unchanged
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing

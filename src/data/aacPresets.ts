@@ -31,6 +31,12 @@ export type AacGridLayout = '2x2' | '2x3' | '3x3' | '3x4' | '4x4' | '4x6'
 
 export type AacTouchTrigger = 'press' | 'release'
 
+/**
+ * Home vs School board context. Core words stay in the exact same slots;
+ * fringe / family words can be context-specific.
+ */
+export type AacBoardContextId = 'home' | 'school'
+
 /** Growth stages — unlock more cells without moving existing words */
 export type AacStage = 'starter' | 'developing' | 'expanded'
 
@@ -73,6 +79,11 @@ export type AacButton = {
   minStage?: AacStage
   /** Optional custom grammar forms (overrides built-in word-forms table) */
   forms?: string[]
+  /**
+   * Board context. Core is always `both`. Fringe may be home-only or school-only
+   * so parents can switch boards without moving motor-planning slots.
+   */
+  boardContext?: AacBoardContextId | 'both'
 }
 
 export type AacCategory = {
@@ -128,7 +139,36 @@ export type AacPrefs = {
   wordFormsEnabled: boolean
   /** Show empty reserved cells for masked core words (muscle-memory slots) */
   showMaskedSlots: boolean
+  /** Active Home / School board (core slots unchanged) */
+  activeBoardContext: AacBoardContextId
+  /** Always-visible “Excuse me / Look!” attention button */
+  attentionEnabled: boolean
+  attentionPhrase: string
+  /** One-tap Pain & Body Check overlay on Talk */
+  bodyCheckEnabled: boolean
 }
+
+export const AAC_BOARD_CONTEXTS: {
+  id: AacBoardContextId
+  label: string
+  emoji: string
+  blurb: string
+}[] = [
+  {
+    id: 'home',
+    label: 'Home board',
+    emoji: '🏠',
+    blurb: 'Favorite snacks, pets, family — core words stay put.',
+  },
+  {
+    id: 'school',
+    label: 'School board',
+    emoji: '🏫',
+    blurb: 'Teacher, recess, bus, classroom — same core slots.',
+  },
+]
+
+export const DEFAULT_ATTENTION_PHRASE = 'Excuse me! Look!'
 
 export type AacLibrary = {
   categories: AacCategory[]
@@ -238,6 +278,10 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   modelMode: false,
   wordFormsEnabled: true,
   showMaskedSlots: true,
+  activeBoardContext: 'home',
+  attentionEnabled: true,
+  attentionPhrase: DEFAULT_ATTENTION_PHRASE,
+  bodyCheckEnabled: true,
 }
 
 export const PRESET_CATEGORIES: AacCategory[] = [
@@ -296,6 +340,7 @@ function fringe(
   partOfSpeech: AacPartOfSpeech,
   minStage: AacStage,
   speak?: string,
+  boardContext: AacBoardContextId | 'both' = 'both',
 ): AacButton {
   return {
     id,
@@ -307,7 +352,18 @@ function fringe(
     minStage,
     source: 'preset',
     speak,
+    boardContext,
   }
+}
+
+function matchesBoardContext(
+  btn: AacButton,
+  active: AacBoardContextId,
+): boolean {
+  // Core motor-planning board is always shared
+  if (btn.categoryId === 'core') return true
+  const ctx = btn.boardContext ?? 'both'
+  return ctx === 'both' || ctx === active
 }
 
 /**
@@ -366,18 +422,35 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('hungry', 'Hungry', '😋', 'food', 2, 'adjective', 'expanded'),
   fringe('thirsty', 'Thirsty', '🥤', 'food', 3, 'adjective', 'expanded'),
 
-  fringe('mom', 'Mom', '👩', 'people', 0, 'pronoun', 'expanded'),
-  fringe('dad', 'Dad', '👨', 'people', 1, 'pronoun', 'expanded'),
-  fringe('teacher', 'Teacher', '👩‍🏫', 'people', 2, 'pronoun', 'expanded'),
+  fringe('mom', 'Mom', '👩', 'people', 0, 'pronoun', 'expanded', undefined, 'home'),
+  fringe('dad', 'Dad', '👨', 'people', 1, 'pronoun', 'expanded', undefined, 'home'),
+  fringe('grandma', 'Grandma', '👵', 'people', 4, 'pronoun', 'expanded', undefined, 'home'),
+  fringe('grandpa', 'Grandpa', '👴', 'people', 5, 'pronoun', 'expanded', undefined, 'home'),
+  fringe('pet', 'Pet', '🐶', 'people', 6, 'noun', 'developing', undefined, 'home'),
+  fringe('teacher', 'Teacher', '👩‍🏫', 'people', 2, 'pronoun', 'expanded', undefined, 'school'),
   fringe('friend', 'Friend', '🤝', 'people', 3, 'pronoun', 'expanded'),
+  fringe('aide', 'Aide', '🧑‍🏫', 'people', 7, 'pronoun', 'expanded', undefined, 'school'),
 
-  fringe('school', 'School', '🏫', 'places', 0, 'noun', 'expanded'),
-  fringe('park', 'Park', '🌳', 'places', 1, 'noun', 'expanded'),
+  fringe('school', 'School', '🏫', 'places', 0, 'noun', 'expanded', undefined, 'school'),
+  fringe('park', 'Park', '🌳', 'places', 1, 'noun', 'expanded', undefined, 'home'),
   fringe('outside', 'Outside', '☀️', 'places', 2, 'noun', 'expanded'),
-  fringe('car', 'Car', '🚗', 'places', 3, 'noun', 'expanded'),
-  fringe('bed', 'Bed', '🛏️', 'places', 4, 'noun', 'expanded'),
-  fringe('class', 'Classroom', '📚', 'places', 5, 'noun', 'expanded'),
-  fringe('home-place', 'Home', '🏠', 'places', 6, 'noun', 'developing', 'home'),
+  fringe('car', 'Car', '🚗', 'places', 3, 'noun', 'expanded', undefined, 'home'),
+  fringe('bed', 'Bed', '🛏️', 'places', 4, 'noun', 'expanded', undefined, 'home'),
+  fringe('class', 'Classroom', '📚', 'places', 5, 'noun', 'expanded', undefined, 'school'),
+  fringe('home-place', 'Home', '🏠', 'places', 6, 'noun', 'developing', 'home', 'home'),
+  fringe('recess', 'Recess', '⚽', 'places', 7, 'noun', 'expanded', undefined, 'school'),
+  fringe('bus', 'Bus', '🚌', 'places', 8, 'noun', 'expanded', undefined, 'school'),
+
+  // Home family words (photo placeholders parents customize)
+  fringe('sippy', 'Sippy cup', '🍼', 'family', 0, 'noun', 'developing', 'sippy cup', 'home'),
+  fringe('favorite-toy', 'My toy', '🧸', 'family', 1, 'noun', 'developing', 'my toy', 'home'),
+  fringe('tablet', 'Tablet', '📱', 'family', 2, 'noun', 'expanded', undefined, 'home'),
+
+  // School supplies / routines
+  fringe('backpack', 'Backpack', '🎒', 'family', 3, 'noun', 'expanded', undefined, 'school'),
+  fringe('pencil', 'Pencil', '✏️', 'family', 4, 'noun', 'expanded', undefined, 'school'),
+  fringe('lunch', 'Lunch', '🍱', 'food', 4, 'noun', 'expanded', undefined, 'school'),
+  fringe('recess-play', 'Play outside', '🛝', 'actions', 6, 'verb', 'expanded', 'play outside', 'school'),
 
   fringe('sign-more', 'More (sign)', '✋', 'signs', 0, 'misc', 'expanded', 'more'),
   fringe('sign-help', 'Help (sign)', '🤝', 'signs', 1, 'misc', 'expanded', 'help'),
@@ -456,6 +529,12 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   if (typeof merged.aboutMeText !== 'string' || !merged.aboutMeText.trim()) {
     merged.aboutMeText = DEFAULT_ABOUT_ME
   }
+  if (merged.activeBoardContext !== 'school') merged.activeBoardContext = 'home'
+  if (typeof merged.attentionPhrase !== 'string' || !merged.attentionPhrase.trim()) {
+    merged.attentionPhrase = DEFAULT_ATTENTION_PHRASE
+  }
+  if (typeof merged.attentionEnabled !== 'boolean') merged.attentionEnabled = true
+  if (typeof merged.bodyCheckEnabled !== 'boolean') merged.bodyCheckEnabled = true
   return merged
 }
 
@@ -526,6 +605,10 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
             hidden: btn.hidden ?? prev.hidden,
             masked: btn.masked ?? prev.masked,
             forms: btn.forms ?? prev.forms,
+            boardContext:
+              prev.source === 'preset'
+                ? (prev.boardContext ?? btn.boardContext ?? 'both')
+                : (btn.boardContext ?? prev.boardContext ?? 'both'),
             photoDataUrl: btn.photoDataUrl ?? prev.photoDataUrl,
             signPhotoDataUrl: btn.signPhotoDataUrl ?? prev.signPhotoDataUrl,
             audioDataUrl: btn.audioDataUrl ?? prev.audioDataUrl,
@@ -538,6 +621,7 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
             source: btn.source ?? 'custom',
             partOfSpeech,
             minStage: btn.minStage ?? 'developing',
+            boardContext: btn.boardContext ?? 'both',
           },
     )
   }
@@ -612,13 +696,15 @@ export function fringeCategories(library: AacLibrary) {
 
 export function buttonsForCategory(library: AacLibrary, categoryId: string) {
   const stage = library.prefs.stage
+  const ctx = library.prefs.activeBoardContext
   return library.buttons
     .filter(
       (b) =>
         !b.hidden &&
         !b.masked &&
         b.categoryId === categoryId &&
-        stageAtLeast(stage, b.minStage ?? 'starter'),
+        stageAtLeast(stage, b.minStage ?? 'starter') &&
+        matchesBoardContext(b, ctx),
     )
     .sort((a, b) => a.order - b.order)
 }
@@ -626,12 +712,15 @@ export function buttonsForCategory(library: AacLibrary, categoryId: string) {
 /** Editor list: includes masked words so SLPs can unmask without shifting slots. */
 export function buttonsForCategoryEditor(library: AacLibrary, categoryId: string) {
   const stage = library.prefs.stage
+  const ctx = library.prefs.activeBoardContext
   return library.buttons
     .filter(
       (b) =>
         !b.hidden &&
         b.categoryId === categoryId &&
-        stageAtLeast(stage, b.minStage ?? 'starter'),
+        stageAtLeast(stage, b.minStage ?? 'starter') &&
+        // Editor shows active context + both; core always
+        matchesBoardContext(b, ctx),
     )
     .sort((a, b) => a.order - b.order)
 }

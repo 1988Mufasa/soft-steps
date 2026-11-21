@@ -60,3 +60,35 @@ export function speakAboutMe(text: string, soundOn: boolean, prefs: AacPrefs) {
     rate: Math.min(prefs.speechRate, 0.95),
   })
 }
+
+/** Quick attention / “Excuse me — look!” across the room. */
+export function speakAttention(phrase: string, soundOn: boolean, prefs: AacPrefs) {
+  if (!soundOn) return
+  stopClip()
+  try {
+    // Soft attention chime before the phrase
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = 880
+    gain.gain.value = 0.12
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start()
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
+    osc.stop(ctx.currentTime + 0.38)
+    window.setTimeout(() => void ctx.close().catch(() => undefined), 500)
+  } catch {
+    /* chime optional */
+  }
+  speakText((phrase || 'Excuse me! Look!').trim(), true, {
+    pitch: Math.min(prefs.speechPitch + 0.1, 1.5),
+    rate: Math.max(prefs.speechRate, 0.95),
+  })
+  try {
+    navigator.vibrate?.([80, 40, 80])
+  } catch {
+    /* ignore */
+  }
+}

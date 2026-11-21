@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { speakAacButton, speakAacSentence, speakAboutMe } from '../../audio/aacSpeech'
+import {
+  speakAacButton,
+  speakAacSentence,
+  speakAboutMe,
+  speakAttention,
+} from '../../audio/aacSpeech'
 import { speakText as speakCalm } from '../../audio/calmAudio'
 import { AacBoardLock } from '../../components/AacBoardLock'
+import { AacBodyCheck } from '../../components/AacBodyCheck'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
 import {
+  AAC_BOARD_CONTEXTS,
   FITZGERALD_COLORS,
   buttonsForCategory,
   coreButtonsInViewport,
@@ -13,9 +20,11 @@ import {
   gridRows,
   layoutMeta,
   resolveAacVisual,
+  type AacBoardContextId,
   type AacButton,
   type AacPrefs,
 } from '../../data/aacPresets'
+import type { BodyCheckItem } from '../../data/aacBodyCheck'
 import { wordFormsFor } from '../../data/aacWordForms'
 import { useAacTouch } from '../../hooks/useAacTouch'
 import { useApp } from '../../store/AppContext'
@@ -24,7 +33,7 @@ import { AacSetup } from './AacSetup'
 
 /**
  * Age-adaptive AAC communicator — fixed slots, mask/unmask, model mode,
- * word-forms hold, lock-to-board.
+ * word-forms hold, attention bell, body check, Home/School contexts.
  */
 export function TalkAac() {
   const navigate = useNavigate()
@@ -40,11 +49,17 @@ export function TalkAac() {
   const [editHold, setEditHold] = useState(0)
   const [glowId, setGlowId] = useState<string | null>(null)
   const [formsFor, setFormsFor] = useState<AacButton | null>(null)
+  const [bodyOpen, setBodyOpen] = useState(false)
+  const [attentionPulse, setAttentionPulse] = useState(false)
+  const [contextGate, setContextGate] = useState(false)
   const editTimer = useRef<number | null>(null)
   const editTick = useRef<number | null>(null)
   const glowTimer = useRef<number | null>(null)
+  const attentionTimer = useRef<number | null>(null)
 
   const needsSetup = !prefs.setupComplete
+  const activeContextMeta =
+    AAC_BOARD_CONTEXTS.find((c) => c.id === prefs.activeBoardContext) ?? AAC_BOARD_CONTEXTS[0]
 
   const folderButtons = useMemo(
     () => (folderId ? buttonsForCategory(library, folderId) : []),
@@ -62,6 +77,10 @@ export function TalkAac() {
     return () => window.removeEventListener('popstate', onPop)
   }, [locked])
 
+  useEffect(() => {
+    setFolderId(null)
+  }, [prefs.activeBoardContext])
+
   const setBoardLocked = (boardLocked: boolean) => {
     updateSettings({
       aacLibrary: {
@@ -78,6 +97,12 @@ export function TalkAac() {
         prefs: { ...library.prefs, ...patch },
       },
     })
+  }
+
+  const setBoardContext = (activeBoardContext: AacBoardContextId) => {
+    patchPrefs({ activeBoardContext })
+    setContextGate(false)
+    setMessage([])
   }
 
   const flashGlow = (id: string) => {
@@ -104,7 +129,6 @@ export function TalkAac() {
         )
       }
     }
-    // Model mode: highlight + speak only — do not fill the child's sentence strip
     if (prefs.modelMode) return
     if (prefs.messageBar) {
       const chip: AacButton = speakOverride
@@ -112,6 +136,35 @@ export function TalkAac() {
         : btn
       setMessage((m) => [...m, chip].slice(-16))
     }
+  }
+
+  const ringAttention = () => {
+    setAttentionPulse(true)
+    if (attentionTimer.current != null) window.clearTimeout(attentionTimer.current)
+    attentionTimer.current = window.setTimeout(() => setAttentionPulse(false), 1200)
+    speakAttention(prefs.attentionPhrase, settings.sensory.soundOn, prefs)
+  }
+
+  const pickBodyItem = (item: BodyCheckItem) => {
+    const btn: AacButton = {
+      id: `body-${item.id}`,
+      label: item.label,
+      speak: item.speak,
+      emoji: item.emoji,
+      categoryId: 'needs',
+      partOfSpeech: item.kind === 'pain' ? 'adjective' : item.kind === 'need' ? 'noun' : 'adjective',
+      order: 0,
+      source: 'custom',
+    }
+    flashGlow(btn.id)
+    speakCalm(item.speak, settings.sensory.soundOn, {
+      pitch: prefs.speechPitch,
+      rate: prefs.speechRate,
+    })
+    if (!prefs.modelMode && prefs.messageBar) {
+      setMessage((m) => [...m, btn].slice(-16))
+    }
+    setBodyOpen(false)
   }
 
   const speakMessage = () => {
@@ -151,6 +204,16 @@ export function TalkAac() {
     setFormsFor(btn)
   }
 
+  const requestContextSwitch = () => {
+    if (locked) return
+    if (isParentSessionValid()) {
+      setContextGate((v) => !v)
+      return
+    }
+    // Route through editor PIN gate for context switch
+    navigate('/talk/edit')
+  }
+
   if (needsSetup && isParentSessionValid() && !locked) {
     return (
       <section className="care-page aac-comm">
@@ -168,17 +231,39 @@ export function TalkAac() {
     )
   }
 
+  if (bodyOpen) {
+    return (
+      <section className="care-page aac-comm aac-body-open">
+        <AacBodyCheck onPick={pickBodyItem} onClose={() => setBodyOpen(false)} />
+      </section>
+    )
+  }
+
   return (
     <section
       className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''} ${
         locked ? 'is-board-locked' : ''
-      } ${prefs.modelMode ? 'is-model-mode' : ''}`}
+      } ${prefs.modelMode ? 'is-model-mode' : ''} context-${prefs.activeBoardContext}`}
     >
       <AacBoardLock
         locked={locked}
         onLock={() => setBoardLocked(true)}
         onUnlock={() => setBoardLocked(false)}
       />
+
+      {prefs.attentionEnabled ? (
+        <button
+          type="button"
+          className={`aac-attention-btn ${attentionPulse ? 'is-pulsing' : ''}`}
+          onClick={ringAttention}
+          aria-label={`Attention: ${prefs.attentionPhrase}`}
+        >
+          <span className="aac-attention-bell" aria-hidden="true">
+            🔔
+          </span>
+          <span className="aac-attention-label">Excuse me / Look!</span>
+        </button>
+      ) : null}
 
       {prefs.messageBar ? (
         <div className="aac-sentence-strip" aria-label="Sentence strip">
@@ -270,7 +355,7 @@ export function TalkAac() {
           </Link>
           <div className="activity-meta">
             <p className="eyebrow offline-tag">
-              AAC · {meta.label} · {prefs.ageRange}
+              AAC · {meta.label} · {prefs.ageRange} · {activeContextMeta.label}
               {prefs.modelMode ? ' · Model' : ''}
             </p>
             <h1>Talk</h1>
@@ -287,6 +372,15 @@ export function TalkAac() {
             </button>
             <button
               type="button"
+              className="chip"
+              onClick={requestContextSwitch}
+              aria-expanded={contextGate}
+              title="Switch Home / School board (parental gate)"
+            >
+              {activeContextMeta.emoji} Board
+            </button>
+            <button
+              type="button"
               className="btn btn-ghost aac-edit-link"
               onPointerDown={startEditHold}
               onPointerUp={clearEditHold}
@@ -300,6 +394,22 @@ export function TalkAac() {
         </header>
       ) : null}
 
+      {contextGate && !locked ? (
+        <div className="aac-context-switcher" role="group" aria-label="Board context">
+          <p className="fine-print">Core words stay in the same spots. Fringe words change.</p>
+          {AAC_BOARD_CONTEXTS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`chip ${prefs.activeBoardContext === c.id ? 'is-active' : ''}`}
+              onClick={() => setBoardContext(c.id)}
+            >
+              {c.emoji} {c.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {!locked && needsSetup ? (
         <p className="aac-setup-hint" role="status">
           Grown-ups: hold <strong>Edit</strong> for setup. Use <strong>Model</strong> while teaching.
@@ -307,16 +417,28 @@ export function TalkAac() {
         </p>
       ) : null}
 
-      {!locked && prefs.aboutMeEnabled ? (
-        <button
-          type="button"
-          className="aac-about-me"
-          onClick={() => speakAboutMe(prefs.aboutMeText, settings.sensory.soundOn, prefs)}
-          aria-label="About me — emergency info"
-        >
-          <span aria-hidden="true">ℹ️</span> About me
-        </button>
-      ) : null}
+      <div className="aac-quick-bar" role="toolbar" aria-label="Quick tools">
+        {prefs.bodyCheckEnabled ? (
+          <button
+            type="button"
+            className="aac-quick-tool aac-body-launch"
+            onClick={() => setBodyOpen(true)}
+            aria-label="Pain and body check"
+          >
+            <span aria-hidden="true">🫀</span> Body check
+          </button>
+        ) : null}
+        {!locked && prefs.aboutMeEnabled ? (
+          <button
+            type="button"
+            className="aac-quick-tool aac-about-me"
+            onClick={() => speakAboutMe(prefs.aboutMeText, settings.sensory.soundOn, prefs)}
+            aria-label="About me — emergency info"
+          >
+            <span aria-hidden="true">ℹ️</span> About me
+          </button>
+        ) : null}
+      </div>
 
       <div className="aac-board-shell">
         <div className="aac-core-panel">
@@ -358,7 +480,9 @@ export function TalkAac() {
 
         {prefs.showFolders && fringe.length > 0 ? (
           <aside className="aac-folder-panel" aria-label="Category folders">
-            <p className="aac-section-label">Folders</p>
+            <p className="aac-section-label">
+              Folders · {activeContextMeta.label}
+            </p>
             <nav className="aac-cat-tabs aac-folder-tabs">
               {fringe.map((c) => (
                 <button
@@ -388,7 +512,7 @@ export function TalkAac() {
                   />
                 ))}
                 {folderButtons.length === 0 ? (
-                  <p className="empty-note">No words in this folder yet.</p>
+                  <p className="empty-note">No words on this board yet.</p>
                 ) : null}
               </div>
             ) : (
