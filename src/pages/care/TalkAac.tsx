@@ -727,13 +727,16 @@ function AacWordButton({
     onLongPress: canForms ? onLongPress : undefined,
   })
   const colors = FITZGERALD_COLORS[btn.partOfSpeech]
+  const isPhoto = visual.kind === 'photo'
   const style: CSSProperties = {
     ...(prefs.colorCoding
       ? {
           background: colors.bg,
           borderColor: colors.border,
-          borderWidth: 3,
+          borderWidth: 4,
           borderStyle: 'solid',
+          ['--aac-fitz-border' as string]: colors.border,
+          ['--aac-fitz-bg' as string]: colors.bg,
         }
       : {}),
     ...(absolute && typeof btn.row === 'number' && typeof btn.col === 'number'
@@ -747,7 +750,9 @@ function AacWordButton({
   return (
     <button
       type="button"
-      className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''} ${
+      className={`aac-comm-card aac-tile-slp ${touch.className} ${
+        prefs.highContrast ? 'is-contrast' : ''
+      } ${prefs.colorCoding ? 'is-fitzgerald' : ''} ${isPhoto ? 'has-photo' : ''} ${
         glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''
       } ${cooldownCalm ? 'is-cooldown-calm' : ''}`}
       role="listitem"
@@ -758,21 +763,30 @@ function AacWordButton({
       onPointerCancel={touch.onPointerCancel}
       onPointerLeave={touch.onPointerLeave}
     >
-      {visual.src ? (
-        <img
-          src={visual.src}
-          alt=""
-          className={`aac-comm-img ${visual.kind === 'sign' ? 'is-sign' : ''}`}
-          draggable={false}
-        />
-      ) : (
-        <span className="aac-comm-emoji" aria-hidden="true">
-          {visual.emoji}
-        </span>
-      )}
+      {/* Label on top so a finger tap does not cover the word (SLP motor-planning practice) */}
       {prefs.showLabels || prefs.audioLabels ? (
         <span className="aac-comm-label">{btn.label}</span>
       ) : null}
+      <span
+        className={`aac-comm-visual ${isPhoto ? 'is-photo-frame' : ''} ${
+          visual.kind === 'sign' ? 'is-sign-frame' : ''
+        }`}
+      >
+        {visual.src ? (
+          <img
+            src={visual.src}
+            alt=""
+            className={`aac-comm-img ${visual.kind === 'sign' ? 'is-sign' : ''} ${
+              isPhoto ? 'is-photo' : ''
+            }`}
+            draggable={false}
+          />
+        ) : (
+          <span className="aac-comm-emoji" aria-hidden="true">
+            {visual.emoji}
+          </span>
+        )}
+      </span>
       {visual.kind === 'sign' ? (
         <span className="aac-sign-badge" aria-hidden="true">
           ✋
