@@ -2770,6 +2770,215 @@ html[data-dim-colors='true'] body {
   font: inherit;
 }
 
+/* —— Full AAC communicator (Talk) —— */
+.aac-comm .activity-header {
+  align-items: center;
+}
+
+.aac-edit-link {
+  white-space: nowrap;
+}
+
+.aac-cat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.5rem 0 0.85rem;
+}
+
+.aac-comm-grid {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 5.5rem;
+}
+
+.aac-comm-grid.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.aac-comm-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aac-comm-grid.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.aac-comm-card {
+  position: relative;
+  min-height: 108px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  gap: 0.3rem;
+  padding: 0.65rem 0.4rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.aac-comm-grid.is-large .aac-comm-card {
+  min-height: 132px;
+}
+
+.aac-comm-card:active {
+  transform: scale(0.97);
+}
+
+.aac-comm-emoji {
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.aac-comm-grid.is-large .aac-comm-emoji {
+  font-size: 2.6rem;
+}
+
+.aac-comm-img {
+  width: 100%;
+  max-height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.aac-comm-grid.is-large .aac-comm-img {
+  max-height: 96px;
+}
+
+.aac-comm-img.is-sign {
+  object-fit: contain;
+  background: rgba(244, 251, 247, 0.9);
+}
+
+.aac-comm-label {
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-align: center;
+  line-height: 1.15;
+  color: var(--accent-deep);
+}
+
+.aac-sign-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.aac-message-bar {
+  position: sticky;
+  bottom: max(0.5rem, var(--safe-bottom));
+  z-index: 5;
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border-radius: 18px;
+  background: rgba(244, 251, 247, 0.96);
+  box-shadow: var(--shadow);
+  border: 2px solid rgba(54, 97, 176, 0.18);
+}
+
+.aac-message-words {
+  min-height: 2.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  font-weight: 700;
+  color: var(--ink-soft, #4a5568);
+}
+
+.aac-message-chip {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(54, 97, 176, 0.12);
+  color: var(--accent-deep);
+  font-weight: 800;
+}
+
+.aac-message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+/* —— AAC grown-up editor —— */
+.aac-upload-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 560px) {
+  .aac-upload-row {
+    grid-template-columns: 1fr;
+  }
+
+  .aac-comm-grid.cols-4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.aac-edit-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.aac-edit-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.35rem;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.aac-edit-list li.is-hidden {
+  opacity: 0.55;
+}
+
+.aac-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.35rem;
+  min-height: 52px;
+}
+
+.aac-edit-row span {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.aac-edit-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.aac-edit-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .offline-ready-dot {
   display: inline-block;
   width: 0.55rem;
@@ -2915,6 +3124,7 @@ html[data-large-tap='true'] .chip,
 html[data-large-tap='true'] .module-card,
 html[data-large-tap='true'] .sign-mode-card,
 html[data-large-tap='true'] .aac-card,
+html[data-large-tap='true'] .aac-comm-card,
 html[data-large-tap='true'] .back-link,
 html[data-large-tap='true'] .more-tools-toggle,
 html[data-large-tap='true'] .food-live-choice,

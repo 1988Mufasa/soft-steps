@@ -1,203 +1,156 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { speakText } from '../../audio/calmAudio'
-import { AAC_BOARDS, boardForHour } from '../../data/aac'
+import {
+  buttonsForCategory,
+  resolveAacVisual,
+  visibleCategories,
+  type AacButton,
+} from '../../data/aacPresets'
 import { useApp } from '../../store/AppContext'
-import { readPhotoAsDataUrl } from '../../utils/imageFile'
 
+/**
+ * Full AAC communicator for non-verbal kids — large tap grid, message bar,
+ * presets + family photos / sign images from Grown-ups editor.
+ */
 export function TalkAac() {
-  const { settings, updateSettings } = useApp()
-  const auto = useMemo(() => boardForHour(), [])
-  const [boardId, setBoardId] = useState(auto.id)
-  const [spoken, setSpoken] = useState<string[]>([])
-  const [adding, setAdding] = useState(false)
-  const [label, setLabel] = useState('')
-  const [emoji, setEmoji] = useState('💬')
-  const [photo, setPhoto] = useState<string | undefined>()
-  const [photoError, setPhotoError] = useState('')
+  const { settings } = useApp()
+  const library = settings.aacLibrary
+  const prefs = library.prefs
+  const cats = useMemo(() => visibleCategories(library), [library])
+  const [categoryId, setCategoryId] = useState(cats[0]?.id ?? 'core')
+  const [message, setMessage] = useState<AacButton[]>([])
 
-  const board = AAC_BOARDS.find((b) => b.id === boardId) ?? auto
-  const custom = settings.customAacCards
+  const activeCat = cats.find((c) => c.id === categoryId) ?? cats[0]
+  const buttons = useMemo(
+    () => (activeCat ? buttonsForCategory(library, activeCat.id) : []),
+    [library, activeCat],
+  )
 
-  const onPhoto = (file: File | null) => {
-    if (!file) return
-    void readPhotoAsDataUrl(file).then((result) => {
-      if (!result.ok) {
-        setPhotoError(result.error)
-        setPhoto(undefined)
-        return
-      }
-      setPhotoError('')
-      setPhoto(result.dataUrl)
-    })
+  const speakButton = (btn: AacButton) => {
+    const text = (btn.speak || btn.label).trim()
+    if (prefs.speakOnTap) speakText(text, settings.sensory.soundOn)
+    if (prefs.messageBar) setMessage((m) => [...m, btn].slice(-12))
   }
 
-  const addCustom = (e: FormEvent) => {
-    e.preventDefault()
-    const trimmed = label.trim()
-    if (!trimmed) return
-    updateSettings({
-      customAacCards: [
-        {
-          id: `custom-${Date.now()}`,
-          label: trimmed,
-          emoji: emoji.trim() || '💬',
-          photoDataUrl: photo,
-        },
-        ...custom,
-      ].slice(0, 24),
-    })
-    setLabel('')
-    setEmoji('💬')
-    setPhoto(undefined)
-    setAdding(false)
+  const speakMessage = () => {
+    if (!message.length) return
+    const text = message.map((b) => b.speak || b.label).join('. ')
+    speakText(text, settings.sensory.soundOn)
   }
 
-  const removeCustom = (id: string) => {
-    updateSettings({ customAacCards: custom.filter((c) => c.id !== id) })
-  }
+  const cols = prefs.columns
+  const gridClass = `aac-comm-grid cols-${cols} ${prefs.largeButtons ? 'is-large' : ''}`
 
   return (
-    <section className="care-page">
+    <section className="care-page aac-comm">
       <header className="activity-header">
         <Link to="/" className="back-link">
           ← Home
         </Link>
         <div className="activity-meta">
-          <p className="eyebrow offline-tag">Offline AAC</p>
-          <h1>Talk board</h1>
+          <p className="eyebrow offline-tag">AAC</p>
+          <h1>Talk</h1>
         </div>
-        <span className="age-badge">{board.title}</span>
+        <Link to="/talk/edit" className="btn btn-ghost aac-edit-link">
+          Edit
+        </Link>
       </header>
 
       <p className="prompt">
-        Words change by time of day. Add your own photos &amp; phrases — works without Wi‑Fi.
+        Tap a word to speak. Grown-ups can add photos, sign pictures, and new words in Edit.
       </p>
 
-      <div className="tool-picker wrap">
-        {AAC_BOARDS.map((b) => (
+      <nav className="aac-cat-tabs" aria-label="AAC categories">
+        {cats.map((c) => (
           <button
-            key={b.id}
+            key={c.id}
             type="button"
-            className={`chip ${boardId === b.id ? 'is-active' : ''}`}
-            onClick={() => setBoardId(b.id)}
+            className={`chip ${activeCat?.id === c.id ? 'is-active' : ''}`}
+            onClick={() => setCategoryId(c.id)}
           >
-            {b.title}
+            <span aria-hidden="true">{c.emoji}</span> {c.title}
           </button>
         ))}
-      </div>
+      </nav>
 
-      {custom.length > 0 ? (
-        <>
-          <h2 className="aac-section-title">Family phrases</h2>
-          <div className="aac-grid">
-            {custom.map((card) => (
-              <div key={card.id} className="aac-custom-wrap">
-                <button
-                  type="button"
-                  className="aac-card has-photo"
-                  onClick={() => {
-                    speakText(card.label, settings.sensory.soundOn)
-                    setSpoken((s) => [...s.slice(-6), card.label])
-                  }}
-                >
-                  {card.photoDataUrl ? (
-                    <img src={card.photoDataUrl} alt="" className="aac-photo" />
-                  ) : (
-                    <span className="aac-emoji" aria-hidden="true">
-                      {card.emoji}
-                    </span>
-                  )}
-                  <span>{card.label}</span>
-                </button>
-                <button
-                  type="button"
-                  className="aac-remove"
-                  aria-label={`Remove ${card.label}`}
-                  onClick={() => removeCustom(card.id)}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : null}
-
-      {!adding ? (
-        <button type="button" className="btn btn-secondary" onClick={() => setAdding(true)}>
-          Add family phrase / photo
-        </button>
-      ) : (
-        <form className="aac-add-form" onSubmit={addCustom}>
-          <label>
-            Phrase
-            <input
-              type="text"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              maxLength={40}
-              required
-            />
-          </label>
-          <label>
-            Emoji
-            <input type="text" value={emoji} onChange={(e) => setEmoji(e.target.value)} maxLength={8} />
-          </label>
-          <label className="btn btn-ghost upload-btn">
-            {photo ? 'Change photo' : 'Add photo'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              hidden
-              onChange={(e) => onPhoto(e.target.files?.[0] ?? null)}
-            />
-          </label>
-          {photo ? <img src={photo} alt="" className="aac-photo-preview" /> : null}
-          {photoError ? <p className="form-error">{photoError}</p> : null}
-          <p className="fine-print">
-            On a phone, this can open the camera. Photos are resized and stay on this device only.
-          </p>
-          <div className="confirm-row">
-            <button type="submit" className="btn btn-primary">
-              Save phrase
+      <div className={gridClass} role="list">
+        {buttons.map((btn) => {
+          const visual = resolveAacVisual(btn, prefs.displayMode)
+          return (
+            <button
+              key={btn.id}
+              type="button"
+              className="aac-comm-card"
+              role="listitem"
+              onClick={() => speakButton(btn)}
+              aria-label={btn.speak || btn.label}
+            >
+              {visual.src ? (
+                <img
+                  src={visual.src}
+                  alt=""
+                  className={`aac-comm-img ${visual.kind === 'sign' ? 'is-sign' : ''}`}
+                />
+              ) : (
+                <span className="aac-comm-emoji" aria-hidden="true">
+                  {visual.emoji}
+                </span>
+              )}
+              {prefs.showLabels ? <span className="aac-comm-label">{btn.label}</span> : null}
+              {visual.kind === 'sign' ? (
+                <span className="aac-sign-badge" aria-hidden="true">
+                  ✋
+                </span>
+              ) : null}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => setAdding(false)}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
-      <h2 className="aac-section-title">{board.title} board</h2>
-      <div className="aac-grid">
-        {board.cards.map((card) => (
-          <button
-            key={card.id}
-            type="button"
-            className="aac-card"
-            onClick={() => {
-              speakText(card.label, settings.sensory.soundOn)
-              setSpoken((s) => [...s.slice(-6), card.label])
-            }}
-          >
-            <span className="aac-emoji" aria-hidden="true">
-              {card.emoji}
-            </span>
-            <span>{card.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="aac-strip" aria-live="polite">
-        {spoken.length ? spoken.join(' · ') : 'Your message appears here.'}
-        {spoken.length ? (
-          <button type="button" className="btn btn-ghost" onClick={() => setSpoken([])}>
-            Clear
-          </button>
+          )
+        })}
+        {buttons.length === 0 ? (
+          <p className="empty-note">No words in this category yet. Grown-ups can add some in Edit.</p>
         ) : null}
       </div>
+
+      {prefs.messageBar ? (
+        <div className="aac-message-bar" aria-live="polite">
+          <div className="aac-message-words">
+            {message.length
+              ? message.map((b, i) => (
+                  <span key={`${b.id}-${i}`} className="aac-message-chip">
+                    {b.label}
+                  </span>
+                ))
+              : 'Your message builds here.'}
+          </div>
+          <div className="aac-message-actions">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={!message.length}
+              onClick={() => setMessage((m) => m.slice(0, -1))}
+              aria-label="Delete last word"
+            >
+              ⌫
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={!message.length}
+              onClick={() => setMessage([])}
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!message.length}
+              onClick={speakMessage}
+            >
+              Speak
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

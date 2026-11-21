@@ -22,6 +22,7 @@ import { FirstThenBoard } from './pages/care/FirstThenBoard'
 import { RoutineBuilder } from './pages/care/RoutineBuilder'
 import { SocialStories } from './pages/care/SocialStories'
 import { TalkAac } from './pages/care/TalkAac'
+import { AacEditor } from './pages/care/AacEditor'
 import { SocialCues } from './pages/care/SocialCues'
 import { InterestRewards } from './pages/care/InterestRewards'
 import { LearningVideos } from './pages/care/LearningVideos'
@@ -120,6 +121,14 @@ export default function App() {
           element={
             <GuardedCare id="talk">
               <TalkAac />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/talk/edit"
+          element={
+            <GuardedCare id="talk">
+              <AacEditor />
             </GuardedCare>
           }
         />

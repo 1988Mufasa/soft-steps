@@ -56,7 +56,12 @@ const CARE: {
   { id: 'schedule', title: 'First / Then', blurb: 'Routine · timer · rewards', path: '/schedule' },
   { id: 'stories', title: 'What to expect', blurb: 'Picture social stories', path: '/stories' },
   { id: 'videos', title: 'Learning videos', blurb: 'Watch lessons · YouTube Kids', path: '/videos' },
-  { id: 'talk', title: 'Talk board', blurb: 'Offline AAC by time of day', path: '/talk' },
+  {
+    id: 'talk',
+    title: 'Talk (AAC)',
+    blurb: 'Full communication board — words, photos, signs',
+    path: '/talk',
+  },
   { id: 'friends', title: 'Social cues', blurb: 'Gentle practice scenes', path: '/friends' },
   { id: 'interest', title: 'Interest rewards', blurb: 'Unlock special-interest facts', path: '/interest' },
 ]

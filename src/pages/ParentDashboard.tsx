@@ -49,7 +49,7 @@ const CARE_LABELS: { id: CareModuleId; label: string }[] = [
   { id: 'schedule', label: 'First / Then routines' },
   { id: 'stories', label: 'Social stories' },
   { id: 'videos', label: 'Learning videos' },
-  { id: 'talk', label: 'Talk board (AAC)' },
+  { id: 'talk', label: 'Talk AAC (full board + editor)' },
   { id: 'friends', label: 'Social cues' },
   { id: 'interest', label: 'Interest rewards' },
 ]

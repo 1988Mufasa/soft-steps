@@ -1,3 +1,5 @@
+import { createDefaultAacLibrary, type AacLibrary } from './data/aacPresets'
+
 export type AgeBand = '3-6' | '7-12'
 
 export type ModuleId = 'abc' | 'shapes' | 'colors' | 'numbers' | 'signs' | 'foods'
@@ -62,6 +64,14 @@ export type CustomAacCard = {
   emoji: string
   photoDataUrl?: string
 }
+
+export type {
+  AacButton,
+  AacCategory,
+  AacDisplayMode,
+  AacLibrary,
+  AacPrefs,
+} from './data/aacPresets'
 
 export type CareStats = {
   routinesCompleted: number
@@ -180,6 +190,8 @@ export type ParentSettings = {
   stories: Story[]
   interestChecklist: { id: string; label: string; done: boolean }[]
   customAacCards: CustomAacCard[]
+  /** Full AAC library — presets + family/therapist/educator customizations */
+  aacLibrary: AacLibrary
   customVideos: CustomLearningVideo[]
   careStats: CareStats
   home: HomePrefs
@@ -411,6 +423,7 @@ export const DEFAULT_SETTINGS: ParentSettings = {
   })),
   interestChecklist: DEFAULT_INTEREST_CHECKLIST.map((c) => ({ ...c })),
   customAacCards: [],
+  aacLibrary: createDefaultAacLibrary(),
   customVideos: [],
   careStats: { ...DEFAULT_CARE_STATS },
   home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
