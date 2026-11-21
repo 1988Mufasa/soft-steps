@@ -3201,3 +3201,73 @@ html[data-mute-celebrations='true'] .game-celebration-sky {
 .asl-disclaimer {
   margin: 0.35rem 0 0.85rem;
 }
+
+/* —— VoiceOver / keyboard / reduced motion —— */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 1000;
+  padding: 0.65rem 1rem;
+  border-radius: 14px;
+  background: var(--accent-deep);
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform 120ms ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid var(--try);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.app-main {
+  outline: none;
+}
+
+html[data-focus-outlines='true'] :focus-visible,
+html[data-focus-outlines='true'] a:focus-visible,
+html[data-focus-outlines='true'] button:focus-visible,
+html[data-focus-outlines='true'] input:focus-visible,
+html[data-focus-outlines='true'] textarea:focus-visible,
+html[data-focus-outlines='true'] [tabindex]:focus-visible {
+  outline: 3px solid var(--accent) !important;
+  outline-offset: 3px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-reduced-motion='true'] .game-balloon,
+html[data-reduced-motion='true'] .meltdown-home-orb,
+html[data-reduced-motion='true'] .brand-ribbon {
+  animation: none !important;
+}
+
+html[data-soft-audio='true'] .game-celebration-title {
+  letter-spacing: 0.01em;
+}

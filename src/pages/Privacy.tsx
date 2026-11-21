@@ -86,6 +86,15 @@ export function Privacy() {
       </article>
 
       <article className="privacy-block">
+        <h2>Accessibility</h2>
+        <p>
+          Soft Steps supports VoiceOver / TalkBack with skip links, focus outlines, and page
+          announcements. Grown-ups can enable reduced motion (including follow system Reduce
+          Motion), sensory-friendly soft audio, and Quiet mode.
+        </p>
+      </article>
+
+      <article className="privacy-block">
         <h2>Contact</h2>
         <p>
           For privacy questions about Soft Steps store builds (TestFlight / Play Internal), use the

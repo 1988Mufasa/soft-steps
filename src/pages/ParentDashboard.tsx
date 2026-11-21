@@ -344,14 +344,17 @@ export function ParentDashboard() {
         <article className="dash-card quiet-card">
           <h2>Quiet mode</h2>
           <p className="fine-print">
-            One tap: mute celebrations, reduce motion, and soft muted colors.
+            One tap: mute celebrations, reduce motion, soft audio, and muted colors — good with
+            VoiceOver.
           </p>
           <button
             type="button"
             className="btn btn-primary"
             onClick={() => {
               applyQuietMode()
-              setSaved('Quiet mode on — celebrations muted, motion reduced, palette softened.')
+              setSaved(
+                'Quiet mode on — celebrations muted, motion reduced, soft audio, palette softened.',
+              )
             }}
           >
             Turn on quiet mode
@@ -758,10 +761,26 @@ export function ParentDashboard() {
           <label className="check-line">
             <input
               type="checkbox"
+              checked={settings.sensory.followSystemMotion}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, followSystemMotion: e.target.checked },
+                })
+              }
+            />
+            Follow system Reduce Motion (iOS / macOS / Android)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
               checked={settings.sensory.reducedMotion}
               onChange={(e) =>
                 updateSettings({
-                  sensory: { ...settings.sensory, reducedMotion: e.target.checked },
+                  sensory: {
+                    ...settings.sensory,
+                    reducedMotion: e.target.checked,
+                    followSystemMotion: e.target.checked ? settings.sensory.followSystemMotion : false,
+                  },
                 })
               }
             />
@@ -794,6 +813,18 @@ export function ParentDashboard() {
           <label className="check-line">
             <input
               type="checkbox"
+              checked={settings.sensory.softAudio}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, softAudio: e.target.checked },
+                })
+              }
+            />
+            Sensory-friendly audio (quieter tones, slower softer speech)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
               checked={settings.sensory.muteCelebrations}
               onChange={(e) =>
                 updateSettings({
@@ -807,6 +838,11 @@ export function ParentDashboard() {
             />
             Mute celebrations
           </label>
+          <p className="fine-print">
+            VoiceOver tip: leave focus outlines on, use Quiet mode or soft audio so Soft Steps
+            speech does not fight screen-reader speech. Skip to main content is at the top of each
+            page.
+          </p>
         </article>
 
         <article className="dash-card">

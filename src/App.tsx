@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { A11yShell } from './components/A11yShell'
 import { SessionGate } from './components/SessionGate'
 import { Home } from './pages/Home'
 import { AbcModule } from './pages/AbcModule'
@@ -46,6 +47,7 @@ function GuardedCare({ id, children }: { id: CareModuleId; children: ReactNode }
 export default function App() {
   return (
     <div className="app-shell">
+      <A11yShell>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/meltdown" element={<MeltdownMode />} />
@@ -223,6 +225,7 @@ export default function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </A11yShell>
     </div>
   )
 }

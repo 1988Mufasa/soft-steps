@@ -33,9 +33,7 @@ export function HappyFaceHold({
     setPct(0)
   }
 
-  const beginHold = (e: ReactPointerEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+  const startHoldTimer = () => {
     start.current = Date.now()
     setHolding(true)
     setPct(0)
@@ -55,6 +53,12 @@ export function HappyFaceHold({
     }, 40)
   }
 
+  const beginHold = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+    startHoldTimer()
+  }
+
   const secondsLeft = Math.max(0, Math.ceil((HOLD_MS * (100 - pct)) / 100 / 1000))
 
   return (
@@ -63,17 +67,29 @@ export function HappyFaceHold({
         type="button"
         className={`happy-face-btn ${holding ? 'is-holding' : ''}`}
         aria-label={label}
+        aria-describedby="happy-face-status"
+        aria-pressed={holding}
         onPointerDown={beginHold}
         onPointerUp={clearHold}
         onPointerLeave={clearHold}
         onPointerCancel={clearHold}
+        onKeyDown={(e) => {
+          // Space/Enter hold support for VoiceOver / keyboard
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault()
+            if (!holding) startHoldTimer()
+          }
+        }}
+        onKeyUp={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') clearHold()
+        }}
         onContextMenu={(e) => e.preventDefault()}
       >
         <span className="happy-face-emoji" aria-hidden="true">
           😊
         </span>
         <span className="happy-face-ring" aria-hidden="true">
-          <svg viewBox="0 0 72 72">
+          <svg viewBox="0 0 72 72" role="presentation">
             <circle className="happy-face-track" cx="36" cy="36" r="30" />
             <circle
               className="happy-face-progress"
@@ -88,12 +104,12 @@ export function HappyFaceHold({
           </svg>
         </span>
       </button>
-      <p className="happy-face-hint">
+      <p id="happy-face-status" className="happy-face-hint" aria-live="polite">
         {holding
-          ? `Keep holding… ${secondsLeft}s`
+          ? `Keep holding… ${secondsLeft} seconds`
           : pct >= 100
             ? 'Unlocked'
-            : 'Grown-ups: hold 😊 for 6 seconds'}
+            : 'Grown-ups: hold the happy face for 6 seconds'}
       </p>
     </div>
   )

@@ -16,6 +16,7 @@ import type {
   ProgressState,
 } from '../types'
 import { DEFAULT_PROFILE_ID } from '../types'
+import { setAudioSensory } from '../audio/sensoryAudio'
 import { setSpeechPrefs } from '../audio/voices'
 import { hashPin, verifyPin } from '../security/pinCrypto'
 import { pickRoutineForHour } from '../utils/routines'
@@ -127,20 +128,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [now, settings.autoSwitchRoutines, settings.routines, settings.activeRoutineId])
 
+  // Follow OS “Reduce Motion” when enabled in settings
+  useEffect(() => {
+    if (!settings.sensory.followSystemMotion) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const apply = () => {
+      const wants = mq.matches
+      setSettings((prev) => {
+        if (prev.sensory.reducedMotion === wants) return prev
+        const next = {
+          ...prev,
+          sensory: {
+            ...prev.sensory,
+            reducedMotion: wants,
+            disableSuddenAnimations: wants ? true : prev.sensory.disableSuddenAnimations,
+          },
+        }
+        saveSettings(next)
+        return next
+      })
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [settings.sensory.followSystemMotion])
+
   useEffect(() => {
     const root = document.documentElement
-    root.dataset.reducedMotion =
+    const reduced =
       settings.sensory.reducedMotion || settings.sensory.disableSuddenAnimations
-        ? 'true'
-        : 'false'
+    root.dataset.reducedMotion = reduced ? 'true' : 'false'
     root.dataset.dimColors = settings.sensory.dimColors ? 'true' : 'false'
     root.dataset.noSudden = settings.sensory.disableSuddenAnimations ? 'true' : 'false'
     root.dataset.mutedPalette = settings.sensory.mutedPalette ? 'true' : 'false'
     root.dataset.muteCelebrations = settings.sensory.muteCelebrations ? 'true' : 'false'
+    root.dataset.softAudio = settings.sensory.softAudio ? 'true' : 'false'
     root.dataset.largeText = settings.sensory.largeText ? 'true' : 'false'
     root.dataset.highContrast = settings.sensory.highContrast ? 'true' : 'false'
     root.dataset.largeTap = settings.sensory.largeTapTargets ? 'true' : 'false'
     root.dataset.focusOutlines = settings.sensory.showFocusOutlines ? 'true' : 'false'
+    setAudioSensory({
+      softAudio: settings.sensory.softAudio,
+      muteCelebrations: settings.sensory.muteCelebrations,
+      reducedMotion: reduced,
+    })
     setSpeechPrefs({
       voiceURI: settings.sensory.voiceURI || '',
       style: settings.sensory.voiceStyle || 'child',
@@ -332,6 +363,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         mutedPalette: true,
         disableSuddenAnimations: true,
         dimColors: true,
+        softAudio: true,
+        showFocusOutlines: true,
       },
       routinePrefs: {
         ...settings.routinePrefs,

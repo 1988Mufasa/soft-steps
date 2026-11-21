@@ -33,19 +33,23 @@ export type VoiceStyle = 'child' | 'gentle' | 'clear'
 export type SensoryPrefs = {
   soundOn: boolean
   reducedMotion: boolean
+  /** When true, OS “Reduce Motion” turns on reducedMotion automatically */
+  followSystemMotion: boolean
   dimColors: boolean
   disableSuddenAnimations: boolean
   /** Mute celebratory chimes / sudden “yay” feedback */
   muteCelebrations: boolean
   /** Soften accent colors app-wide */
   mutedPalette: boolean
+  /** Quieter tones + softer/slower speech (sensory-friendly / VoiceOver-friendly) */
+  softAudio: boolean
   /** Accessibility: bigger body / UI text */
   largeText: boolean
   /** Accessibility: stronger ink / borders for contrast */
   highContrast: boolean
   /** Accessibility: larger tap targets */
   largeTapTargets: boolean
-  /** Accessibility: always-visible focus rings for keyboard / switch */
+  /** Accessibility: always-visible focus rings for keyboard / switch / VoiceOver */
   showFocusOutlines: boolean
   /** System speechSynthesis voiceURI; empty = auto-pick best quality */
   voiceURI: string
@@ -350,14 +354,16 @@ export const DEFAULT_SETTINGS: ParentSettings = {
   sensory: {
     soundOn: true,
     reducedMotion: false,
+    followSystemMotion: true,
     dimColors: false,
     disableSuddenAnimations: false,
     muteCelebrations: false,
     mutedPalette: false,
+    softAudio: false,
     largeText: false,
     highContrast: false,
     largeTapTargets: false,
-    showFocusOutlines: false,
+    showFocusOutlines: true,
     voiceURI: '',
     voiceStyle: 'child',
   },

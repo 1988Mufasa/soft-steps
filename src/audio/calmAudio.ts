@@ -1,4 +1,5 @@
 import { resolveVoice, styleToProsody, getSpeechPrefs, ensureVoicesLoaded } from './voices'
+import { getAudioSensory } from './sensoryAudio'
 
 let ctx: AudioContext | null = null
 let drone: { osc: OscillatorNode; gain: GainNode } | null = null
@@ -17,11 +18,12 @@ export function startSoothingDrone(soundOn: boolean) {
     const audio = getCtx()
     if (audio.state === 'suspended') void audio.resume()
     stopSoothingDrone()
+    const { softAudio } = getAudioSensory()
     const osc = audio.createOscillator()
     const gain = audio.createGain()
     osc.type = 'sine'
     osc.frequency.value = 174.61
-    gain.gain.value = 0.025
+    gain.gain.value = softAudio ? 0.012 : 0.025
     osc.connect(gain)
     gain.connect(audio.destination)
     osc.start()
@@ -45,16 +47,17 @@ export function softBubblePop(soundOn: boolean) {
   try {
     const audio = getCtx()
     if (audio.state === 'suspended') void audio.resume()
+    const { softAudio } = getAudioSensory()
     const osc = audio.createOscillator()
     const gain = audio.createGain()
     osc.type = 'sine'
-    osc.frequency.value = 520
-    gain.gain.value = 0.04
-    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.18)
+    osc.frequency.value = softAudio ? 420 : 520
+    gain.gain.value = softAudio ? 0.018 : 0.04
+    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + (softAudio ? 0.24 : 0.18))
     osc.connect(gain)
     gain.connect(audio.destination)
     osc.start()
-    osc.stop(audio.currentTime + 0.2)
+    osc.stop(audio.currentTime + (softAudio ? 0.28 : 0.2))
   } catch {
     /* ignore */
   }
@@ -62,7 +65,8 @@ export function softBubblePop(soundOn: boolean) {
 
 /**
  * Soft Steps speech — prefers high-quality / premium system voices,
- * with parent-chosen voice + style when set.
+ * with parent-chosen voice + style when set. Soft-audio mode lowers volume
+ * and slows rate for sensory-friendly listening / VoiceOver coexistence.
  */
 export function speakText(text: string, soundOn: boolean) {
   if (!soundOn || !('speechSynthesis' in window)) return
@@ -70,12 +74,13 @@ export function speakText(text: string, soundOn: boolean) {
     window.speechSynthesis.cancel()
     const prefs = getSpeechPrefs()
     const prosody = styleToProsody(prefs.style)
+    const { softAudio } = getAudioSensory()
     const u = new SpeechSynthesisUtterance(text)
     const voice = resolveVoice()
     if (voice) u.voice = voice
-    u.pitch = prosody.pitch
-    u.rate = prosody.rate
-    u.volume = 1
+    u.pitch = softAudio ? Math.min(prosody.pitch, 1.12) : prosody.pitch
+    u.rate = softAudio ? Math.min(prosody.rate, 0.86) : prosody.rate
+    u.volume = softAudio ? 0.7 : 1
     // Some engines need a tiny delay after cancel to apply the new voice
     window.setTimeout(() => {
       try {

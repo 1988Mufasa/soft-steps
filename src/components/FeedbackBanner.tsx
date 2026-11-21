@@ -4,9 +4,15 @@ type Props = {
 }
 
 export function FeedbackBanner({ tone, message }: Props) {
+  const live = tone === 'try' ? 'assertive' : 'polite'
   return (
-    <div className={`feedback feedback-${tone}`} role="status" aria-live="polite">
-      {message}
+    <div
+      className={`feedback feedback-${tone}`}
+      role="status"
+      aria-live={live}
+      aria-atomic="true"
+    >
+      {message || '\u00a0'}
     </div>
   )
 }
