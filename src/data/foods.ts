@@ -53,6 +53,9 @@ export const FOODS: FoodItem[] = [
   { id: 'duck', name: 'Duck', emoji: '🦆', kind: 'animal', tint: '#fff0c8', ages: ['7-12'] },
   { id: 'frog', name: 'Frog', emoji: '🐸', kind: 'animal', tint: '#d8f0c8', ages: ['7-12'] },
   { id: 'bear', name: 'Bear', emoji: '🐻', kind: 'animal', tint: '#e8d0b8', ages: ['7-12'] },
+  { id: 'pig', name: 'Pig', emoji: '🐷', kind: 'animal', tint: '#f8d8e0', ages: ['3-6', '7-12'] },
+  { id: 'chicken', name: 'Chicken', emoji: '🐔', kind: 'animal', tint: '#fff0d0', ages: ['7-12'] },
+  { id: 'turtle', name: 'Turtle', emoji: '🐢', kind: 'animal', tint: '#d0e8c8', ages: ['7-12'] },
   // Body parts
   { id: 'hand', name: 'Hand', emoji: '✋', kind: 'body', tint: '#f5e0d0', ages: ['3-6', '7-12'] },
   { id: 'foot', name: 'Foot', emoji: '🦶', kind: 'body', tint: '#f0d8c8', ages: ['3-6', '7-12'] },
@@ -62,6 +65,8 @@ export const FOODS: FoodItem[] = [
   { id: 'mouth', name: 'Mouth', emoji: '👄', kind: 'body', tint: '#f8c8d0', ages: ['3-6', '7-12'] },
   { id: 'hair', name: 'Hair', emoji: '💇', kind: 'body', tint: '#e8dcc8', ages: ['7-12'] },
   { id: 'tummy', name: 'Tummy', emoji: '🤰', kind: 'body', tint: '#f0e8d8', ages: ['7-12'] },
+  { id: 'teeth', name: 'Teeth', emoji: '🦷', kind: 'body', tint: '#f0f4f8', ages: ['3-6', '7-12'] },
+  { id: 'knee', name: 'Knee', emoji: '🦵', kind: 'body', tint: '#f0e0d0', ages: ['7-12'] },
   // Daily objects
   { id: 'shoes', name: 'Shoes', emoji: '👟', kind: 'object', tint: '#d0e8f0', ages: ['3-6', '7-12'] },
   { id: 'cup', name: 'Cup', emoji: 'マグカップ', kind: 'object', tint: '#e0f0f8', ages: ['3-6', '7-12'] },
@@ -73,6 +78,9 @@ export const FOODS: FoodItem[] = [
   { id: 'phone', name: 'Phone', emoji: '📱', kind: 'object', tint: '#d8e0f0', ages: ['7-12'] },
   { id: 'hat', name: 'Hat', emoji: '🧢', kind: 'object', tint: '#c8e0f8', ages: ['7-12'] },
   { id: 'towel', name: 'Towel', emoji: '🧺', kind: 'object', tint: '#e8f0f8', ages: ['7-12'] },
+  { id: 'spoon', name: 'Spoon', emoji: '🥄', kind: 'object', tint: '#e8eef0', ages: ['3-6', '7-12'] },
+  { id: 'soap', name: 'Soap', emoji: '🧼', kind: 'object', tint: '#e0f0f8', ages: ['3-6', '7-12'] },
+  { id: 'clock', name: 'Clock', emoji: '🕐', kind: 'object', tint: '#f0e8d0', ages: ['7-12'] },
 ]
 
 export function foodPool(ageBand: '3-6' | '7-12', kind?: FoodKind) {
