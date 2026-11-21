@@ -70,9 +70,18 @@ export function Privacy() {
       <article className="privacy-block">
         <h2>Backups</h2>
         <p>
-          Grown-ups can export a local backup file (settings, AAC, photos, progress). You choose
-          where to keep that file (device Files, iCloud Drive, Google Drive, etc.). Soft Steps does
-          not automatically sync to the cloud yet.
+          Grown-ups can export an AES‑GCM encrypted backup (settings, AAC, photos, progress) locked
+          with the device PIN. PIN hashes are not stored inside the file. You choose where to keep
+          that file (device Files, iCloud Drive, Google Drive, etc.). Soft Steps does not
+          automatically sync to the cloud yet.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Grown-up unlock</h2>
+        <p>
+          Parent settings require a PIN (salted PBKDF2). Unlock sessions expire after 15 minutes or
+          5 minutes of idle time. Repeated wrong PINs lock out with increasing delays.
         </p>
       </article>
 

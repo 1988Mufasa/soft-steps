@@ -32,12 +32,18 @@ export function assertNoCardPayload(body: Record<string, unknown>) {
   }
 }
 
+const ALLOWED_PLANS: CheckoutPlan[] = ['supporter-once', 'supporter-month']
+
 export async function startSecureCheckout(plan: CheckoutPlan): Promise<CheckoutResult> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     return {
       ok: false,
       error: 'Purchase needs Wi‑Fi. Connect to the internet, then try again.',
     }
+  }
+
+  if (!ALLOWED_PLANS.includes(plan)) {
+    return { ok: false, error: 'Invalid plan.' }
   }
 
   const payload = { plan }
@@ -53,6 +59,9 @@ export async function startSecureCheckout(plan: CheckoutPlan): Promise<CheckoutR
       },
       body: JSON.stringify(payload),
       credentials: 'omit',
+      mode: 'cors',
+      cache: 'no-store',
+      redirect: 'error',
     })
 
     const data = (await res.json().catch(() => ({}))) as {
@@ -81,6 +90,20 @@ export async function startSecureCheckout(plan: CheckoutPlan): Promise<CheckoutR
 }
 
 export function openCheckoutUrl(url: string) {
+  // Only allow Stripe Checkout hosts — never navigate to an attacker-controlled URL.
+  try {
+    const parsed = new URL(url)
+    const okHost =
+      parsed.protocol === 'https:' &&
+      (parsed.hostname === 'checkout.stripe.com' ||
+        parsed.hostname.endsWith('.stripe.com'))
+    if (!okHost) {
+      console.error('[payments] Refused non-Stripe checkout URL')
+      return
+    }
+  } catch {
+    return
+  }
   // Prefer top-level navigation so Stripe hosts the card form, not Soft Steps.
   window.location.assign(url)
 }

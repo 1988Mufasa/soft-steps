@@ -159,6 +159,8 @@ export type ParentSettings = {
   pinHash: string
   pinSalt: string
   pinIsDefault: boolean
+  /** PBKDF2 iterations for pinHash (defaults to legacy 120k if missing) */
+  pinIterations?: number
   ageBand: AgeBand
   enabledModules: Record<ModuleId, boolean>
   enabledCareModules: Record<CareModuleId, boolean>

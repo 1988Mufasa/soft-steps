@@ -87,6 +87,7 @@ export async function ensurePinHashed(settings: ParentSettings): Promise<ParentS
     pin: '',
     pinHash: secrets.pinHash,
     pinSalt: secrets.pinSalt,
+    pinIterations: secrets.pinIterations,
     pinIsDefault: secrets.pinIsDefault,
   }
   saveSettings(next)
@@ -190,6 +191,10 @@ export function loadSettings(): ParentSettings {
       pin: typeof parsed.pin === 'string' ? parsed.pin : '',
       pinHash: typeof parsed.pinHash === 'string' ? parsed.pinHash : '',
       pinSalt: typeof parsed.pinSalt === 'string' ? parsed.pinSalt : '',
+      pinIterations:
+        typeof parsed.pinIterations === 'number' && parsed.pinIterations > 0
+          ? parsed.pinIterations
+          : undefined,
       pinIsDefault:
         typeof parsed.pinIsDefault === 'boolean'
           ? parsed.pinIsDefault

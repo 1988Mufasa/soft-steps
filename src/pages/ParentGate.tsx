@@ -7,6 +7,7 @@ import {
   PIN_GUARD,
   recordPinFailure,
 } from '../security/pinGuard'
+import { openParentSession } from '../security/parentSession'
 import { useApp, unlockNewSession } from '../store/AppContext'
 
 export function ParentGate() {
@@ -41,7 +42,7 @@ export function ParentGate() {
 
     if (ok) {
       clearPinFailures()
-      sessionStorage.setItem('soft-steps-parent-ok', '1')
+      openParentSession()
       unlockNewSession()
       navigate('/parent/dashboard')
       return
@@ -92,8 +93,9 @@ export function ParentGate() {
         </button>
       </form>
       <p className="fine-print">
-        PIN is stored as a salted hash on this device (not plain text). After{' '}
-        {PIN_GUARD.MAX_ATTEMPTS} wrong tries, unlock pauses briefly.
+        PIN is stored as a salted PBKDF2 hash on this device (not plain text). Unlock lasts 15
+        minutes max, or 5 minutes idle. After {PIN_GUARD.MAX_ATTEMPTS} wrong tries, unlock pauses
+        (longer if repeated the same day).
         {settings.pinIsDefault
           ? ' First-time default is still 1234 — change it in Parent tools.'
           : ' Default PIN was already changed on this device.'}

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PurchaseCodeGate } from '../components/PurchaseCodeGate'
+import { useParentSessionGuard } from '../hooks/useParentSessionGuard'
+import { clearParentSession } from '../security/parentSession'
 import {
   openCheckoutUrl,
   startSecureCheckout,
@@ -17,15 +19,10 @@ import { useApp } from '../store/AppContext'
 export function ParentBilling() {
   const navigate = useNavigate()
   const { online } = useApp()
+  const { remainingMs } = useParentSessionGuard()
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState<CheckoutPlan | null>(null)
   const [pendingPlan, setPendingPlan] = useState<CheckoutPlan | null>(null)
-
-  useEffect(() => {
-    if (sessionStorage.getItem('soft-steps-parent-ok') !== '1') {
-      navigate('/parent', { replace: true })
-    }
-  }, [navigate])
 
   useEffect(() => {
     if (!online) {
@@ -77,10 +74,24 @@ export function ParentBilling() {
           <p className="eyebrow">Secure payments</p>
           <h1>Support Soft Steps</h1>
         </div>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => {
+            clearParentSession()
+            navigate('/')
+          }}
+        >
+          Lock
+        </button>
+      </header>
+
+      <p className="fine-print">
+        Grown-up session · {Math.ceil(remainingMs / 60_000)} min left ·{' '}
         <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
           {online ? 'Online' : 'Offline'}
         </span>
-      </header>
+      </p>
 
       <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
         {online

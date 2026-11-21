@@ -265,6 +265,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pin: '',
         pinHash: secrets.pinHash,
         pinSalt: secrets.pinSalt,
+        pinIterations: secrets.pinIterations,
         pinIsDefault: false,
       }
       saveSettings(next)
@@ -278,9 +279,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return verifyPin(pin, {
         pinHash: settings.pinHash,
         pinSalt: settings.pinSalt,
+        pinIterations: settings.pinIterations,
       })
     },
-    [settings.pinHash, settings.pinSalt],
+    [settings.pinHash, settings.pinSalt, settings.pinIterations],
   )
 
   const switchProfile = useCallback((profileId: string) => {

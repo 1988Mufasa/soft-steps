@@ -1,4 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  clearPinFailures,
+  getPinLockRemainingMs,
+  isPinLocked,
+  PIN_GUARD,
+  recordPinFailure,
+} from '../security/pinGuard'
+import { openParentSession } from '../security/parentSession'
+import { useApp } from '../store/AppContext'
 
 type Props = {
   onUnlock: () => void
@@ -6,120 +15,84 @@ type Props = {
   title?: string
 }
 
-/** Math problem OR hold-to-unlock gate for parent routine builder. */
+/** PIN gate for sensitive grown-up surfaces (routine builder, etc.). */
 export function ParentLock({ onUnlock, onCancel, title = 'Grown-up unlock' }: Props) {
-  const [mode, setMode] = useState<'pick' | 'math' | 'hold'>('pick')
-  const [answer, setAnswer] = useState('')
+  const { checkPin, pinReady, settings } = useApp()
+  const [pin, setPin] = useState('')
   const [error, setError] = useState('')
-  const [holdPct, setHoldPct] = useState(0)
-  const holdTimer = useRef<number | null>(null)
-  const holdStart = useRef<number | null>(null)
-
-  const problem = useMemo(() => {
-    const a = 4 + Math.floor(Math.random() * 5)
-    const b = 3 + Math.floor(Math.random() * 6)
-    return { a, b, sum: a + b }
-  }, [])
+  const [busy, setBusy] = useState(false)
+  const [lockMs, setLockMs] = useState(() => getPinLockRemainingMs())
 
   useEffect(() => {
-    return () => {
-      if (holdTimer.current) window.clearInterval(holdTimer.current)
+    if (lockMs <= 0) return
+    const id = window.setInterval(() => setLockMs(getPinLockRemainingMs()), 500)
+    return () => window.clearInterval(id)
+  }, [lockMs])
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!pinReady || busy) return
+    if (isPinLocked()) {
+      setLockMs(getPinLockRemainingMs())
+      setError('Too many tries. Wait a moment, then try again.')
+      return
     }
-  }, [])
-
-  const startHold = () => {
-    holdStart.current = Date.now()
-    setHoldPct(0)
-    if (holdTimer.current) window.clearInterval(holdTimer.current)
-    holdTimer.current = window.setInterval(() => {
-      if (!holdStart.current) return
-      const pct = Math.min(100, ((Date.now() - holdStart.current) / 2000) * 100)
-      setHoldPct(pct)
-      if (pct >= 100) {
-        if (holdTimer.current) window.clearInterval(holdTimer.current)
-        onUnlock()
-      }
-    }, 50)
+    setBusy(true)
+    const ok = await checkPin(pin)
+    setBusy(false)
+    if (ok) {
+      clearPinFailures()
+      openParentSession()
+      setPin('')
+      onUnlock()
+      return
+    }
+    const result = recordPinFailure()
+    setPin('')
+    if (result.locked) {
+      setLockMs(result.remainingMs)
+      setError(`Too many tries. Locked for ${Math.ceil(result.remainingMs / 1000)} seconds.`)
+    } else {
+      setError('That PIN did not match. Try again.')
+    }
   }
 
-  const endHold = () => {
-    if (holdTimer.current) window.clearInterval(holdTimer.current)
-    holdStart.current = null
-    setHoldPct(0)
-  }
+  const locked = lockMs > 0
 
   return (
     <div className="parent-lock">
       <h1>{title}</h1>
-      <p>Kids stay in the routine. Grown-ups unlock the builder.</p>
-
-      {mode === 'pick' ? (
-        <div className="confirm-row">
-          <button type="button" className="btn btn-primary" onClick={() => setMode('math')}>
-            Solve a math problem
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => setMode('hold')}>
-            Hold to unlock
-          </button>
-        </div>
-      ) : null}
-
-      {mode === 'math' ? (
-        <form
-          className="pin-form"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (Number(answer) === problem.sum) {
-              onUnlock()
-            } else {
-              setError('Try again.')
-              setAnswer('')
-            }
+      <p>Enter the grown-up PIN to continue. Math shortcuts are disabled for stronger security.</p>
+      <form onSubmit={(e) => void onSubmit(e)} className="pin-form">
+        <label htmlFor="builder-pin">PIN</label>
+        <input
+          id="builder-pin"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={6}
+          value={pin}
+          disabled={locked || !pinReady || busy}
+          onChange={(e) => {
+            setPin(e.target.value.replace(/\D/g, ''))
+            setError('')
           }}
-        >
-          <p className="prompt">
-            What is {problem.a} + {problem.b}?
-          </p>
-          <input
-            className="pin-input"
-            inputMode="numeric"
-            value={answer}
-            onChange={(e) => {
-              setAnswer(e.target.value.replace(/\D/g, ''))
-              setError('')
-            }}
-            aria-label="Answer"
-          />
-          {error ? <p className="form-error">{error}</p> : null}
-          <button type="submit" className="btn btn-primary">
-            Unlock
-          </button>
-        </form>
-      ) : null}
-
-      {mode === 'hold' ? (
-        <div className="hold-unlock">
-          <button
-            type="button"
-            className="hold-btn"
-            onPointerDown={startHold}
-            onPointerUp={endHold}
-            onPointerLeave={endHold}
-            onPointerCancel={endHold}
-          >
-            Hold 2 seconds
-          </button>
-          <div className="gentle-timer-track" aria-hidden="true">
-            <div className="gentle-timer-fill" style={{ width: `${holdPct}%` }} />
-          </div>
-        </div>
-      ) : null}
-
-      {onCancel ? (
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Back
+          autoComplete="off"
+          className="pin-input"
+        />
+        {error ? <p className="form-error">{error}</p> : null}
+        <button type="submit" className="btn btn-primary" disabled={locked || !pinReady || busy}>
+          {busy ? 'Checking…' : locked ? `Wait ${Math.ceil(lockMs / 1000)}s` : 'Unlock'}
         </button>
-      ) : null}
+        {onCancel ? (
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+            Cancel
+          </button>
+        ) : null}
+      </form>
+      <p className="fine-print">
+        After {PIN_GUARD.MAX_ATTEMPTS} wrong tries, unlock pauses (longer if repeated).
+        {settings.pinIsDefault ? ' Default PIN is still 1234 — change it in Grown-ups.' : ''}
+      </p>
     </div>
   )
 }

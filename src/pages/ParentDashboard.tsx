@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { VoicePicker } from '../components/VoicePicker'
 import { loadCheckInHistory, replaceCheckInHistory } from '../data/checkIn'
+import { useParentSessionGuard } from '../hooks/useParentSessionGuard'
+import { clearParentSession } from '../security/parentSession'
 import { useApp, unlockNewSession } from '../store/AppContext'
 import { loadAllProgress, saveAllProgress, saveSettings } from '../store/storage'
 import type {
@@ -18,7 +20,17 @@ import {
   ROUTINE_HOUR_PRESETS,
   SAMPLE_STORIES,
 } from '../types'
-import { buildBackup, downloadText, parseBackup } from '../utils/backup'
+import {
+  buildBackupPayload,
+  decryptBackup,
+  downloadText,
+  encryptBackup,
+  parseBackupFile,
+  validateProgressMap,
+  validateRestoredSettings,
+  type SoftStepsEncryptedBackup,
+  type SoftStepsLegacyBackup,
+} from '../utils/backup'
 import { buildWeekInsightsText } from '../utils/insights'
 
 const MODULE_LABELS: { id: ModuleId; label: string }[] = [
@@ -86,13 +98,9 @@ export function ParentDashboard() {
   const [checkIns] = useState(() => loadCheckInHistory())
   const [editName, setEditName] = useState(activeProfile?.name ?? '')
   const [editEmoji, setEditEmoji] = useState(activeProfile?.emoji ?? '🧒')
+  const [backupPin, setBackupPin] = useState('')
   const restoreRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (sessionStorage.getItem('soft-steps-parent-ok') !== '1') {
-      navigate('/parent', { replace: true })
-    }
-  }, [navigate])
+  const { remainingMs } = useParentSessionGuard()
 
   useEffect(() => {
     setEditName(activeProfile?.name ?? '')
@@ -107,7 +115,7 @@ export function ParentDashboard() {
     }
     await changePin(newPin)
     setNewPin('')
-    setSaved('PIN updated and stored as a salted hash on this device.')
+    setSaved('PIN updated — salted PBKDF2 hash stored on this device only.')
   }
 
   const exportInsights = () => {
@@ -133,27 +141,73 @@ export function ParentDashboard() {
     exportInsights()
   }
 
-  const exportBackup = () => {
-    const backup = buildBackup(settings, loadAllProgress())
+  const exportBackup = async () => {
+    if (backupPin.length < 4) {
+      setSaved('Enter your grown-up PIN to encrypt the backup.')
+      return
+    }
+    const payload = buildBackupPayload(settings, loadAllProgress())
+    const encrypted = await encryptBackup(payload, backupPin)
     const stamp = new Date().toISOString().slice(0, 10)
-    downloadText(`soft-steps-backup-${stamp}.json`, JSON.stringify(backup, null, 2), 'application/json')
-    setSaved('Backup file saved. Keep it somewhere safe (Files, Drive, iCloud).')
+    downloadText(
+      `soft-steps-backup-${stamp}.json`,
+      JSON.stringify(encrypted, null, 2),
+      'application/json',
+    )
+    setBackupPin('')
+    setSaved('Encrypted backup downloaded. PIN secrets are not inside the file — keep the PIN safe.')
   }
 
   const onRestoreFile = (file: File | null) => {
     if (!file) return
+    if (backupPin.length < 4) {
+      setSaved('Enter your grown-up PIN first to decrypt / authorize restore.')
+      return
+    }
+    const pin = backupPin
     const reader = new FileReader()
     reader.onload = () => {
-      const parsed = parseBackup(String(reader.result))
-      if (!parsed) {
-        setSaved('That file is not a Soft Steps backup.')
-        return
-      }
-      saveSettings(parsed.settings)
-      saveAllProgress(parsed.progressByProfile ?? {})
-      replaceCheckInHistory(parsed.checkIns ?? [])
-      setSaved('Backup restored — reloading…')
-      window.setTimeout(() => window.location.reload(), 600)
+      void (async () => {
+        const parsed = parseBackupFile(String(reader.result))
+        if (!parsed) {
+          setSaved('That file is not a Soft Steps backup.')
+          return
+        }
+
+        let settingsIn = null as SoftStepsLegacyBackup['settings'] | null
+        let progressIn: Record<string, import('../types').ProgressState> = {}
+        let checkInsIn = [] as ReturnType<typeof loadCheckInHistory>
+
+        if ('encrypted' in parsed && parsed.encrypted) {
+          const plain = await decryptBackup(parsed as SoftStepsEncryptedBackup, pin)
+          if (!plain) {
+            setSaved('Could not decrypt — wrong PIN or damaged file.')
+            return
+          }
+          settingsIn = plain.settings
+          progressIn = plain.progressByProfile
+          checkInsIn = plain.checkIns
+        } else {
+          // Legacy v1 plaintext: still require current PIN to authorize import
+          const legacy = parsed as SoftStepsLegacyBackup
+          settingsIn = legacy.settings
+          progressIn = legacy.progressByProfile ?? {}
+          checkInsIn = legacy.checkIns ?? []
+        }
+
+        if (!settingsIn) {
+          setSaved('Backup had no settings.')
+          return
+        }
+
+        const nextSettings = validateRestoredSettings(settingsIn, settings)
+        saveSettings(nextSettings)
+        saveAllProgress(validateProgressMap(progressIn))
+        replaceCheckInHistory(checkInsIn)
+        setBackupPin('')
+        setSaved('Backup restored — reloading…')
+        window.setTimeout(() => window.location.reload(), 600)
+      })()
     }
     reader.readAsText(file)
   }
@@ -201,13 +255,18 @@ export function ParentDashboard() {
           type="button"
           className="btn btn-ghost"
           onClick={() => {
-            sessionStorage.removeItem('soft-steps-parent-ok')
+            clearParentSession()
             navigate('/')
           }}
         >
           Lock
         </button>
       </header>
+
+      <p className="fine-print session-timer" role="status">
+        Grown-up session · locks in ~{Math.max(1, Math.ceil(remainingMs / 60_000))} min of idle or when
+        the 15‑minute limit ends.
+      </p>
 
       <div className="dash-grid">
         <article className="dash-card quiet-card">
@@ -388,13 +447,29 @@ export function ParentDashboard() {
         <article className="dash-card">
           <h2>Backup &amp; restore</h2>
           <p className="fine-print">
-            Export settings, AAC cards, photos, stories, and progress to a file. Restore on this or
-            another device. Cloud sync (iCloud / Drive) can come later — for now save the file
-            yourself.
+            Backups are AES‑GCM encrypted with your PIN. PIN hashes are never written into the file.
+            On restore, this device keeps its current PIN.
           </p>
+          <label className="field-label">
+            PIN for encrypt / decrypt
+            <input
+              className="pin-input"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={backupPin}
+              onChange={(e) => setBackupPin(e.target.value.replace(/\D/g, ''))}
+              autoComplete="off"
+              aria-label="Backup PIN"
+            />
+          </label>
           <div className="confirm-row">
-            <button type="button" className="btn btn-secondary" onClick={exportBackup}>
-              Download backup
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => void exportBackup()}
+            >
+              Download encrypted backup
             </button>
             <button
               type="button"

@@ -5,15 +5,13 @@ import { REWARD_STICKERS, ROUTINE_TEMPLATES, STEP_ICONS, routineFromTemplate } f
 import { useApp } from '../../store/AppContext'
 import type { RewardTheme, Routine, RoutineStep, RoutineTemplateId } from '../../types'
 
-const UNLOCK_KEY = 'soft-steps-routine-builder-ok'
+import { isParentSessionValid } from '../../security/parentSession'
 
-/** Screen C — Parent Routine Builder (math / hold gate) */
+/** Screen C — Parent Routine Builder (PIN gate) */
 export function RoutineBuilder() {
   const navigate = useNavigate()
   const { settings, updateSettings } = useApp()
-  const [unlocked, setUnlocked] = useState(
-    () => sessionStorage.getItem(UNLOCK_KEY) === '1',
-  )
+  const [unlocked, setUnlocked] = useState(() => isParentSessionValid())
   const [dragId, setDragId] = useState<string | null>(null)
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
@@ -120,10 +118,7 @@ export function RoutineBuilder() {
     <section className="care-page routine-builder">
       <LockedGate
         unlocked={unlocked}
-        onUnlock={() => {
-          sessionStorage.setItem(UNLOCK_KEY, '1')
-          setUnlocked(true)
-        }}
+        onUnlock={() => setUnlocked(true)}
         onCancel={() => navigate('/schedule')}
       >
         <header className="activity-header">
@@ -138,7 +133,6 @@ export function RoutineBuilder() {
             type="button"
             className="btn btn-ghost"
             onClick={() => {
-              sessionStorage.removeItem(UNLOCK_KEY)
               setUnlocked(false)
             }}
           >
