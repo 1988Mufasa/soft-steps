@@ -53,6 +53,18 @@ export function Privacy() {
       </article>
 
       <article className="privacy-block">
+        <h2>Mulberry Symbols</h2>
+        <p>
+          AAC Talk includes Mulberry Symbols (© Steve Lee), licensed under Creative Commons
+          Attribution-ShareAlike 4.0 — see{' '}
+          <a href="https://mulberrysymbols.org" rel="noreferrer">
+            mulberrysymbols.org
+          </a>{' '}
+          and the in-app license at <code>/symbols/MULBERRY-LICENSE.txt</code>.
+        </p>
+      </article>
+
+      <article className="privacy-block">
         <h2>Network</h2>
         <p>
           Soft Steps is built to work 100% offline after install — practice games, AAC Talk, routines,

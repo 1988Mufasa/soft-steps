@@ -783,6 +783,7 @@ function AacWordButton({
   })
   const fitz = fitzgeraldTileStyle(btn.partOfSpeech, theme)
   const isPhoto = visual.kind === 'photo'
+  const isMulberry = visual.kind === 'mulberry'
   const style: CSSProperties = {
     ...(prefs.colorCoding
       ? {
@@ -809,8 +810,10 @@ function AacWordButton({
       className={`aac-comm-card aac-tile-slp ${touch.className} ${
         prefs.highContrast ? 'is-contrast' : ''
       } ${prefs.colorCoding ? 'is-fitzgerald' : ''} ${isPhoto ? 'has-photo' : ''} ${
-        glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''
-      } ${cooldownCalm ? 'is-cooldown-calm' : ''}`}
+        isMulberry ? 'has-mulberry' : ''
+      } ${glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''} ${
+        cooldownCalm ? 'is-cooldown-calm' : ''
+      }`}
       role="listitem"
       style={style}
       aria-label={btn.speak || btn.label}
@@ -833,8 +836,8 @@ function AacWordButton({
             src={visual.src}
             alt=""
             className={`aac-comm-img ${visual.kind === 'sign' ? 'is-sign' : ''} ${
-              isPhoto ? 'is-photo' : ''
-            }`}
+              visual.kind === 'mulberry' ? 'is-mulberry' : ''
+            } ${isPhoto ? 'is-photo' : ''}`}
             draggable={false}
           />
         ) : (

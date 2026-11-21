@@ -3658,6 +3658,22 @@ html[data-native='true'] textarea {
   background: rgba(244, 251, 247, 0.9);
 }
 
+.aac-comm-img.is-mulberry {
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+  max-height: 68px;
+  padding: 0.15rem;
+}
+
+.aac-comm-grid.is-large .aac-comm-img.is-mulberry {
+  max-height: 88px;
+}
+
+.aac-comm.theme-sensory-dark .aac-comm-img.is-mulberry {
+  background: #fff;
+}
+
 /* Parent photo: crop inside rounded frame with matching Fitzgerald border */
 .aac-comm-visual.is-photo-frame {
   width: min(100%, 96px);

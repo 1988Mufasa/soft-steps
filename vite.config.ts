@@ -70,11 +70,21 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precache app shell + fonts so calm / First-Then / AAC stay offline after install
-        globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2,woff,webmanifest}'],
+        // Precache app shell + fonts. Mulberry SVGs (~3.4k) are runtime-cached on use
+        // so the service worker install stays lean; Capacitor ships the full set offline.
+        globPatterns: ['**/*.{js,css,html,ico,png,woff2,woff,webmanifest}', 'symbols/*.{json,txt,csv}'],
+        globIgnores: ['**/symbols/mulberry/**'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
+          {
+            urlPattern: /\/symbols\/mulberry\/.*\.svg$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mulberry-symbols',
+              expiration: { maxEntries: 800, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
           {
             urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
             handler: 'CacheFirst',

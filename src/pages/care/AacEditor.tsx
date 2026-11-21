@@ -683,10 +683,15 @@ export function AacEditor() {
 
         <article className="dash-card">
           <h2>Pictures &amp; display</h2>
+          <p className="fine-print">
+            Soft Steps includes the full Mulberry Symbols set (3,436 SVGs, CC BY-SA 4.0 © Steve Lee).
+            Auto mode prefers a parent photo when present, otherwise Mulberry, then emoji.
+          </p>
           <div className="toggle-row wrap">
             {(
               [
-                ['auto', 'Auto (photo → sign → emoji)'],
+                ['auto', 'Auto (photo → Mulberry → sign → emoji)'],
+                ['mulberry', 'Mulberry Symbols'],
                 ['photo', 'Photo first'],
                 ['sign', 'Sign image first'],
                 ['emoji', 'Emoji only'],

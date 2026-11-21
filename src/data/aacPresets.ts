@@ -4,6 +4,12 @@
  * Soft Steps never rearranges by tap frequency.
  */
 
+import {
+  mulberryUrl,
+  resolveMulberryFileSync,
+} from './mulberrySymbols'
+import mulberryLookup from './mulberry-lookup.json'
+
 /** Fitzgerald Key–style part of speech for color coding */
 export type AacPartOfSpeech =
   | 'pronoun' // yellow
@@ -24,7 +30,7 @@ export type AacCategoryId =
   | 'signs'
   | 'family'
 
-export type AacDisplayMode = 'photo' | 'sign' | 'emoji' | 'auto'
+export type AacDisplayMode = 'photo' | 'sign' | 'emoji' | 'mulberry' | 'auto'
 
 /** Grid density options offered at setup */
 export type AacGridLayout = '2x2' | '2x3' | '3x3' | '3x4' | '4x4' | '4x6'
@@ -57,6 +63,8 @@ export type AacButton = {
   photoDataUrl?: string
   signPhotoDataUrl?: string
   audioDataUrl?: string
+  /** Mulberry Symbols SVG filename under /symbols/mulberry/ */
+  mulberryFile?: string
   /**
    * Fully removed from lists (rare). Prefer `masked` so slots stay put.
    */
@@ -606,7 +614,7 @@ export const PRESET_BUTTONS: AacButton[] = [
 export function createDefaultAacLibrary(): AacLibrary {
   return {
     categories: PRESET_CATEGORIES.map((c) => ({ ...c })),
-    buttons: PRESET_BUTTONS.map((btn) => ({ ...btn })),
+    buttons: withMulberryDefaults(PRESET_BUTTONS.map((btn) => ({ ...btn }))),
     prefs: { ...DEFAULT_AAC_PREFS },
     quickTalk: null,
     firstThen: { ...DEFAULT_FIRST_THEN, first: { ...DEFAULT_FIRST_THEN.first! }, then: { ...DEFAULT_FIRST_THEN.then! } },
@@ -818,6 +826,7 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
             photoDataUrl: btn.photoDataUrl ?? prev.photoDataUrl,
             signPhotoDataUrl: btn.signPhotoDataUrl ?? prev.signPhotoDataUrl,
             audioDataUrl: btn.audioDataUrl ?? prev.audioDataUrl,
+            mulberryFile: btn.mulberryFile ?? prev.mulberryFile,
           }
         : {
             ...btn,
@@ -834,8 +843,10 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
 
   return {
     categories: [...catById.values()].sort((a, b) => a.order - b.order),
-    buttons: [...btnById.values()].sort(
-      (a, b) => a.categoryId.localeCompare(b.categoryId) || a.order - b.order,
+    buttons: withMulberryDefaults(
+      [...btnById.values()].sort(
+        (a, b) => a.categoryId.localeCompare(b.categoryId) || a.order - b.order,
+      ),
     ),
     prefs: normalizePrefs(saved.prefs),
     quickTalk: normalizeQuickTalk(saved.quickTalk),
@@ -933,15 +944,42 @@ export function buttonsForCategoryEditor(library: AacLibrary, categoryId: string
     .sort((a, b) => a.order - b.order)
 }
 
+function mulberrySrcFor(button: AacButton): string | undefined {
+  const file =
+    button.mulberryFile ||
+    resolveMulberryFileSync(button.label, mulberryLookup.byKey) ||
+    resolveMulberryFileSync(button.speak || '', mulberryLookup.byKey)
+  return file ? mulberryUrl(file) : undefined
+}
+
 export function resolveAacVisual(
   button: AacButton,
   mode: AacDisplayMode,
-): { kind: 'photo' | 'sign' | 'emoji'; src?: string; emoji: string } {
+): { kind: 'photo' | 'sign' | 'emoji' | 'mulberry'; src?: string; emoji: string } {
   if (mode === 'photo' && button.photoDataUrl) return { kind: 'photo', src: button.photoDataUrl, emoji: button.emoji }
   if (mode === 'sign' && button.signPhotoDataUrl)
     return { kind: 'sign', src: button.signPhotoDataUrl, emoji: button.emoji }
+  if (mode === 'mulberry') {
+    const src = mulberrySrcFor(button)
+    if (src) return { kind: 'mulberry', src, emoji: button.emoji }
+    return { kind: 'emoji', emoji: button.emoji }
+  }
   if (mode === 'emoji') return { kind: 'emoji', emoji: button.emoji }
+  // auto: parent photo → Mulberry → sign → emoji
   if (button.photoDataUrl) return { kind: 'photo', src: button.photoDataUrl, emoji: button.emoji }
+  const mulberry = mulberrySrcFor(button)
+  if (mulberry) return { kind: 'mulberry', src: mulberry, emoji: button.emoji }
   if (button.signPhotoDataUrl) return { kind: 'sign', src: button.signPhotoDataUrl, emoji: button.emoji }
   return { kind: 'emoji', emoji: button.emoji }
+}
+
+/** Attach Mulberry filenames onto buttons that still lack an explicit assignment. */
+export function withMulberryDefaults(buttons: AacButton[]): AacButton[] {
+  return buttons.map((b) => {
+    if (b.mulberryFile) return b
+    const file =
+      resolveMulberryFileSync(b.label, mulberryLookup.byKey) ||
+      resolveMulberryFileSync(b.speak || '', mulberryLookup.byKey)
+    return file ? { ...b, mulberryFile: file } : b
+  })
 }
