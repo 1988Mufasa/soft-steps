@@ -163,6 +163,10 @@ export function SignsModule() {
           <span className="age-badge">Ages {settings.ageBand}</span>
         </header>
         <p className="prompt">Pick a fun game. Watch short sign clips, then play!</p>
+        <p className="fine-print asl-disclaimer" role="note">
+          Soft Steps signs are gentle, ASL‑inspired practice for families — not a certified ASL
+          course or interpreter training.
+        </p>
         <div className="sign-mode-grid">
           <button type="button" className="sign-mode-card" onClick={() => startMode('learn')}>
             <span className="sign-mode-emoji" aria-hidden="true">

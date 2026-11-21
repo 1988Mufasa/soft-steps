@@ -69,6 +69,12 @@ export function ParentGate() {
       </Link>
       <h1>Grown-up area</h1>
       <p>Enter the PIN to change settings, view progress, or unlock a new session.</p>
+      {settings.pinIsDefault ? (
+        <p className="form-error" role="status">
+          Starter PIN is still <strong>1234</strong>. After unlock you’ll be asked to set a new one
+          before other grown-up tools open.
+        </p>
+      ) : null}
       <form onSubmit={onSubmit} className="pin-form">
         <label htmlFor="pin">PIN</label>
         <input

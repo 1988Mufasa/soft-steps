@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { speakText } from '../../audio/calmAudio'
 import { AAC_BOARDS, boardForHour } from '../../data/aac'
 import { useApp } from '../../store/AppContext'
+import { readPhotoAsDataUrl } from '../../utils/imageFile'
 
 export function TalkAac() {
   const { settings, updateSettings } = useApp()
@@ -13,15 +14,22 @@ export function TalkAac() {
   const [label, setLabel] = useState('')
   const [emoji, setEmoji] = useState('💬')
   const [photo, setPhoto] = useState<string | undefined>()
+  const [photoError, setPhotoError] = useState('')
 
   const board = AAC_BOARDS.find((b) => b.id === boardId) ?? auto
   const custom = settings.customAacCards
 
   const onPhoto = (file: File | null) => {
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setPhoto(String(reader.result))
-    reader.readAsDataURL(file)
+    void readPhotoAsDataUrl(file).then((result) => {
+      if (!result.ok) {
+        setPhotoError(result.error)
+        setPhoto(undefined)
+        return
+      }
+      setPhotoError('')
+      setPhoto(result.dataUrl)
+    })
   }
 
   const addCustom = (e: FormEvent) => {
@@ -147,8 +155,9 @@ export function TalkAac() {
             />
           </label>
           {photo ? <img src={photo} alt="" className="aac-photo-preview" /> : null}
+          {photoError ? <p className="form-error">{photoError}</p> : null}
           <p className="fine-print">
-            On a phone, this can open the camera. Photos stay on this device only.
+            On a phone, this can open the camera. Photos are resized and stay on this device only.
           </p>
           <div className="confirm-row">
             <button type="submit" className="btn btn-primary">

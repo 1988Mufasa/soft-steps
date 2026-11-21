@@ -3172,3 +3172,32 @@ html[data-mute-celebrations='true'] .game-celebration-sky {
 .quiet-card {
   border: 2px solid rgba(54, 97, 176, 0.2);
 }
+
+/* —— Pre-launch: onboarding + ASL note —— */
+.onboard-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(54, 97, 176, 0.14), rgba(116, 184, 210, 0.18));
+  box-shadow: var(--shadow);
+}
+
+.onboard-steps {
+  margin: 0.45rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.onboard-steps code {
+  font-weight: 800;
+}
+
+.asl-disclaimer {
+  margin: 0.35rem 0 0.85rem;
+}

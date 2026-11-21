@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { speakText } from '../../audio/calmAudio'
 import { useApp } from '../../store/AppContext'
 import type { Story, StoryPage } from '../../types'
+import { readPhotoAsDataUrl } from '../../utils/imageFile'
 
 function newId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
@@ -35,31 +36,36 @@ export function SocialStories() {
 
   const onPagePhoto = (file: File | null) => {
     if (!file || !story) return
-    const reader = new FileReader()
-    reader.onload = () => {
+    void readPhotoAsDataUrl(file).then((result) => {
+      if (!result.ok) {
+        setBuildMsg(result.error)
+        return
+      }
       const stories = settings.stories.map((s) => {
         if (s.id !== story.id) return s
         return {
           ...s,
           pages: s.pages.map((p, i) =>
-            i === pageIndex ? { ...p, photoDataUrl: String(reader.result) } : p,
+            i === pageIndex ? { ...p, photoDataUrl: result.dataUrl } : p,
           ),
         }
       })
       updateSettings({ stories })
-    }
-    reader.readAsDataURL(file)
+      setBuildMsg('Photo saved (resized for this device).')
+    })
   }
 
   const onDraftPhoto = (index: number, file: File | null) => {
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
+    void readPhotoAsDataUrl(file).then((result) => {
+      if (!result.ok) {
+        setBuildMsg(result.error)
+        return
+      }
       setDraftPages((pages) =>
-        pages.map((p, i) => (i === index ? { ...p, photoDataUrl: String(reader.result) } : p)),
+        pages.map((p, i) => (i === index ? { ...p, photoDataUrl: result.dataUrl } : p)),
       )
-    }
-    reader.readAsDataURL(file)
+    })
   }
 
   const saveNewStory = () => {

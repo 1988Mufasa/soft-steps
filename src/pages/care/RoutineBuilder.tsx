@@ -6,6 +6,7 @@ import { useApp } from '../../store/AppContext'
 import type { RewardTheme, Routine, RoutineStep, RoutineTemplateId } from '../../types'
 
 import { isParentSessionValid } from '../../security/parentSession'
+import { readPhotoAsDataUrl } from '../../utils/imageFile'
 
 /** Screen C — Parent Routine Builder (PIN gate) */
 export function RoutineBuilder() {
@@ -84,9 +85,9 @@ export function RoutineBuilder() {
   }
 
   const readFile = (file: File, cb: (dataUrl: string) => void) => {
-    const reader = new FileReader()
-    reader.onload = () => cb(String(reader.result))
-    reader.readAsDataURL(file)
+    void readPhotoAsDataUrl(file).then((result) => {
+      if (result.ok) cb(result.dataUrl)
+    })
   }
 
   const startRecording = async (stepId: string) => {

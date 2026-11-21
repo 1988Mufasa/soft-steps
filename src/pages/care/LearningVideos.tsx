@@ -168,7 +168,8 @@ export function LearningVideos() {
           </>
         )}
         <p className="fine-print">
-          YouTube Kids needs a Wi‑Fi (or data) connection. Soft Steps does not host the file.
+          YouTube Kids needs Wi‑Fi. Soft Steps embeds Kids pages only (not regular YouTube) and does
+          not host the file. If the embed is blank, use Open in YouTube Kids.
         </p>
         <button
           type="button"

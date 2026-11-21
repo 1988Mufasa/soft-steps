@@ -72,7 +72,23 @@ export function Home() {
     switchProfile,
   } = useApp()
   const [showMore, setShowMore] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return localStorage.getItem('soft-steps-onboard-v1') !== '1'
+    } catch {
+      return true
+    }
+  })
   const weekTheme = useMemo(() => themeForDate(), [])
+
+  const dismissOnboarding = () => {
+    try {
+      localStorage.setItem('soft-steps-onboard-v1', '1')
+    } catch {
+      /* ignore */
+    }
+    setShowOnboarding(false)
+  }
 
   const enabled = MODULES.filter((m) => settings.enabledModules[m.id])
   const care = CARE.filter((m) => settings.enabledCareModules[m.id])
@@ -229,6 +245,24 @@ export function Home() {
       </aside>
 
       <InstallPrompt />
+
+      {showOnboarding ? (
+        <aside className="onboard-banner" role="region" aria-label="Quick start for grown-ups">
+          <div>
+            <strong>Quick start</strong>
+            <ol className="onboard-steps">
+              <li>Follow Today’s path: First / Then → practice → Calm.</li>
+              <li>Add photos in stories or Talk board when you’re ready.</li>
+              <li>
+                Grown-ups: hold the happy face → PIN (change starter <code>1234</code>).
+              </li>
+            </ol>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={dismissOnboarding}>
+            Got it
+          </button>
+        </aside>
+      ) : null}
 
       {settings.enabledCareModules.calm ? (
         <section className="section">

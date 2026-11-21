@@ -93,6 +93,7 @@ export function ParentDashboard() {
     applyQuietMode,
   } = useApp()
   const [newPin, setNewPin] = useState('')
+  const [confirmPin, setConfirmPin] = useState('')
   const [saved, setSaved] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
   const [checkIns] = useState(() => loadCheckInHistory())
@@ -113,9 +114,80 @@ export function ParentDashboard() {
       setSaved('PIN needs at least 4 digits.')
       return
     }
+    if (newPin === '1234') {
+      setSaved('Choose a PIN other than the starter default 1234.')
+      return
+    }
+    if (settings.pinIsDefault || confirmPin) {
+      if (confirmPin !== newPin) {
+        setSaved('PIN and confirm do not match.')
+        return
+      }
+    }
     await changePin(newPin)
     setNewPin('')
+    setConfirmPin('')
     setSaved('PIN updated — salted PBKDF2 hash stored on this device only.')
+  }
+
+  // Block the rest of Grown-ups until the starter PIN is replaced
+  if (settings.pinIsDefault) {
+    return (
+      <section className="parent-dash">
+        <header className="activity-header">
+          <Link to="/" className="back-link" onClick={() => clearParentSession()}>
+            ← Home
+          </Link>
+          <div className="activity-meta">
+            <p className="eyebrow">Security first</p>
+            <h1>Set your PIN</h1>
+          </div>
+        </header>
+        <article className="dash-card security-card">
+          <h2>Change the starter PIN</h2>
+          <p>
+            Soft Steps still uses the first-time default <strong>1234</strong>. Choose a new 4–6
+            digit PIN before you can open settings, billing, or backups.
+          </p>
+          <form onSubmit={(e) => void onSavePin(e)} className="pin-form">
+            <label className="field-label">
+              New PIN
+              <input
+                className="pin-input"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                autoComplete="new-password"
+                aria-label="New PIN"
+              />
+            </label>
+            <label className="field-label">
+              Confirm PIN
+              <input
+                className="pin-input"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={confirmPin}
+                onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                autoComplete="new-password"
+                aria-label="Confirm PIN"
+              />
+            </label>
+            <button type="submit" className="btn btn-primary">
+              Save PIN &amp; continue
+            </button>
+          </form>
+          {saved ? (
+            <p className="form-error" role="status">
+              {saved}
+            </p>
+          ) : null}
+        </article>
+      </section>
+    )
   }
 
   const exportInsights = () => {
@@ -880,6 +952,17 @@ export function ParentDashboard() {
               value={newPin}
               onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
               aria-label="New PIN"
+              autoComplete="new-password"
+            />
+            <input
+              className="pin-input"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+              aria-label="Confirm new PIN"
+              placeholder="Confirm"
               autoComplete="new-password"
             />
             <button type="submit" className="btn btn-secondary">
