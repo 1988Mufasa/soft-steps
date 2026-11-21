@@ -86,6 +86,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     root.dataset.noSudden = settings.sensory.disableSuddenAnimations ? 'true' : 'false'
     root.dataset.mutedPalette = settings.sensory.mutedPalette ? 'true' : 'false'
     root.dataset.muteCelebrations = settings.sensory.muteCelebrations ? 'true' : 'false'
+    root.dataset.largeText = settings.sensory.largeText ? 'true' : 'false'
+    root.dataset.highContrast = settings.sensory.highContrast ? 'true' : 'false'
+    root.dataset.largeTap = settings.sensory.largeTapTargets ? 'true' : 'false'
+    root.dataset.focusOutlines = settings.sensory.showFocusOutlines ? 'true' : 'false'
     setSpeechPrefs({
       voiceURI: settings.sensory.voiceURI || '',
       style: settings.sensory.voiceStyle || 'child',

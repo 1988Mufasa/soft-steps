@@ -2870,3 +2870,64 @@ html[data-no-sudden='true'] .game-balloon {
   bottom: 55%;
   opacity: 0.75;
 }
+
+/* —— Accessibility settings (Grown-ups) —— */
+.dash-subhead {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.95rem;
+  color: var(--accent-deep);
+}
+
+html[data-large-text='true'] {
+  font-size: 118%;
+}
+
+html[data-large-text='true'] .hero-copy h1,
+html[data-large-text='true'] .activity-meta h1,
+html[data-large-text='true'] .game-celebration-title {
+  font-size: clamp(1.55rem, 5vw, 2.15rem);
+}
+
+html[data-high-contrast='true'] {
+  --ink: #12151c;
+  --ink-soft: #2a3140;
+  --surface: #ffffff;
+  --bg-top: #ffffff;
+  --bg-bottom: #e8eef6;
+  --shadow: 0 10px 24px rgba(18, 21, 28, 0.18);
+}
+
+html[data-high-contrast='true'] .module-card,
+html[data-high-contrast='true'] .choice-btn,
+html[data-high-contrast='true'] .sign-mode-card,
+html[data-high-contrast='true'] .today-path-card,
+html[data-high-contrast='true'] .dash-card {
+  outline: 2px solid rgba(18, 21, 28, 0.35);
+}
+
+html[data-large-tap='true'] {
+  --tap: 76px;
+}
+
+html[data-large-tap='true'] .btn,
+html[data-large-tap='true'] .choice-btn,
+html[data-large-tap='true'] .chip,
+html[data-large-tap='true'] .module-card,
+html[data-large-tap='true'] .sign-mode-card,
+html[data-large-tap='true'] .aac-card,
+html[data-large-tap='true'] .back-link,
+html[data-large-tap='true'] .more-tools-toggle,
+html[data-large-tap='true'] .food-live-choice,
+html[data-large-tap='true'] .memory-card {
+  min-height: var(--tap);
+}
+
+html[data-focus-outlines='true'] :focus-visible {
+  outline: 3px solid var(--try) !important;
+  outline-offset: 3px;
+}
+
+html[data-focus-outlines='true'] :focus {
+  outline: 3px solid var(--try);
+  outline-offset: 3px;
+}

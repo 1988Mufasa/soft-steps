@@ -277,58 +277,32 @@ export function ParentDashboard() {
           </ul>
         </article>
 
-        <article className="dash-card">
-          <h2>Global sensory prefs</h2>
-          <p className="fine-print">One place for the whole app (also syncs routine celebrate/mute).</p>
+        <article className="dash-card" id="accessibility">
+          <h2>Accessibility</h2>
+          <p className="fine-print">
+            Vision, motion, sound, and tap size for the whole app. Changes apply right away.
+          </p>
+
+          <h3 className="dash-subhead">Vision</h3>
           <label className="check-line">
             <input
               type="checkbox"
-              checked={settings.sensory.soundOn}
+              checked={settings.sensory.largeText}
               onChange={(e) =>
-                updateSettings({ sensory: { ...settings.sensory, soundOn: e.target.checked } })
+                updateSettings({ sensory: { ...settings.sensory, largeText: e.target.checked } })
               }
             />
-            Soft sound / voice
+            Larger text
           </label>
           <label className="check-line">
             <input
               type="checkbox"
-              checked={settings.sensory.muteCelebrations}
+              checked={settings.sensory.highContrast}
               onChange={(e) =>
-                updateSettings({
-                  sensory: { ...settings.sensory, muteCelebrations: e.target.checked },
-                  routinePrefs: {
-                    ...settings.routinePrefs,
-                    celebrateSounds: !e.target.checked,
-                  },
-                })
+                updateSettings({ sensory: { ...settings.sensory, highContrast: e.target.checked } })
               }
             />
-            Mute celebrations
-          </label>
-          <label className="check-line">
-            <input
-              type="checkbox"
-              checked={settings.sensory.reducedMotion}
-              onChange={(e) =>
-                updateSettings({
-                  sensory: { ...settings.sensory, reducedMotion: e.target.checked },
-                })
-              }
-            />
-            Reduced motion
-          </label>
-          <label className="check-line">
-            <input
-              type="checkbox"
-              checked={settings.sensory.disableSuddenAnimations}
-              onChange={(e) =>
-                updateSettings({
-                  sensory: { ...settings.sensory, disableSuddenAnimations: e.target.checked },
-                })
-              }
-            />
-            No sudden animations
+            High contrast
           </label>
           <label className="check-line">
             <input
@@ -354,7 +328,87 @@ export function ParentDashboard() {
                 })
               }
             />
-            Muted palette (app-wide)
+            Muted palette
+          </label>
+
+          <h3 className="dash-subhead">Touch &amp; focus</h3>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.largeTapTargets}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, largeTapTargets: e.target.checked },
+                })
+              }
+            />
+            Larger buttons / tap targets
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.showFocusOutlines}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, showFocusOutlines: e.target.checked },
+                })
+              }
+            />
+            Always show focus outlines
+          </label>
+
+          <h3 className="dash-subhead">Motion</h3>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.reducedMotion}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, reducedMotion: e.target.checked },
+                })
+              }
+            />
+            Reduced motion
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.disableSuddenAnimations}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, disableSuddenAnimations: e.target.checked },
+                })
+              }
+            />
+            No sudden animations
+          </label>
+
+          <h3 className="dash-subhead">Sound</h3>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.soundOn}
+              onChange={(e) =>
+                updateSettings({ sensory: { ...settings.sensory, soundOn: e.target.checked } })
+              }
+            />
+            Soft sound / voice
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.sensory.muteCelebrations}
+              onChange={(e) =>
+                updateSettings({
+                  sensory: { ...settings.sensory, muteCelebrations: e.target.checked },
+                  routinePrefs: {
+                    ...settings.routinePrefs,
+                    celebrateSounds: !e.target.checked,
+                  },
+                })
+              }
+            />
+            Mute celebrations
           </label>
         </article>
 

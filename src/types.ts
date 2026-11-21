@@ -29,6 +29,14 @@ export type SensoryPrefs = {
   muteCelebrations: boolean
   /** Soften accent colors app-wide */
   mutedPalette: boolean
+  /** Accessibility: bigger body / UI text */
+  largeText: boolean
+  /** Accessibility: stronger ink / borders for contrast */
+  highContrast: boolean
+  /** Accessibility: larger tap targets */
+  largeTapTargets: boolean
+  /** Accessibility: always-visible focus rings for keyboard / switch */
+  showFocusOutlines: boolean
   /** System speechSynthesis voiceURI; empty = auto-pick best quality */
   voiceURI: string
   voiceStyle: VoiceStyle
@@ -291,6 +299,10 @@ export const DEFAULT_SETTINGS: ParentSettings = {
     disableSuddenAnimations: false,
     muteCelebrations: false,
     mutedPalette: false,
+    largeText: false,
+    highContrast: false,
+    largeTapTargets: false,
+    showFocusOutlines: false,
     voiceURI: '',
     voiceStyle: 'child',
   },
