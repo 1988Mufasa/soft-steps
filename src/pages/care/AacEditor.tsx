@@ -564,8 +564,9 @@ export function AacEditor() {
         <article className="dash-card aac-guided-access">
           <h2>Keep Talk open (Guided Access / App Pinning)</h2>
           <p>
-            Lock the device to Soft Steps so your child can’t accidentally leave their communication
-            board.
+            On Talk, tap the corner <strong>padlock</strong> to hide Home and Edit (hold ~4 seconds
+            to unlock). For stronger device-level locking, use Guided Access / App Pinning so your
+            child can’t leave Soft Steps entirely.
           </p>
           <h3>iPhone / iPad — Guided Access</h3>
           <ol>
