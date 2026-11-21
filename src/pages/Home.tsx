@@ -429,23 +429,19 @@ export function Home() {
 
             <div className="section-head" style={{ marginTop: '1.25rem' }}>
               <h2>
-                <span className="eyebrow online-tag">Online</span> Network
+                <span className="eyebrow offline-tag">Offline</span> Extra games
               </h2>
             </div>
             {settings.onlineExtrasEnabled ? (
-              <Link to="/online" className={`online-card ${online ? '' : 'is-disabled'}`}>
+              <Link to="/online" className="online-card">
                 <div>
-                  <strong>Open online hub</strong>
-                  <p>
-                    {online
-                      ? 'Mix quiz · Gentle timer · Multi-step match'
-                      : 'You’re offline — use Today’s path and Favorites above'}
-                  </p>
+                  <strong>Open extra games</strong>
+                  <p>Mix quiz · Gentle timer · Multi-step match — works without Wi‑Fi</p>
                 </div>
                 <span className="chev">→</span>
               </Link>
             ) : (
-              <p className="empty-note">Online extras are turned off in Grown-ups.</p>
+              <p className="empty-note">Extra games are turned off in Grown-ups.</p>
             )}
           </>
         ) : null}

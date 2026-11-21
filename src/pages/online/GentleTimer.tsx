@@ -52,10 +52,6 @@ export function GentleTimer() {
     return <Navigate to="/online" replace />
   }
 
-  if (state.status === 'offline') {
-    return <OnlineShell title="Gentle timer" requireOnline>{null}</OnlineShell>
-  }
-
   if (state.status === 'loading') {
     return (
       <OnlineShell title="Gentle timer">

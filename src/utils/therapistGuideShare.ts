@@ -9,7 +9,7 @@ export function buildTherapistEducatorGuideText(): string {
     'Soft Steps combines customizable AAC communication, emotional check-ins, ASL, and sensory-friendly learning games for ages 3–12.',
     '',
     '• 100% Offline & COPPA-Safe',
-    '  Zero internet required, no accounts, no ads, no AI, and zero cloud tracking.',
+    '  Zero internet required after install — AAC, games, routines, and videos stay on-device. No accounts, no ads, no AI, and zero cloud tracking.',
     '',
     '• Motor Planning Protection (Mask Mode)',
     '  Hide or reveal buttons on 2×2, 3×4, or 4×6 grids without shifting word positions, with Fitzgerald Key color coding.',

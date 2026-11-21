@@ -59,10 +59,9 @@ const CARE_LABELS: { id: CareModuleId; label: string }[] = [
 ]
 
 const ONLINE_LABELS: { id: OnlineActivityId; label: string }[] = [
-  { id: 'mix-quiz', label: 'Mix quiz' },
-  { id: 'gentle-timer', label: 'Gentle timer' },
-  { id: 'multi-match', label: 'Multi-step match' },
-  { id: 'sync-demo', label: 'Progress sync demo' },
+  { id: 'mix-quiz', label: 'Mix quiz (offline)' },
+  { id: 'gentle-timer', label: 'Gentle timer (offline)' },
+  { id: 'multi-match', label: 'Multi-step match (offline)' },
 ]
 
 const INTERESTS: { id: InterestTheme; label: string }[] = [
@@ -696,14 +695,17 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card">
-          <h2>Online features</h2>
+          <h2>Extra games (offline)</h2>
+          <p className="fine-print">
+            Mix quiz, timer, and multi-match run on this device — Soft Steps does not need Wi‑Fi.
+          </p>
           <label className="check-line">
             <input
               type="checkbox"
               checked={settings.onlineExtrasEnabled}
               onChange={(e) => updateSettings({ onlineExtrasEnabled: e.target.checked })}
             />
-            Enable all online extras
+            Enable extra games
           </label>
           <ul className="module-toggles">
             {ONLINE_LABELS.map((a) => (

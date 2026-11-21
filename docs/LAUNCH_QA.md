@@ -27,9 +27,11 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Encrypted backup download + restore with PIN
 - [ ] Restore keeps current device PIN
 
-## Videos & network
+## Videos & offline
 - [ ] Offline topic lessons play without Wi‑Fi
 - [ ] Learning videos: offline topic lessons only (no YouTube Kids)
+- [ ] Airplane mode: Home, Talk, Extra games (mix/timer/match) all usable
+- [ ] Extra games hub never blocks for “needs Wi‑Fi” / no sync demo
 - [ ] No billing / purchase screens anywhere in the app
 
 ## Profiles & content

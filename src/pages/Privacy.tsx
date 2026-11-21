@@ -55,10 +55,11 @@ export function Privacy() {
       <article className="privacy-block">
         <h2>Network</h2>
         <p>
-          Soft Steps is built to work offline after install. Soft Steps has no in-app purchases and
-          does not collect payments. Soft Steps does not sell personal data and does not show
-          third-party ads. Learning videos are on-device lessons only — Soft Steps does not embed
-          YouTube Kids or other external video hosts.
+          Soft Steps is built to work 100% offline after install — practice games, AAC Talk, routines,
+          check-ins, social stories, and learning videos all run on the device. Soft Steps has no
+          in-app purchases and does not collect payments. Soft Steps does not sell personal data and
+          does not show third-party ads. Soft Steps does not embed YouTube Kids or other external
+          video hosts.
         </p>
       </article>
 

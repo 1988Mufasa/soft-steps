@@ -14,7 +14,7 @@ const HIGHLIGHTS: { icon: string; title: string; body: string }[] = [
   {
     icon: '🔒',
     title: '100% Offline & COPPA-Safe',
-    body: 'Zero internet required, no accounts, no ads, no AI, and zero cloud tracking.',
+    body: 'Zero internet required after install — AAC, games, routines, and videos stay on-device. No accounts, no ads, no AI, and zero cloud tracking.',
   },
   {
     icon: '🧩',

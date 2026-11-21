@@ -36,14 +36,10 @@ export function MixQuiz() {
     return <Navigate to="/online" replace />
   }
 
-  if (state.status === 'offline') {
-    return <OnlineShell title="Mix quiz" requireOnline>{null}</OnlineShell>
-  }
-
   if (state.status === 'loading') {
     return (
       <OnlineShell title="Mix quiz">
-        <p className="loading-note">Loading online quiz pack…</p>
+        <p className="loading-note">Loading quiz pack…</p>
       </OnlineShell>
     )
   }

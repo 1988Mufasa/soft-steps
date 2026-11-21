@@ -22,7 +22,7 @@ const TITLE_FOR_PATH: Record<string, string> = {
   '/numbers': 'Numbers',
   '/signs': 'Sign language',
   '/foods': 'Pictures',
-  '/online': 'Online hub',
+  '/online': 'Extra games',
   '/parent': 'Grown-up unlock',
   '/parent/dashboard': 'Grown-up controls',
   '/privacy': 'Privacy',
@@ -30,7 +30,7 @@ const TITLE_FOR_PATH: Record<string, string> = {
 
 function titleFor(pathname: string) {
   if (TITLE_FOR_PATH[pathname]) return TITLE_FOR_PATH[pathname]
-  if (pathname.startsWith('/online/')) return 'Online activity'
+  if (pathname.startsWith('/online/')) return 'Extra game'
   return 'Soft Steps'
 }
 

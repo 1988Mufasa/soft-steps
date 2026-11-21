@@ -8,34 +8,8 @@ type Props = {
   backTo?: string
   backLabel?: string
   meta?: ReactNode
+  /** @deprecated Soft Steps extras are offline — ignored */
   requireOnline?: boolean
-}
-
-export function OnlineOfflineFallback({ title = 'Online activity' }: { title?: string }) {
-  return (
-    <section className="online-hub">
-      <Link to="/online" className="back-link">
-        ← Online hub
-      </Link>
-      <p className="eyebrow online-tag">Online</p>
-      <h1>{title}</h1>
-      <div className="offline-fallback" role="status">
-        <p className="offline-fallback-title">You’re offline right now</p>
-        <p>
-          This activity needs a network connection. Offline practice (ABCs, shapes, colors, numbers)
-          still works on Home.
-        </p>
-        <div className="confirm-row">
-          <Link className="btn btn-primary" to="/">
-            Offline practice
-          </Link>
-          <Link className="btn btn-secondary" to="/online">
-            Online hub
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
 }
 
 export function OnlineDisabledFallback() {
@@ -44,10 +18,27 @@ export function OnlineDisabledFallback() {
       <Link to="/" className="back-link">
         ← Home
       </Link>
-      <h1>Online extras off</h1>
-      <p>A grown-up can turn these on in Parent tools.</p>
+      <h1>Extra games off</h1>
+      <p>A grown-up can turn these on in Parent tools. Everything else on Home still works offline.</p>
       <Link className="btn btn-secondary" to="/parent">
         Grown-ups
+      </Link>
+    </section>
+  )
+}
+
+/** @deprecated Kept for imports — extras no longer block when offline */
+export function OnlineOfflineFallback({ title = 'Extra game' }: { title?: string }) {
+  return (
+    <section className="online-hub">
+      <Link to="/online" className="back-link">
+        ← Extra games
+      </Link>
+      <p className="eyebrow offline-tag">Offline ready</p>
+      <h1>{title}</h1>
+      <p>This activity works without Wi‑Fi. Open Extra games to play.</p>
+      <Link className="btn btn-primary" to="/online">
+        Extra games
       </Link>
     </section>
   )
@@ -57,18 +48,13 @@ export function OnlineShell({
   title,
   children,
   backTo = '/online',
-  backLabel = '← Online hub',
+  backLabel = '← Extra games',
   meta,
-  requireOnline = true,
 }: Props) {
-  const { online, settings } = useApp()
+  const { settings } = useApp()
 
   if (!settings.onlineExtrasEnabled) {
     return <OnlineDisabledFallback />
-  }
-
-  if (requireOnline && !online) {
-    return <OnlineOfflineFallback title={title} />
   }
 
   return (
@@ -78,10 +64,10 @@ export function OnlineShell({
           {backLabel}
         </Link>
         <div className="activity-meta">
-          <p className="eyebrow online-tag">Online</p>
+          <p className="eyebrow offline-tag">Offline</p>
           <h1>{title}</h1>
         </div>
-        {meta ?? <span className="net-badge is-online">Connected</span>}
+        {meta ?? <span className="net-badge is-online">On device</span>}
       </header>
       {children}
     </section>
