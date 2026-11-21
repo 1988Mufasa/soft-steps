@@ -9,6 +9,7 @@ import {
   GRID_LAYOUTS,
   PRESET_CATEGORIES,
   applyStageToLibrary,
+  buttonsForCategoryEditor,
   type AacButton,
   type AacCategory,
   type AacDisplayMode,
@@ -20,6 +21,11 @@ import {
 } from '../../data/aacPresets'
 import { isParentSessionValid } from '../../security/parentSession'
 import { useApp } from '../../store/AppContext'
+import {
+  downloadAacBoard,
+  libraryFromAacBoardFile,
+  parseAacBoardFile,
+} from '../../utils/aacBoardTransfer'
 import { readPhotoAsDataUrl } from '../../utils/imageFile'
 import { AacSetup } from './AacSetup'
 
@@ -87,9 +93,7 @@ export function AacEditor() {
     setMsg('Preferences saved.')
   }
 
-  const buttonsInCat = library.buttons
-    .filter((b) => b.categoryId === categoryId)
-    .sort((a, b) => a.order - b.order)
+  const buttonsInCat = buttonsForCategoryEditor(library, categoryId)
 
   const openNew = () => {
     setEditing(null)
@@ -227,11 +231,37 @@ export function AacEditor() {
     closeForm()
   }
 
-  const toggleHidden = (id: string) => {
+  const toggleMasked = (id: string) => {
     saveLibrary({
       ...library,
-      buttons: library.buttons.map((b) => (b.id === id ? { ...b, hidden: !b.hidden } : b)),
+      buttons: library.buttons.map((b) => (b.id === id ? { ...b, masked: !b.masked } : b)),
     })
+    setMsg('Mask updated — slot stays put for muscle memory.')
+  }
+
+  const exportBoard = () => {
+    downloadAacBoard(library)
+    setMsg('AAC board file downloaded — AirDrop or share with home devices.')
+  }
+
+  const importBoard = (file: File | null) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result))
+        const board = parseAacBoardFile(parsed)
+        if (!board) {
+          setMsg('That file is not a Soft Steps AAC board.')
+          return
+        }
+        saveLibrary(libraryFromAacBoardFile(board))
+        setMsg('Board imported — layout, masks, and media applied.')
+      } catch {
+        setMsg('Could not read that board file.')
+      }
+    }
+    reader.readAsText(file)
   }
 
   const removeCustom = (id: string) => {
@@ -376,6 +406,30 @@ export function AacEditor() {
               onChange={(e) => updatePrefs({ colorCoding: e.target.checked })}
             />
             Fitzgerald Key color coding
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.modelMode}
+              onChange={(e) => updatePrefs({ modelMode: e.target.checked })}
+            />
+            Model mode (glow + speak, don’t fill sentence strip)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.wordFormsEnabled}
+              onChange={(e) => updatePrefs({ wordFormsEnabled: e.target.checked })}
+            />
+            Press-and-hold word forms (eat → eating / ate…)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.showMaskedSlots}
+              onChange={(e) => updatePrefs({ showMaskedSlots: e.target.checked })}
+            />
+            Show empty reserved slots for masked words
           </label>
           {library.prefs.colorCoding ? (
             <ul className="aac-fitz-legend">
@@ -608,6 +662,28 @@ export function AacEditor() {
           </button>
         </div>
 
+        <article className="dash-card">
+          <h2>Export &amp; share board</h2>
+          <p className="fine-print">
+            Program on a clinic iPad, then download this board file and AirDrop / share it to the
+            home device — no rebuild from scratch.
+          </p>
+          <div className="confirm-row">
+            <button type="button" className="btn btn-primary" onClick={exportBoard}>
+              Export AAC board
+            </button>
+            <label className="btn btn-ghost upload-btn">
+              Import board file
+              <input
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => importBoard(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+        </article>
+
         <div className="confirm-row">
           <button type="button" className="btn btn-primary" onClick={openNew}>
             + Add word
@@ -768,9 +844,13 @@ export function AacEditor() {
           </form>
         ) : null}
 
+        <p className="fine-print">
+          Mask keeps the button’s permanent slot empty for progressive vocabulary — it does not
+          rearrange the grid.
+        </p>
         <ul className="aac-edit-list">
           {buttonsInCat.map((btn) => (
-            <li key={btn.id} className={btn.hidden ? 'is-hidden' : ''}>
+            <li key={btn.id} className={btn.masked ? 'is-masked' : ''}>
               <button type="button" className="aac-edit-row" onClick={() => openEdit(btn)}>
                 {btn.photoDataUrl ? (
                   <img src={btn.photoDataUrl} alt="" className="aac-edit-thumb" />
@@ -792,13 +872,13 @@ export function AacEditor() {
                     {btn.photoDataUrl ? ' · photo' : ''}
                     {btn.signPhotoDataUrl ? ' · sign' : ''}
                     {btn.audioDataUrl ? ' · voice' : ''}
-                    {btn.hidden ? ' · hidden' : ''}
+                    {btn.masked ? ' · masked' : ''}
                   </span>
                 </span>
               </button>
               <div className="aac-edit-actions">
-                <button type="button" className="btn btn-ghost" onClick={() => toggleHidden(btn.id)}>
-                  {btn.hidden ? 'Show' : 'Hide'}
+                <button type="button" className="btn btn-ghost" onClick={() => toggleMasked(btn.id)}>
+                  {btn.masked ? 'Unmask' : 'Mask'}
                 </button>
                 {btn.source === 'custom' ? (
                   <button type="button" className="btn btn-ghost" onClick={() => removeCustom(btn.id)}>

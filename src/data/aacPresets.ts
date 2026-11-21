@@ -51,7 +51,15 @@ export type AacButton = {
   photoDataUrl?: string
   signPhotoDataUrl?: string
   audioDataUrl?: string
+  /**
+   * Fully removed from lists (rare). Prefer `masked` so slots stay put.
+   */
   hidden?: boolean
+  /**
+   * Progressive vocabulary: button stays in its permanent slot but is blank /
+   * non-interactive until an SLP unmasks it. Does not shift the grid.
+   */
+  masked?: boolean
   /**
    * Legacy sort key within fringe folders.
    * Core words use row/col instead.
@@ -63,6 +71,8 @@ export type AacButton = {
   col?: number
   /** Earliest stage that shows this word */
   minStage?: AacStage
+  /** Optional custom grammar forms (overrides built-in word-forms table) */
+  forms?: string[]
 }
 
 export type AacCategory = {
@@ -110,6 +120,14 @@ export type AacPrefs = {
    * Grown-ups unlock with a 4-second padlock hold (parental gate).
    */
   boardLocked: boolean
+  /**
+   * SLP modeling: adult taps glow + speak without adding to the sentence strip.
+   */
+  modelMode: boolean
+  /** Press-and-hold pops verb tenses / plurals */
+  wordFormsEnabled: boolean
+  /** Show empty reserved cells for masked core words (muscle-memory slots) */
+  showMaskedSlots: boolean
 }
 
 export type AacLibrary = {
@@ -217,6 +235,9 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   audioLabels: true,
   showFolders: false,
   boardLocked: false,
+  modelMode: false,
+  wordFormsEnabled: true,
+  showMaskedSlots: true,
 }
 
 export const PRESET_CATEGORIES: AacCategory[] = [
@@ -498,11 +519,13 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
                   minStage: btn.minStage ?? prev.minStage,
                   partOfSpeech: btn.partOfSpeech ?? prev.partOfSpeech ?? partOfSpeech,
                 }),
-            // Keep family media / labels from save
+            // Keep family media / labels / mask from save
             label: btn.label || prev.label,
             speak: btn.speak ?? prev.speak,
             emoji: btn.emoji || prev.emoji,
             hidden: btn.hidden ?? prev.hidden,
+            masked: btn.masked ?? prev.masked,
+            forms: btn.forms ?? prev.forms,
             photoDataUrl: btn.photoDataUrl ?? prev.photoDataUrl,
             signPhotoDataUrl: btn.signPhotoDataUrl ?? prev.signPhotoDataUrl,
             audioDataUrl: btn.audioDataUrl ?? prev.audioDataUrl,
@@ -540,7 +563,10 @@ export function gridRows(layout: AacGridLayout): number {
   return layoutMeta(layout).rows
 }
 
-/** Core words unlocked for the current stage, still at permanent coordinates. */
+/**
+ * Core words unlocked for the current stage, still at permanent coordinates.
+ * Masked words are included so their slots stay reserved (progressive vocab).
+ */
 export function coreButtonsForStage(library: AacLibrary) {
   const stage = library.prefs.stage
   return library.buttons
@@ -553,6 +579,11 @@ export function coreButtonsForStage(library: AacLibrary) {
         stageAtLeast(stage, b.minStage ?? 'starter'),
     )
     .sort((a, b) => (a.row! - b.row!) * AAC_MASTER_COLS + (a.col! - b.col!))
+}
+
+/** Interactive (unmasked) core buttons in the viewport. */
+export function activeCoreButtonsInViewport(library: AacLibrary) {
+  return coreButtonsInViewport(library).filter((b) => !b.masked)
 }
 
 /** Core cells visible in the active grid viewport (absolute positions). */
@@ -580,6 +611,20 @@ export function fringeCategories(library: AacLibrary) {
 }
 
 export function buttonsForCategory(library: AacLibrary, categoryId: string) {
+  const stage = library.prefs.stage
+  return library.buttons
+    .filter(
+      (b) =>
+        !b.hidden &&
+        !b.masked &&
+        b.categoryId === categoryId &&
+        stageAtLeast(stage, b.minStage ?? 'starter'),
+    )
+    .sort((a, b) => a.order - b.order)
+}
+
+/** Editor list: includes masked words so SLPs can unmask without shifting slots. */
+export function buttonsForCategoryEditor(library: AacLibrary, categoryId: string) {
   const stage = library.prefs.stage
   return library.buttons
     .filter(

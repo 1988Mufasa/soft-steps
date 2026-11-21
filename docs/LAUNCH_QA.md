@@ -47,6 +47,10 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] About Me + Guided Access guide work
 - [ ] Adult Communication Lock: padlock hides Home/Edit/About; hold 4s → PIN or spelled numbers
 - [ ] Parent Controls: toggle board lock; Guided Access badge; How to Lock iPad Screen guide
+- [ ] Mask/Unmask in Edit keeps empty permanent slots (no grid shift)
+- [ ] Hold a verb (eat/go) → word-forms popup; pick a form
+- [ ] Model mode: taps glow + speak without filling sentence strip
+- [ ] Export AAC board JSON → import on another device restores layout/masks/media
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing

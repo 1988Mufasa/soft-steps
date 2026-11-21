@@ -3269,8 +3269,61 @@ html[data-dim-colors='true'] body {
   box-shadow: var(--shadow);
 }
 
-.aac-edit-list li.is-hidden {
+.aac-edit-list li.is-hidden,
+.aac-edit-list li.is-masked {
   opacity: 0.55;
+}
+
+.aac-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.aac-comm-card.is-masked-slot {
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px dashed rgba(54, 97, 176, 0.25);
+  box-shadow: none;
+  pointer-events: none;
+  min-height: 0;
+}
+
+.aac-comm-card.is-model-glow {
+  outline: 3px solid var(--accent-deep, #3661b0);
+  box-shadow: 0 0 0 6px rgba(54, 97, 176, 0.28), var(--shadow);
+  transform: scale(1.03);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.aac-comm.is-model-mode .aac-sentence-strip {
+  border-color: rgba(67, 160, 71, 0.45);
+}
+
+.aac-forms-backdrop {
+  z-index: 35;
+}
+
+.aac-forms-sheet {
+  width: min(380px, 100%);
+  margin: 0;
+}
+
+.aac-forms-sheet h3 {
+  margin: 0 0 0.25rem;
+}
+
+.aac-forms-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.75rem 0;
+}
+
+.aac-form-chip {
+  text-transform: none;
+  min-height: 48px;
 }
 
 .aac-edit-row {

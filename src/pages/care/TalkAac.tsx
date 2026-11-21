@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { speakAacButton, speakAacSentence, speakAboutMe } from '../../audio/aacSpeech'
+import { speakText as speakCalm } from '../../audio/calmAudio'
 import { AacBoardLock } from '../../components/AacBoardLock'
+import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
 import {
   FITZGERALD_COLORS,
   buttonsForCategory,
@@ -14,15 +16,15 @@ import {
   type AacButton,
   type AacPrefs,
 } from '../../data/aacPresets'
+import { wordFormsFor } from '../../data/aacWordForms'
 import { useAacTouch } from '../../hooks/useAacTouch'
 import { useApp } from '../../store/AppContext'
 import { isParentSessionValid } from '../../security/parentSession'
 import { AacSetup } from './AacSetup'
 
 /**
- * Age-adaptive AAC communicator — fixed motor-planning slots,
- * core on main screen, fringe folders as the child grows.
- * Optional Lock-to-board hides Home/Edit until a grown-up holds the padlock.
+ * Age-adaptive AAC communicator — fixed slots, mask/unmask, model mode,
+ * word-forms hold, lock-to-board.
  */
 export function TalkAac() {
   const navigate = useNavigate()
@@ -36,8 +38,11 @@ export function TalkAac() {
   const [folderId, setFolderId] = useState<string | null>(null)
   const [message, setMessage] = useState<AacButton[]>([])
   const [editHold, setEditHold] = useState(0)
+  const [glowId, setGlowId] = useState<string | null>(null)
+  const [formsFor, setFormsFor] = useState<AacButton | null>(null)
   const editTimer = useRef<number | null>(null)
   const editTick = useRef<number | null>(null)
+  const glowTimer = useRef<number | null>(null)
 
   const needsSetup = !prefs.setupComplete
 
@@ -47,7 +52,6 @@ export function TalkAac() {
   )
   const activeFolder = fringe.find((c) => c.id === folderId)
 
-  // Trap browser back while locked (Home/Edit controls are already hidden)
   useEffect(() => {
     if (!locked) return
     const onPop = () => {
@@ -67,15 +71,51 @@ export function TalkAac() {
     })
   }
 
-  const activate = (btn: AacButton) => {
-    if (prefs.speakOnTap || prefs.audioLabels) {
-      speakAacButton(btn, settings.sensory.soundOn, prefs)
+  const patchPrefs = (patch: Partial<AacPrefs>) => {
+    updateSettings({
+      aacLibrary: {
+        ...library,
+        prefs: { ...library.prefs, ...patch },
+      },
+    })
+  }
+
+  const flashGlow = (id: string) => {
+    setGlowId(id)
+    if (glowTimer.current != null) window.clearTimeout(glowTimer.current)
+    glowTimer.current = window.setTimeout(() => setGlowId(null), 700)
+  }
+
+  const activate = (btn: AacButton, speakOverride?: string) => {
+    if (btn.masked) return
+    flashGlow(btn.id)
+    const spoken = (speakOverride || btn.speak || btn.label).trim()
+    if (prefs.speakOnTap || prefs.audioLabels || prefs.modelMode) {
+      if (speakOverride) {
+        speakCalm(spoken, settings.sensory.soundOn, {
+          pitch: prefs.speechPitch,
+          rate: prefs.speechRate,
+        })
+      } else {
+        speakAacButton(
+          speakOverride ? { ...btn, speak: speakOverride, label: speakOverride } : btn,
+          settings.sensory.soundOn,
+          prefs,
+        )
+      }
     }
-    if (prefs.messageBar) setMessage((m) => [...m, btn].slice(-16))
+    // Model mode: highlight + speak only — do not fill the child's sentence strip
+    if (prefs.modelMode) return
+    if (prefs.messageBar) {
+      const chip: AacButton = speakOverride
+        ? { ...btn, label: speakOverride, speak: speakOverride, id: `${btn.id}-form-${speakOverride}` }
+        : btn
+      setMessage((m) => [...m, chip].slice(-16))
+    }
   }
 
   const speakMessage = () => {
-    if (!message.length) return
+    if (!message.length || prefs.modelMode) return
     speakAacSentence(message, settings.sensory.soundOn, prefs)
   }
 
@@ -104,6 +144,13 @@ export function TalkAac() {
     }, 3000)
   }
 
+  const openForms = (btn: AacButton) => {
+    if (!prefs.wordFormsEnabled || locked) return
+    const forms = btn.forms?.length ? btn.forms : wordFormsFor(btn.id, btn.label)
+    if (forms.length <= 1) return
+    setFormsFor(btn)
+  }
+
   if (needsSetup && isParentSessionValid() && !locked) {
     return (
       <section className="care-page aac-comm">
@@ -125,7 +172,7 @@ export function TalkAac() {
     <section
       className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''} ${
         locked ? 'is-board-locked' : ''
-      }`}
+      } ${prefs.modelMode ? 'is-model-mode' : ''}`}
     >
       <AacBoardLock
         locked={locked}
@@ -139,14 +186,18 @@ export function TalkAac() {
             type="button"
             className="aac-sentence-window"
             onClick={speakMessage}
-            disabled={!message.length}
+            disabled={!message.length || prefs.modelMode}
             aria-label={
               message.length
                 ? `Speak message: ${message.map((b) => b.label).join(' ')}`
-                : 'Sentence strip empty'
+                : prefs.modelMode
+                  ? 'Model mode — sentence strip paused'
+                  : 'Sentence strip empty'
             }
           >
-            {message.length ? (
+            {prefs.modelMode ? (
+              <span className="aac-sentence-placeholder">Model mode — taps glow, strip stays clear</span>
+            ) : message.length ? (
               message.map((b, i) => {
                 const visual = resolveAacVisual(b, prefs.displayMode)
                 return (
@@ -179,34 +230,36 @@ export function TalkAac() {
               </span>
             )}
           </button>
-          <div className="aac-sentence-actions">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              disabled={!message.length}
-              onClick={() => setMessage((m) => m.slice(0, -1))}
-              aria-label="Backspace — remove last word"
-            >
-              Backspace
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              disabled={!message.length}
-              onClick={() => setMessage([])}
-              aria-label="Clear all words"
-            >
-              Clear all
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!message.length}
-              onClick={speakMessage}
-            >
-              Speak
-            </button>
-          </div>
+          {!prefs.modelMode ? (
+            <div className="aac-sentence-actions">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={!message.length}
+                onClick={() => setMessage((m) => m.slice(0, -1))}
+                aria-label="Backspace — remove last word"
+              >
+                Backspace
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={!message.length}
+                onClick={() => setMessage([])}
+                aria-label="Clear all words"
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!message.length}
+                onClick={speakMessage}
+              >
+                Speak
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -218,27 +271,39 @@ export function TalkAac() {
           <div className="activity-meta">
             <p className="eyebrow offline-tag">
               AAC · {meta.label} · {prefs.ageRange}
+              {prefs.modelMode ? ' · Model' : ''}
             </p>
             <h1>Talk</h1>
           </div>
-          <button
-            type="button"
-            className="btn btn-ghost aac-edit-link"
-            onPointerDown={startEditHold}
-            onPointerUp={clearEditHold}
-            onPointerLeave={clearEditHold}
-            onPointerCancel={clearEditHold}
-            aria-label="Hold 3 seconds to open AAC editor"
-          >
-            {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
-          </button>
+          <div className="aac-header-actions">
+            <button
+              type="button"
+              className={`chip ${prefs.modelMode ? 'is-active' : ''}`}
+              onClick={() => patchPrefs({ modelMode: !prefs.modelMode })}
+              aria-pressed={prefs.modelMode}
+              title="Modeling highlight — taps glow without filling the sentence strip"
+            >
+              Model
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost aac-edit-link"
+              onPointerDown={startEditHold}
+              onPointerUp={clearEditHold}
+              onPointerLeave={clearEditHold}
+              onPointerCancel={clearEditHold}
+              aria-label="Hold 3 seconds to open AAC editor"
+            >
+              {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
+            </button>
+          </div>
         </header>
       ) : null}
 
       {!locked && needsSetup ? (
         <p className="aac-setup-hint" role="status">
-          Grown-ups: hold <strong>Edit</strong> for 3 seconds to pick an age-recommended grid.
-          Tap the padlock for Adult Communication Lock.
+          Grown-ups: hold <strong>Edit</strong> for setup. Use <strong>Model</strong> while teaching.
+          Mask words in Edit so slots stay put.
         </p>
       ) : null}
 
@@ -267,15 +332,27 @@ export function TalkAac() {
             role="list"
             aria-label="Core communication board"
           >
-            {coreButtons.map((btn) => (
-              <AacWordButton
-                key={btn.id}
-                btn={btn}
-                prefs={prefs}
-                onActivate={() => activate(btn)}
-                absolute
-              />
-            ))}
+            {coreButtons.map((btn) =>
+              btn.masked && prefs.showMaskedSlots ? (
+                <div
+                  key={btn.id}
+                  className="aac-comm-card is-masked-slot"
+                  style={{ gridRow: (btn.row ?? 0) + 1, gridColumn: (btn.col ?? 0) + 1 }}
+                  aria-hidden="true"
+                  title="Masked — reserved for later"
+                />
+              ) : btn.masked ? null : (
+                <AacWordButton
+                  key={btn.id}
+                  btn={btn}
+                  prefs={prefs}
+                  glowing={glowId === btn.id}
+                  onActivate={() => activate(btn)}
+                  onLongPress={() => openForms(btn)}
+                  absolute
+                />
+              ),
+            )}
           </div>
         </div>
 
@@ -305,7 +382,9 @@ export function TalkAac() {
                     key={btn.id}
                     btn={btn}
                     prefs={prefs}
+                    glowing={glowId === btn.id}
                     onActivate={() => activate(btn)}
+                    onLongPress={() => openForms(btn)}
                   />
                 ))}
                 {folderButtons.length === 0 ? (
@@ -321,9 +400,22 @@ export function TalkAac() {
 
       {!locked ? (
         <p className="fine-print aac-motor-note">
-          Positions never shuffle by use. Tap the padlock for Adult Communication Lock (hides Home
-          &amp; Edit). Grown-ups unlock with a 4-second hold, then PIN or spelled numbers.
+          Hold a word for grammar forms. Model mode glows without filling the strip. Mask in Edit
+          keeps permanent slots empty until you unmask.
         </p>
+      ) : null}
+
+      {formsFor ? (
+        <AacWordFormsPopover
+          baseLabel={formsFor.label}
+          anchorLabel={formsFor.label}
+          forms={formsFor.forms?.length ? formsFor.forms : wordFormsFor(formsFor.id, formsFor.label)}
+          onPick={(form) => {
+            setFormsFor(null)
+            activate(formsFor, form)
+          }}
+          onClose={() => setFormsFor(null)}
+        />
       ) : null}
     </section>
   )
@@ -333,19 +425,26 @@ function AacWordButton({
   btn,
   prefs,
   onActivate,
+  onLongPress,
   absolute,
+  glowing,
 }: {
   btn: AacButton
   prefs: AacPrefs
   onActivate: () => void
+  onLongPress?: () => void
   absolute?: boolean
+  glowing?: boolean
 }) {
   const visual = resolveAacVisual(btn, prefs.displayMode)
+  const forms = btn.forms?.length ? btn.forms : wordFormsFor(btn.id, btn.label)
+  const canForms = Boolean(prefs.wordFormsEnabled && forms.length > 1 && onLongPress)
   const touch = useAacTouch({
     delayMs: prefs.touchDelayMs,
     trigger: prefs.touchTrigger,
     animations: prefs.buttonAnimations,
     onActivate,
+    onLongPress: canForms ? onLongPress : undefined,
   })
   const colors = FITZGERALD_COLORS[btn.partOfSpeech]
   const style: CSSProperties = {
@@ -368,7 +467,9 @@ function AacWordButton({
   return (
     <button
       type="button"
-      className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''}`}
+      className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''} ${
+        glowing ? 'is-model-glow' : ''
+      }`}
       role="listitem"
       style={style}
       aria-label={btn.speak || btn.label}
