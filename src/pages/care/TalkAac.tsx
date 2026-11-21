@@ -15,9 +15,9 @@ import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
 import { ParentalGateModal } from '../../components/ParentalGateModal'
 import {
   AAC_BOARD_CONTEXTS,
-  FITZGERALD_COLORS,
   buttonsForCategory,
   coreButtonsInViewport,
+  fitzgeraldTileStyle,
   fringeCategories,
   gridColumns,
   gridRows,
@@ -27,6 +27,7 @@ import {
   type AacButton,
   type AacPrefs,
   type AacQuickTalkWord,
+  type AacSensoryTheme,
 } from '../../data/aacPresets'
 import type { BodyCheckItem } from '../../data/aacBodyCheck'
 import { wordFormsFor } from '../../data/aacWordForms'
@@ -277,7 +278,10 @@ export function TalkAac() {
 
   if (needsSetup && isParentSessionValid() && !locked) {
     return (
-      <section className="care-page aac-comm">
+      <section
+        className={`care-page aac-comm theme-${prefs.sensoryTheme}`}
+        data-aac-theme={prefs.sensoryTheme}
+      >
         <header className="activity-header">
           <div className="activity-meta">
             <p className="eyebrow offline-tag">AAC setup</p>
@@ -291,7 +295,10 @@ export function TalkAac() {
 
   if (bodyOpen) {
     return (
-      <section className="care-page aac-comm aac-body-open">
+      <section
+        className={`care-page aac-comm aac-body-open theme-${prefs.sensoryTheme}`}
+        data-aac-theme={prefs.sensoryTheme}
+      >
         <AacBodyCheck onPick={pickBodyItem} onClose={() => setBodyOpen(false)} />
       </section>
     )
@@ -299,11 +306,12 @@ export function TalkAac() {
 
   return (
     <section
-      className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''} ${
-        locked ? 'is-board-locked' : ''
-      } ${prefs.modelMode ? 'is-model-mode' : ''} ${
+      className={`care-page aac-comm stage-${prefs.stage} theme-${prefs.sensoryTheme} ${
+        prefs.highContrast ? 'is-contrast' : ''
+      } ${locked ? 'is-board-locked' : ''} ${prefs.modelMode ? 'is-model-mode' : ''} ${
         prefs.strongTapHighlight ? 'is-strong-highlight' : ''
       } ${prefs.classroomVolumeBoost ? 'is-volume-boost' : ''} context-${prefs.activeBoardContext}`}
+      data-aac-theme={prefs.sensoryTheme}
     >
       <AacBoardLock
         locked={locked}
@@ -364,10 +372,7 @@ export function TalkAac() {
                     className="aac-sentence-chip"
                     style={
                       prefs.colorCoding
-                        ? {
-                            background: FITZGERALD_COLORS[b.partOfSpeech].bg,
-                            borderColor: FITZGERALD_COLORS[b.partOfSpeech].border,
-                          }
+                        ? fitzgeraldTileStyle(b.partOfSpeech, prefs.sensoryTheme)
                         : undefined
                     }
                   >
@@ -589,6 +594,7 @@ export function TalkAac() {
                   key={btn.id}
                   btn={btn}
                   prefs={prefs}
+                  theme={prefs.sensoryTheme}
                   glowing={glowId === btn.id}
                   cooldownCalm={cooldownTileId === btn.id}
                   onActivate={() => activate(btn)}
@@ -643,6 +649,7 @@ export function TalkAac() {
                   key={btn.id}
                   btn={btn}
                   prefs={prefs}
+                  theme={prefs.sensoryTheme}
                   glowing={glowId === btn.id}
                   cooldownCalm={cooldownTileId === btn.id}
                   onActivate={() => activate(btn)}
@@ -701,6 +708,7 @@ export function TalkAac() {
 function AacWordButton({
   btn,
   prefs,
+  theme,
   onActivate,
   onLongPress,
   absolute,
@@ -709,6 +717,7 @@ function AacWordButton({
 }: {
   btn: AacButton
   prefs: AacPrefs
+  theme: AacSensoryTheme
   onActivate: () => void
   onLongPress?: () => void
   absolute?: boolean
@@ -726,17 +735,18 @@ function AacWordButton({
     onActivate,
     onLongPress: canForms ? onLongPress : undefined,
   })
-  const colors = FITZGERALD_COLORS[btn.partOfSpeech]
+  const fitz = fitzgeraldTileStyle(btn.partOfSpeech, theme)
   const isPhoto = visual.kind === 'photo'
   const style: CSSProperties = {
     ...(prefs.colorCoding
       ? {
-          background: colors.bg,
-          borderColor: colors.border,
+          background: fitz.background,
+          borderColor: fitz.borderColor,
+          color: fitz.color,
           borderWidth: 4,
           borderStyle: 'solid',
-          ['--aac-fitz-border' as string]: colors.border,
-          ['--aac-fitz-bg' as string]: colors.bg,
+          ['--aac-fitz-border' as string]: fitz.borderColor,
+          ['--aac-fitz-bg' as string]: fitz.background,
         }
       : {}),
     ...(absolute && typeof btn.row === 'number' && typeof btn.col === 'number'

@@ -1085,6 +1085,58 @@ export function ParentDashboard() {
             Lock Talk AAC board now
           </label>
           <p className="field-label" style={{ marginTop: '0.85rem' }}>
+            Sensory Theme
+          </p>
+          <p className="fine-print">
+            Board lighting for the Talk board, sentence strip, and First–Then bar. Saved on this
+            device.
+          </p>
+          <div className="toggle-row wrap" role="radiogroup" aria-label="Sensory Theme">
+            {(
+              [
+                {
+                  id: 'calm-light' as const,
+                  label: 'Calm Light Mode',
+                  hint: 'Soft off-white (#F5F6F8)',
+                },
+                {
+                  id: 'sensory-dark' as const,
+                  label: 'Sensory Dark Mode',
+                  hint: 'Charcoal board · less glare',
+                },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="radio"
+                aria-checked={settings.aacLibrary.prefs.sensoryTheme === opt.id}
+                className={`chip ${
+                  settings.aacLibrary.prefs.sensoryTheme === opt.id ? 'is-active' : ''
+                }`}
+                onClick={() => {
+                  updateSettings({
+                    aacLibrary: {
+                      ...settings.aacLibrary,
+                      prefs: {
+                        ...settings.aacLibrary.prefs,
+                        sensoryTheme: opt.id,
+                      },
+                    },
+                  })
+                  setSaved(
+                    opt.id === 'sensory-dark'
+                      ? 'Sensory Dark Mode on for Talk board.'
+                      : 'Calm Light Mode on for Talk board.',
+                  )
+                }}
+              >
+                {opt.label}
+                <span className="chip-hint">{opt.hint}</span>
+              </button>
+            ))}
+          </div>
+          <p className="field-label" style={{ marginTop: '0.85rem' }}>
             Repeat tap cooldown
           </p>
           <p className="fine-print">

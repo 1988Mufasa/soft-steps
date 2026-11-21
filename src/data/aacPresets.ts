@@ -97,6 +97,9 @@ export type AacCategory = {
   minStage?: AacStage
 }
 
+/** Board lighting for light sensitivity — Calm Light (default) or Sensory Dark */
+export type AacSensoryTheme = 'calm-light' | 'sensory-dark'
+
 export type AacPrefs = {
   gridLayout: AacGridLayout
   displayMode: AacDisplayMode
@@ -162,6 +165,11 @@ export type AacPrefs = {
   attentionPhrase: string
   /** One-tap Pain & Body Check overlay on Talk */
   bodyCheckEnabled: boolean
+  /**
+   * Sensory theme for the Talk board, sentence strip, and First–Then bar.
+   * Persisted with AAC prefs in local storage.
+   */
+  sensoryTheme: AacSensoryTheme
 }
 
 export const AAC_BOARD_CONTEXTS: {
@@ -242,6 +250,46 @@ export const FITZGERALD_COLORS: Record<
   social: { bg: '#E1BEE7', border: '#8E24AA', label: 'Social / quick responses (pink–purple)' },
   misc: { bg: '#F5F5F5', border: '#9E9E9E', label: 'Other' },
 }
+
+/** Vibrant Fitzgerald borders on dark slate fills for Sensory Dark Mode */
+export const FITZGERALD_DARK: Record<AacPartOfSpeech, { bg: string; border: string }> = {
+  pronoun: { bg: '#242730', border: '#FFD54F' },
+  verb: { bg: '#242730', border: '#66BB6A' },
+  noun: { bg: '#242730', border: '#FFA726' },
+  adjective: { bg: '#242730', border: '#42A5F5' },
+  social: { bg: '#242730', border: '#CE93D8' },
+  misc: { bg: '#242730', border: '#90A4AE' },
+}
+
+/** Inline Fitzgerald styles for tiles / sentence chips by sensory theme */
+export function fitzgeraldTileStyle(
+  partOfSpeech: AacPartOfSpeech,
+  theme: AacSensoryTheme = 'calm-light',
+): { background: string; borderColor: string; color?: string } {
+  if (theme === 'sensory-dark') {
+    const d = FITZGERALD_DARK[partOfSpeech]
+    return { background: d.bg, borderColor: d.border, color: '#FFFFFF' }
+  }
+  const c = FITZGERALD_COLORS[partOfSpeech]
+  return { background: c.bg, borderColor: c.border }
+}
+
+export const AAC_SENSORY_THEMES: {
+  id: AacSensoryTheme
+  label: string
+  blurb: string
+}[] = [
+  {
+    id: 'calm-light',
+    label: 'Calm Light Mode',
+    blurb: 'Soft warm off-white board with crisp Fitzgerald Key tiles.',
+  },
+  {
+    id: 'sensory-dark',
+    label: 'Sensory Dark Mode',
+    blurb: 'Deep charcoal board, slate tiles, bright text — easier on light-sensitive eyes.',
+  },
+]
 
 export const GRID_LAYOUTS: {
   id: AacGridLayout
@@ -342,6 +390,7 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   attentionEnabled: true,
   attentionPhrase: DEFAULT_ATTENTION_PHRASE,
   bodyCheckEnabled: true,
+  sensoryTheme: 'calm-light',
 }
 
 export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label: string }[] = [
@@ -657,6 +706,7 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   if (typeof merged.firstThenBarEnabled !== 'boolean') merged.firstThenBarEnabled = false
   if (typeof merged.classroomVolumeBoost !== 'boolean') merged.classroomVolumeBoost = false
   if (typeof merged.strongTapHighlight !== 'boolean') merged.strongTapHighlight = true
+  if (merged.sensoryTheme !== 'sensory-dark') merged.sensoryTheme = 'calm-light'
   return merged
 }
 
