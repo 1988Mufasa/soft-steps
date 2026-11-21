@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { GuidedAccessGuide } from '../components/GuidedAccessGuide'
+import { TherapistEducatorGuideModal } from '../components/TherapistEducatorGuideModal'
 import { VoicePicker } from '../components/VoicePicker'
 import { getGuidedAccessStatus, type GuidedAccessStatus } from '../native/guidedAccess'
 import { loadCheckInHistory, replaceCheckInHistory } from '../data/checkIn'
@@ -100,6 +101,7 @@ export function ParentDashboard() {
   const [confirmReset, setConfirmReset] = useState(false)
   const [gaStatus, setGaStatus] = useState<GuidedAccessStatus | null>(null)
   const [showGaGuide, setShowGaGuide] = useState(false)
+  const [showTherapistGuide, setShowTherapistGuide] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -363,6 +365,20 @@ export function ParentDashboard() {
         Grown-up session · locks in ~{Math.max(1, Math.ceil(remainingMs / 60_000))} min of idle or when
         the 15‑minute limit ends.
       </p>
+
+      <div className="confirm-row therapist-guide-launch">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => setShowTherapistGuide(true)}
+        >
+          For Therapists &amp; Educators
+        </button>
+      </div>
+
+      {showTherapistGuide ? (
+        <TherapistEducatorGuideModal onClose={() => setShowTherapistGuide(false)} />
+      ) : null}
 
       <div className="dash-grid">
         <article className="dash-card quiet-card">

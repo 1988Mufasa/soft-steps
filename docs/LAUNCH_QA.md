@@ -59,6 +59,7 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Quick-Talk: load Fall/Field trip pack in editor → strip on Talk; Clear leaves home board alone
 - [ ] First–Then Schedule Bar toggle default off; when on: speak “First …, then …”, checkmark greens FIRST, adult picker behind parent session
 - [ ] Classroom volume boost + strong tap highlight / “Tapped” banner
+- [ ] Parent Controls → For Therapists & Educators → guide modal + Share Guide (share sheet / copy / download)
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing
