@@ -1,10 +1,42 @@
 # Soft Steps
 
-Calm ABC, shapes, colors, and numbers practice for kids ages 3–12 (autism-friendly UX).
+**Soft Steps is a native-capable AAC communication app** for kids ages 3–12 (autism-friendly).  
+It ships as:
 
-Works as a **PWA** and as a **Capacitor** native shell (Android + iOS projects included).
+1. **iOS / Android app** via Capacitor (`ios/` + `android/`, app id `com.softsteps.learn`)
+2. **Home Screen app** (PWA install / Add to Home Screen) for full-screen offline use
+3. A browser preview only for development — not the intended kid experience
 
-## Web / PWA (works in this cloud VM)
+## Run as an app (recommended)
+
+### On your Mac (real device / simulator)
+
+```bash
+cd soft-steps
+npm install
+
+# Rebuild web UI into the native shells
+npm run mobile:sync
+
+# iPhone / iPad — opens Xcode
+npm run mobile:ios
+
+# Android — opens Android Studio
+npm run mobile:android
+```
+
+Then press **Run** in Xcode or Android Studio onto a simulator or USB device.  
+That launches Soft Steps as a real app (splash screen, status bar, no browser chrome).
+
+### Home Screen install (no App Store yet)
+
+1. Open Soft Steps once in Safari (iOS) or Chrome (Android).
+2. **Share → Add to Home Screen** (iOS) or **Install app** (Android).
+3. Open from the home icon — full-screen, offline AAC board.
+
+Default parent PIN: **1234**
+
+## Browser preview (dev only)
 
 ```bash
 npm install
@@ -13,62 +45,21 @@ npm run preview
 # → http://127.0.0.1:4173/
 ```
 
-Dev server:
+Kids should not stay in a browser tab. Use Home Screen install or the native project.
 
-```bash
-npm run dev
-```
+## What this environment can / cannot do
 
-### Add to Home Screen (phone)
-
-1. Open the deployed or LAN preview URL in **Safari (iOS)** or **Chrome (Android)**.
-2. Use **Share → Add to Home Screen** (iOS) or **Install app / Add to Home screen** (Android).
-3. Soft Steps opens full-screen; offline modules work after the first visit.
-
-Default parent PIN: **1234**
-
-## Capacitor native shells
-
-Projects live in `android/` and `ios/` (`appId`: `com.softsteps.learn`).
-
-```bash
-# Rebuild web assets and copy into native projects
-npm run mobile:sync
-
-# Open in Android Studio (requires Android SDK + Studio on your machine)
-npm run mobile:android
-
-# Open in Xcode (requires macOS + Xcode)
-npm run mobile:ios
-```
-
-### Live reload on a device/emulator
-
-```bash
-# Terminal 1 — expose Vite on your LAN
-npm run dev -- --host 0.0.0.0 --port 5173
-
-# Terminal 2 — point Capacitor at that server (example)
-npx cap run android -l --host 192.168.1.10 --port 5173
-```
-
-Or temporarily set `server.url` in `capacitor.config.ts` while iterating, then remove it before release builds.
-
-### What this Linux cloud VM can / cannot do
-
-| Path | In this VM |
-|------|------------|
-| Vite build + PWA preview | ✅ |
-| `npx cap add/sync` Android + iOS project files | ✅ |
-| Android APK via Gradle | ❌ needs Android SDK / Android Studio |
-| iOS IPA / Simulator | ❌ needs macOS + Xcode |
-| Store submission | ❌ local machine / CI with signing |
+| Path | Cloud VM | Your Mac |
+|------|----------|----------|
+| Vite build + preview | ✅ | ✅ |
+| `npm run mobile:sync` | ✅ | ✅ |
+| Open Xcode / iOS Simulator | ❌ | ✅ |
+| Open Android Studio / emulator | ❌ | ✅ |
+| TestFlight / Play upload | ❌ | ✅ (signing) |
 
 ## Offline (100%)
 
-After install / first load, Soft Steps works without Wi‑Fi: ABCs, Shapes, Colors, Numbers, Signs,
-Foods, Care tools, AAC Talk, Learning videos, and Extra games (Mix quiz, Gentle timer, Multi-step
-match). Progress stays on the device — no cloud sync.
+After install / first load, Soft Steps works without Wi‑Fi: Talk AAC, Learn games, routines, check-ins, stories, videos, and extras. Progress stays on the device.
 
 ## Stack
 

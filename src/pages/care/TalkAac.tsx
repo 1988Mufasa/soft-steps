@@ -13,6 +13,7 @@ import { AacFirstThenBar } from '../../components/AacFirstThenBar'
 import { AacFolderTile } from '../../components/AacFolderTile'
 import { AacLearnPanel } from '../../components/AacLearnPanel'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
+import { AppShellBanner } from '../../components/AppShellBanner'
 import { ParentalGateModal } from '../../components/ParentalGateModal'
 import {
   AAC_BOARD_CONTEXTS,
@@ -340,6 +341,8 @@ export function TalkAac() {
         onLock={() => setBoardLocked(true)}
         onUnlock={() => setBoardLocked(false)}
       />
+
+      {!locked ? <AppShellBanner /> : null}
 
       {prefs.firstThenBarEnabled ? (
         <AacFirstThenBar

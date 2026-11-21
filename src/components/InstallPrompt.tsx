@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 
 type BeforeInstallPromptEvent = Event & {
@@ -7,6 +8,7 @@ type BeforeInstallPromptEvent = Event & {
 
 function isStandalone() {
   return (
+    Capacitor.isNativePlatform() ||
     window.matchMedia('(display-mode: standalone)').matches ||
     // iOS Safari
     ('standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone))

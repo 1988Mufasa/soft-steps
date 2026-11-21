@@ -2802,6 +2802,44 @@ html[data-dim-colors='true'] body {
   align-items: center;
 }
 
+.app-shell-banner {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 2px solid rgba(54, 97, 176, 0.28);
+  background: linear-gradient(145deg, #e8f0fb, #fffef8);
+  box-shadow: var(--shadow);
+}
+
+.app-shell-banner strong {
+  font-size: 1.05rem;
+}
+
+.app-shell-banner p {
+  margin: 0.35rem 0 0;
+}
+
+.app-shell-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+html[data-native='true'] body {
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-native='true'] input,
+html[data-native='true'] textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 .aac-comm {
   position: relative;
   --aac-board-bg: #f5f6f8;

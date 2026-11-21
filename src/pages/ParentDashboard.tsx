@@ -1055,6 +1055,31 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card security-card">
+          <h2>Install Soft Steps as an app</h2>
+          <p className="fine-print">
+            Soft Steps is built as an app — not a website to leave open in a browser tab. Kids get a
+            full-screen, offline Talk board from the Home Screen icon or a native install.
+          </p>
+          <ol className="onboard-steps">
+            <li>
+              <strong>Phone (fastest):</strong> Safari → Share → Add to Home Screen (iPhone), or
+              Chrome → Install app (Android).
+            </li>
+            <li>
+              <strong>Mac → iPhone:</strong> run <code>npm run mobile:ios</code>, then Run in Xcode.
+            </li>
+            <li>
+              <strong>Mac → Android:</strong> run <code>npm run mobile:android</code>, then Run in
+              Android Studio.
+            </li>
+          </ol>
+          <p className="fine-print">
+            App id <code>com.softsteps.learn</code>. Native projects live in <code>ios/</code> and{' '}
+            <code>android/</code>.
+          </p>
+        </article>
+
+        <article className="dash-card security-card">
           <h2>Adult Communication Lock</h2>
           <p className="fine-print">
             When locked, Talk hides Edit and grown-up chrome so only communication tiles, Learn, and the

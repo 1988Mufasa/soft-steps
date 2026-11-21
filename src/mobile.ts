@@ -9,8 +9,9 @@ export async function initMobileShell() {
 
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
-    await StatusBar.setStyle({ style: Style.Light })
-    await StatusBar.setBackgroundColor({ color: '#E8F0E9' })
+    // Light content on calm off-white / charcoal board chrome
+    await StatusBar.setStyle({ style: Style.Dark })
+    await StatusBar.setBackgroundColor({ color: '#F5F6F8' })
   } catch {
     /* plugin unavailable */
   }

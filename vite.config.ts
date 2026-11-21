@@ -39,11 +39,13 @@ export default defineConfig({
         description:
           'Calm autism-friendly learning: ABCs, signs, foods, routines, AAC Talk, and social stories — 100% offline after install.',
         theme_color: '#3661B0',
-        background_color: '#F7F7F2',
+        background_color: '#F5F6F8',
         display: 'standalone',
+        display_override: ['standalone', 'fullscreen', 'minimal-ui'],
         orientation: 'any',
         start_url: '/',
         scope: '/',
+        id: '/',
         lang: 'en',
         categories: ['education', 'kids', 'lifestyle'],
         icons: [
