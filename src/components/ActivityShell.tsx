@@ -24,8 +24,8 @@ export function ActivityShell({
   return (
     <section className="activity-shell">
       <header className="activity-header">
-        <Link to="/" className="back-link" aria-label="Back home">
-          ← Home
+        <Link to="/" className="back-link" aria-label="Back to Talk board">
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow offline-tag">Offline</p>

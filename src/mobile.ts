@@ -32,7 +32,9 @@ export async function initMobileShell() {
           const parsed = JSON.parse(raw) as {
             aacLibrary?: { prefs?: { boardLocked?: boolean } }
           }
-          if (parsed.aacLibrary?.prefs?.boardLocked && window.location.pathname.startsWith('/talk')) {
+          const path = window.location.pathname
+          const onTalkBoard = path === '/' || path.startsWith('/talk')
+          if (parsed.aacLibrary?.prefs?.boardLocked && onTalkBoard) {
             return
           }
         }

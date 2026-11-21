@@ -2,7 +2,8 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 
 const TITLE_FOR_PATH: Record<string, string> = {
-  '/': 'Home — Today’s path',
+  '/': 'Talk board',
+  '/hub': 'More tools',
   '/meltdown': 'Quiet calm',
   '/calm': 'Calm toolkit',
   '/check-in': 'AAC and check-in',
@@ -12,7 +13,6 @@ const TITLE_FOR_PATH: Record<string, string> = {
   '/schedule/builder': 'Routine builder',
   '/stories': 'Social stories',
   '/videos': 'Learning videos',
-  '/talk': 'Talk AAC',
   '/talk/edit': 'AAC editor',
   '/friends': 'Social cues',
   '/interest': 'Interest rewards',

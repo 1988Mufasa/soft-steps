@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   speakAacButton,
   speakAacSentence,
@@ -10,7 +10,9 @@ import { speakText as speakCalm } from '../../audio/calmAudio'
 import { AacBoardLock } from '../../components/AacBoardLock'
 import { AacBodyCheck } from '../../components/AacBodyCheck'
 import { AacFirstThenBar } from '../../components/AacFirstThenBar'
+import { AacLearnPanel } from '../../components/AacLearnPanel'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
+import { ParentalGateModal } from '../../components/ParentalGateModal'
 import {
   AAC_BOARD_CONTEXTS,
   FITZGERALD_COLORS,
@@ -34,12 +36,12 @@ import { isParentSessionValid } from '../../security/parentSession'
 import { AacSetup } from './AacSetup'
 
 /**
- * Age-adaptive AAC communicator — fixed slots, mask/unmask, model mode,
- * word-forms hold, attention bell, body check, Home/School contexts.
+ * Primary Soft Steps interface — age-adaptive AAC board.
+ * Learning games open from the Learn panel on this board.
  */
 export function TalkAac() {
   const navigate = useNavigate()
-  const { settings, updateSettings } = useApp()
+  const { settings, updateSettings, activeProfile } = useApp()
   const library = settings.aacLibrary
   const prefs = library.prefs
   const locked = prefs.boardLocked
@@ -47,6 +49,8 @@ export function TalkAac() {
   const coreButtons = useMemo(() => coreButtonsInViewport(library), [library])
 
   const [folderId, setFolderId] = useState<string | null>(null)
+  const [learnOpen, setLearnOpen] = useState(false)
+  const [showParentGate, setShowParentGate] = useState(false)
   const [message, setMessage] = useState<AacButton[]>([])
   const [editHold, setEditHold] = useState(0)
   const [glowId, setGlowId] = useState<string | null>(null)
@@ -275,12 +279,9 @@ export function TalkAac() {
     return (
       <section className="care-page aac-comm">
         <header className="activity-header">
-          <Link to="/" className="back-link">
-            ← Home
-          </Link>
           <div className="activity-meta">
             <p className="eyebrow offline-tag">AAC setup</p>
-            <h1>Talk</h1>
+            <h1>Soft Steps</h1>
           </div>
         </header>
         <AacSetup />
@@ -421,16 +422,15 @@ export function TalkAac() {
       ) : null}
 
       {!locked ? (
-        <header className="activity-header">
-          <Link to="/" className="back-link">
-            ← Home
-          </Link>
+        <header className="activity-header aac-home-header">
           <div className="activity-meta">
+            <p className="brand aac-home-brand">Soft Steps</p>
+            <h1>Talk</h1>
             <p className="eyebrow offline-tag">
               AAC · {meta.label} · {prefs.ageRange} · {activeContextMeta.label}
               {prefs.modelMode ? ' · Model' : ''}
+              {activeProfile ? ` · ${activeProfile.emoji} ${activeProfile.name}` : ''}
             </p>
-            <h1>Talk</h1>
           </div>
           <div className="aac-header-actions">
             <button
@@ -462,9 +462,23 @@ export function TalkAac() {
             >
               {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
             </button>
+            <button
+              type="button"
+              className="btn btn-ghost grownups-link"
+              onClick={() => setShowParentGate(true)}
+            >
+              Grown-ups
+            </button>
           </div>
         </header>
-      ) : null}
+      ) : (
+        <header className="activity-header aac-home-header aac-home-header-locked">
+          <div className="activity-meta">
+            <p className="brand aac-home-brand">Soft Steps</p>
+            <h1 className="sr-only">Talk board</h1>
+          </div>
+        </header>
+      )}
 
       {contextGate && !locked ? (
         <div className="aac-context-switcher" role="group" aria-label="Board context">
@@ -586,49 +600,67 @@ export function TalkAac() {
           </div>
         </div>
 
-        {prefs.showFolders && fringe.length > 0 ? (
-          <aside className="aac-folder-panel" aria-label="Category folders">
-            <p className="aac-section-label">
-              Folders · {activeContextMeta.label}
-            </p>
-            <nav className="aac-cat-tabs aac-folder-tabs">
-              {fringe.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={`chip ${folderId === c.id ? 'is-active' : ''}`}
-                  onClick={() => setFolderId((id) => (id === c.id ? null : c.id))}
-                >
-                  <span aria-hidden="true">{c.emoji}</span> {c.title}
-                </button>
+        <aside className="aac-folder-panel" aria-label="Category folders and Learn">
+          <p className="aac-section-label">Folders · {activeContextMeta.label}</p>
+          <nav className="aac-cat-tabs aac-folder-tabs">
+            {prefs.showFolders
+              ? fringe.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`chip ${folderId === c.id && !learnOpen ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setLearnOpen(false)
+                      setFolderId((id) => (id === c.id ? null : c.id))
+                    }}
+                  >
+                    <span aria-hidden="true">{c.emoji}</span> {c.title}
+                  </button>
+                ))
+              : null}
+            <button
+              type="button"
+              className={`chip aac-learn-chip ${learnOpen ? 'is-active' : ''}`}
+              onClick={() => {
+                setFolderId(null)
+                setLearnOpen((v) => !v)
+              }}
+              aria-expanded={learnOpen}
+              aria-controls="aac-learn-destinations"
+            >
+              <span aria-hidden="true">🎮</span> Learn
+            </button>
+          </nav>
+          {learnOpen ? <AacLearnPanel /> : null}
+          {!learnOpen && folderId && prefs.showFolders ? (
+            <div
+              className={`aac-comm-grid cols-${Math.min(cols, 3)} ${prefs.largeButtons ? 'is-large' : ''}`}
+              role="list"
+              aria-label={`${activeFolder?.title ?? 'Folder'} words`}
+            >
+              {folderButtons.map((btn) => (
+                <AacWordButton
+                  key={btn.id}
+                  btn={btn}
+                  prefs={prefs}
+                  glowing={glowId === btn.id}
+                  cooldownCalm={cooldownTileId === btn.id}
+                  onActivate={() => activate(btn)}
+                  onLongPress={() => openForms(btn)}
+                />
               ))}
-            </nav>
-            {folderId ? (
-              <div
-                className={`aac-comm-grid cols-${Math.min(cols, 3)} ${prefs.largeButtons ? 'is-large' : ''}`}
-                role="list"
-                aria-label={`${activeFolder?.title ?? 'Folder'} words`}
-              >
-                {folderButtons.map((btn) => (
-                  <AacWordButton
-                    key={btn.id}
-                    btn={btn}
-                    prefs={prefs}
-                    glowing={glowId === btn.id}
-                    cooldownCalm={cooldownTileId === btn.id}
-                    onActivate={() => activate(btn)}
-                    onLongPress={() => openForms(btn)}
-                  />
-                ))}
-                {folderButtons.length === 0 ? (
-                  <p className="empty-note">No words on this board yet.</p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="fine-print">Open a folder for more words. Core stays put on the left.</p>
-            )}
-          </aside>
-        ) : null}
+              {folderButtons.length === 0 ? (
+                <p className="empty-note">No words on this board yet.</p>
+              ) : null}
+            </div>
+          ) : null}
+          {!learnOpen && !folderId ? (
+            <p className="fine-print">
+              Tap a folder for more words, or <strong>Learn</strong> for games. Core stays put on the
+              left.
+            </p>
+          ) : null}
+        </aside>
       </div>
 
       {!locked ? (
@@ -648,6 +680,18 @@ export function TalkAac() {
             activate(formsFor, form)
           }}
           onClose={() => setFormsFor(null)}
+        />
+      ) : null}
+
+      {showParentGate ? (
+        <ParentalGateModal
+          title="Parent Controls"
+          blurb="Grown-ups confirm before opening Parent Controls."
+          onCancel={() => setShowParentGate(false)}
+          onVerified={() => {
+            setShowParentGate(false)
+            navigate('/parent')
+          }}
         />
       ) : null}
     </section>

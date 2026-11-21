@@ -166,7 +166,7 @@ export function ParentDashboard() {
       <section className="parent-dash">
         <header className="activity-header">
           <Link to="/" className="back-link" onClick={() => clearParentSession()}>
-            ← Home
+            ← Talk
           </Link>
           <div className="activity-meta">
             <p className="eyebrow">Security first</p>
@@ -347,7 +347,7 @@ export function ParentDashboard() {
     <section className="parent-dash">
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow">Parent / Teacher</p>
@@ -508,7 +508,7 @@ export function ParentDashboard() {
               })}
             </p>
           ) : (
-            <p className="fine-print">No routines finished yet — kids use Home → First / Then.</p>
+            <p className="fine-print">No routines finished yet — kids use Talk → Learn → First / Then.</p>
           )}
           <div className="confirm-row">
             <button type="button" className="btn btn-secondary" onClick={exportInsights}>
@@ -520,7 +520,7 @@ export function ParentDashboard() {
           </div>
           <h3>Recent AAC check-ins</h3>
           {checkIns.length === 0 ? (
-            <p>No check-ins yet. Kids can use Home → AAC &amp; check-in.</p>
+            <p>No check-ins yet. Kids can use Talk → Learn → Feelings board.</p>
           ) : (
             <ul className="checkin-history">
               {checkIns.slice(0, 5).map((c) => (
@@ -1057,7 +1057,7 @@ export function ParentDashboard() {
         <article className="dash-card security-card">
           <h2>Adult Communication Lock</h2>
           <p className="fine-print">
-            When locked, Talk AAC hides Home, Edit, and chrome so only communication tiles and the
+            When locked, Talk hides Edit and grown-up chrome so only communication tiles, Learn, and the
             sentence strip stay interactive. Unlock requires a 4-second padlock hold, then PIN or
             spelled numbers.
           </p>
@@ -1200,8 +1200,8 @@ export function ParentDashboard() {
             Default off. Unlock a parent session, open Talk, and tap FIRST / THEN to pick AAC
             tiles, presets, or a custom photo.
           </p>
-          <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
-            Open Talk AAC
+          <Link to="/" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
+            Open Talk board
           </Link>
         </article>
 

@@ -47,7 +47,7 @@ export function RoutineActive() {
     return (
       <section className="routine-active">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <p>No routine yet. Ask a grown-up to open the builder.</p>
         <Link className="btn btn-primary" to="/schedule/builder">
@@ -126,7 +126,7 @@ export function RoutineActive() {
     >
       <header className="routine-top">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="star-row" aria-label={`${remaining} steps remaining`}>
           {stars.map((done, i) => (

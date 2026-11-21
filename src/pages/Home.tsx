@@ -59,8 +59,8 @@ const CARE: {
   {
     id: 'talk',
     title: 'Talk (AAC)',
-    blurb: 'Full communication board — words, photos, signs',
-    path: '/talk',
+    blurb: 'Main board — words, photos, signs, Learn games',
+    path: '/',
   },
   { id: 'friends', title: 'Social cues', blurb: 'Gentle practice scenes', path: '/friends' },
   { id: 'interest', title: 'Interest rewards', blurb: 'Unlock special-interest facts', path: '/interest' },
@@ -190,22 +190,34 @@ export function Home() {
     <div className="home home-simple">
       <header className="hero hero-compact">
         <div className="hero-copy">
+          <Link to="/" className="back-link">
+            ← Talk board
+          </Link>
           <p className="brand">Soft Steps</p>
           <span className="brand-ribbon" aria-hidden="true" />
-          <h1>Today’s path</h1>
+          <h1>More tools</h1>
           <p className="hero-sub">
+            Kids start on the Talk board. This hub lists practice, care tools, and today’s path.
             {activeProfile ? (
               <>
+                {' '}
                 {activeProfile.emoji} {activeProfile.name} · Ages {settings.ageBand}
               </>
             ) : (
-              <>Ages {settings.ageBand}</>
+              <> Ages {settings.ageBand}</>
             )}
             {online ? '' : ' · Offline ready'}
             {activeRoutine ? ` · ${activeRoutine.title}` : ''}
           </p>
         </div>
       </header>
+
+      <section className="section">
+        <Link to="/" className="module-card mod-care aac-home-card">
+          <span className="module-title">Talk board</span>
+          <span className="module-blurb">Main AAC communication — words, Learn games, First–Then</span>
+        </Link>
+      </section>
 
       {settings.profiles.length > 1 ? (
         <section className="section profile-switcher" aria-label="Kid profiles">
@@ -258,8 +270,10 @@ export function Home() {
           <div>
             <strong>Quick start</strong>
             <ol className="onboard-steps">
-              <li>Follow Today’s path: First / Then → practice → Calm.</li>
-              <li>Add photos in stories or Talk board when you’re ready.</li>
+              <li>Kids land on the Talk board — core words stay in fixed spots.</li>
+              <li>
+                Open <strong>Learn</strong> on the board for ABCs, shapes, and other games.
+              </li>
               <li>
                 Grown-ups: open Grown-ups → PIN (change starter <code>1234</code>).
               </li>

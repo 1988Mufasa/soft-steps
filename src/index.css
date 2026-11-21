@@ -3851,6 +3851,84 @@ html[data-dim-colors='true'] body {
   }
 }
 
+.aac-home-header {
+  align-items: flex-start;
+}
+
+.aac-home-brand {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--brand, #3661b0);
+}
+
+.aac-home-header-locked {
+  padding-block: 0.35rem;
+}
+
+.aac-learn-chip.is-active {
+  background: rgba(54, 97, 176, 0.18);
+  border-color: rgba(54, 97, 176, 0.55);
+}
+
+.aac-learn-body {
+  margin-top: 0.65rem;
+}
+
+.aac-learn-care-label {
+  margin-top: 0.85rem;
+}
+
+.aac-learn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 0.55rem;
+}
+
+.aac-learn-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 104px;
+  padding: 0.65rem 0.45rem;
+  border-radius: 16px;
+  border: 2px solid rgba(54, 97, 176, 0.22);
+  background: linear-gradient(180deg, #fffef8, #e8f0ff);
+  text-decoration: none;
+  color: inherit;
+  text-align: center;
+  touch-action: manipulation;
+  box-shadow: var(--shadow);
+}
+
+.aac-learn-tile:hover,
+.aac-learn-tile:focus-visible {
+  border-color: rgba(54, 97, 176, 0.55);
+  outline: none;
+}
+
+.aac-learn-emoji {
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.aac-learn-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.aac-learn-blurb {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  line-height: 1.25;
+}
+
+.aac-home-card {
+  margin-bottom: 0.5rem;
+}
+
 .aac-quick-bar {
   display: flex;
   flex-wrap: wrap;

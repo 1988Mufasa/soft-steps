@@ -321,10 +321,10 @@ export function AacEditor() {
       <LockedGate
         unlocked={unlocked}
         onUnlock={() => setUnlocked(true)}
-        onCancel={() => navigate('/talk')}
+        onCancel={() => navigate('/')}
       >
         <header className="activity-header">
-          <Link to="/talk" className="back-link">
+          <Link to="/" className="back-link">
             ← Talk
           </Link>
           <div className="activity-meta">
