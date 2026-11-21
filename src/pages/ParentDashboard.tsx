@@ -562,6 +562,7 @@ export function ParentDashboard() {
           <h2>Security & payments</h2>
           <p>
             Card numbers never touch Soft Steps. Support payments use Stripe-hosted Checkout only.
+            Purchases require Wi‑Fi — they cannot start offline.
           </p>
           <Link to="/parent/billing" className="btn btn-primary">
             Open secure billing

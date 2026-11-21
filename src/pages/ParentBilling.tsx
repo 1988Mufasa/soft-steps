@@ -6,14 +6,17 @@ import {
   startSecureCheckout,
   type CheckoutPlan,
 } from '../security/payments'
+import { useApp } from '../store/AppContext'
 
 /**
  * Billing UI — Soft Steps never shows card inputs.
  * Payment details are entered only on Stripe Checkout.
+ * Purchases require Wi‑Fi / network — Checkout cannot start offline.
  * Every purchase first requires a visible 4-digit grown-up code.
  */
 export function ParentBilling() {
   const navigate = useNavigate()
+  const { online } = useApp()
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState<CheckoutPlan | null>(null)
   const [pendingPlan, setPendingPlan] = useState<CheckoutPlan | null>(null)
@@ -24,7 +27,19 @@ export function ParentBilling() {
     }
   }, [navigate])
 
+  useEffect(() => {
+    if (!online) {
+      setPendingPlan(null)
+      setBusy(null)
+    }
+  }, [online])
+
   const checkout = async (plan: CheckoutPlan) => {
+    if (!navigator.onLine) {
+      setPendingPlan(null)
+      setStatus('Purchase needs Wi‑Fi. Connect to the internet, then try again.')
+      return
+    }
     setBusy(plan)
     setStatus('')
     const result = await startSecureCheckout(plan)
@@ -44,6 +59,10 @@ export function ParentBilling() {
   }
 
   const requestPurchase = (plan: CheckoutPlan) => {
+    if (!navigator.onLine) {
+      setStatus('Purchase needs Wi‑Fi. Connect to the internet, then try again.')
+      return
+    }
     setStatus('')
     setPendingPlan(plan)
   }
@@ -58,12 +77,21 @@ export function ParentBilling() {
           <p className="eyebrow">Secure payments</p>
           <h1>Support Soft Steps</h1>
         </div>
-        <span />
+        <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
+          {online ? 'Online' : 'Offline'}
+        </span>
       </header>
+
+      <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
+        {online
+          ? 'Wi‑Fi connected — purchases can continue to Stripe Checkout.'
+          : 'Wi‑Fi required — purchases can only be made while online.'}
+      </aside>
 
       <article className="dash-card security-card">
         <h2>How your payment stays safe</h2>
         <ul className="security-list">
+          <li>Purchases need a Wi‑Fi (or mobile data) connection — Checkout cannot start offline.</li>
           <li>Before every purchase, Soft Steps shows 4 random numbers you must type in.</li>
           <li>Soft Steps never asks for card numbers, CVV, or bank details.</li>
           <li>Checkout opens on Stripe’s secure page (PCI DSS SAQ A).</li>
@@ -71,7 +99,18 @@ export function ParentBilling() {
         </ul>
       </article>
 
-      {pendingPlan ? (
+      {!online ? (
+        <article className="dash-card">
+          <h2>Connect to buy</h2>
+          <p>
+            Soft Steps learning tools still work offline. Support purchases open Stripe Checkout and
+            need Wi‑Fi.
+          </p>
+          <button type="button" className="btn btn-primary" disabled>
+            Purchase unavailable offline
+          </button>
+        </article>
+      ) : pendingPlan ? (
         <article className="dash-card">
           <PurchaseCodeGate
             onCancel={() => setPendingPlan(null)}

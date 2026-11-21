@@ -33,6 +33,13 @@ export function assertNoCardPayload(body: Record<string, unknown>) {
 }
 
 export async function startSecureCheckout(plan: CheckoutPlan): Promise<CheckoutResult> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return {
+      ok: false,
+      error: 'Purchase needs Wi‑Fi. Connect to the internet, then try again.',
+    }
+  }
+
   const payload = { plan }
   assertNoCardPayload(payload)
 
