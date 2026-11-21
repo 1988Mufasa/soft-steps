@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 /**
  * Store-facing privacy copy for TestFlight / Play Internal / App Store review.
- * Device-local by design — no child accounts on Soft Steps servers.
+ * Device-local by design — no child accounts, no in-app purchases.
  */
 export function Privacy() {
   return (
@@ -55,16 +55,16 @@ export function Privacy() {
         <h2>Network</h2>
         <p>
           Most tools work offline after install. Optional online extras (YouTube Kids embeds you
-          choose, Stripe Checkout for support purchases) need Wi‑Fi. Purchases never run offline.
+          choose) need Wi‑Fi. Soft Steps has no in-app purchases and does not collect payments.
           Soft Steps does not sell personal data and does not show third-party ads.
         </p>
       </article>
 
       <article className="privacy-block">
-        <h2>Payments</h2>
+        <h2>No payments</h2>
         <p>
-          Optional support payments use Stripe-hosted Checkout. Card numbers are entered on Stripe’s
-          pages — they never touch Soft Steps storage.
+          Soft Steps does not sell subscriptions or one-time purchases inside the app. There is no
+          checkout, no Stripe, and no card entry of any kind.
         </p>
       </article>
 
@@ -98,12 +98,10 @@ export function Privacy() {
       <article className="privacy-block">
         <h2>Contact</h2>
         <p>
-          For privacy questions about Soft Steps store builds (TestFlight / Play Internal), use the
-          support channel listed with your build invitation.
+          Questions about privacy: use the contact email listed with your App Store / Play listing
+          when Soft Steps is published.
         </p>
       </article>
-
-      <p className="fine-print">Last updated for store packaging · Soft Steps</p>
     </section>
   )
 }

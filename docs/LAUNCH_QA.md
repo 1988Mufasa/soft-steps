@@ -30,7 +30,7 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 ## Videos & network
 - [ ] Offline topic lessons play without Wi‑Fi
 - [ ] Family YouTube Kids embed plays on Wi‑Fi (or “Open in YouTube Kids” works)
-- [ ] Purchase flow refuses offline; online opens Stripe (or demo message)
+- [ ] No billing / purchase screens anywhere in the app
 
 ## Profiles & content
 - [ ] Add sibling profile; progress stays separate

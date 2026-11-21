@@ -996,104 +996,21 @@ html[data-no-sudden='true'] .sign-signer.is-live .sign-mover--stop-flat {
   opacity: 0.85;
 }
 
-.happy-face-hold {
-  display: grid;
-  justify-items: center;
-  gap: 0.55rem;
-  user-select: none;
-}
-
-.happy-face-btn {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  border: none;
-  border-radius: 50%;
-  background: #fff8dc;
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  touch-action: none;
-  display: grid;
-  place-items: center;
-  padding: 0;
-}
-
-.happy-face-btn.is-holding {
-  transform: scale(1.04);
-  background: #ffe9a8;
-}
-
-.happy-face-emoji {
-  font-size: 2.1rem;
-  line-height: 1;
-  pointer-events: none;
-}
-
-.happy-face-ring {
-  position: absolute;
-  inset: -6px;
-  pointer-events: none;
-}
-
-.happy-face-ring svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.happy-face-track {
-  fill: none;
-  stroke: rgba(54, 97, 176, 0.18);
-  stroke-width: 5;
-}
-
-.happy-face-progress {
-  fill: none;
-  stroke: var(--sense-blue);
-  stroke-width: 5;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 40ms linear;
-}
-
-.happy-face-hint {
-  margin: 0;
-  font-size: 0.9rem;
+.grownups-link {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--ink-soft);
-  text-align: center;
+  opacity: 0.55;
+  text-decoration: none;
+  border-radius: 10px;
 }
 
-.purchase-code-gate {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.purchase-code-display {
-  display: flex;
-  justify-content: center;
-  gap: 0.65rem;
-  padding: 0.75rem 0;
-}
-
-.purchase-code-digit {
-  width: 3.2rem;
-  height: 3.8rem;
-  border-radius: 14px;
-  background: linear-gradient(160deg, #e8eef8, #ffffff);
-  border: 3px solid var(--sense-blue);
-  display: grid;
-  place-items: center;
-  font-size: 2rem;
-  font-weight: 900;
+.grownups-link:hover,
+.grownups-link:focus-visible {
+  opacity: 1;
   color: var(--accent-deep);
-  font-variant-numeric: tabular-nums;
-}
-
-.purchase-code-input {
-  letter-spacing: 0.35em;
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 800;
 }
 
 .activity-shell,

@@ -147,7 +147,7 @@ export function ParentDashboard() {
           <h2>Change the starter PIN</h2>
           <p>
             Soft Steps still uses the first-time default <strong>1234</strong>. Choose a new 4–6
-            digit PIN before you can open settings, billing, or backups.
+            digit PIN before you can open settings or backups.
           </p>
           <form onSubmit={(e) => void onSavePin(e)} className="pin-form">
             <label className="field-label">
@@ -1008,15 +1008,12 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card security-card">
-          <h2>Security & payments</h2>
+          <h2>Security & privacy</h2>
           <p>
-            Card numbers never touch Soft Steps. Support payments use Stripe-hosted Checkout only.
-            Purchases require Wi‑Fi — they cannot start offline.
+            Soft Steps has no in-app purchases and never collects payments. Learning data stays on
+            this device unless you export a backup yourself.
           </p>
-          <Link to="/parent/billing" className="btn btn-primary">
-            Open secure billing
-          </Link>
-          <Link to="/privacy" className="btn btn-ghost" style={{ marginTop: '0.5rem' }}>
+          <Link to="/privacy" className="btn btn-ghost">
             Privacy for stores
           </Link>
         </article>

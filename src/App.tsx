@@ -28,7 +28,6 @@ import { InterestRewards } from './pages/care/InterestRewards'
 import { LearningVideos } from './pages/care/LearningVideos'
 import { ParentGate } from './pages/ParentGate'
 import { ParentDashboard } from './pages/ParentDashboard'
-import { ParentBilling } from './pages/ParentBilling'
 import { Privacy } from './pages/Privacy'
 import { useApp } from './store/AppContext'
 import type { CareModuleId, ModuleId } from './types'
@@ -230,7 +229,6 @@ export default function App() {
         />
         <Route path="/parent" element={<ParentGate />} />
         <Route path="/parent/dashboard" element={<ParentDashboard />} />
-        <Route path="/parent/billing" element={<ParentBilling />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

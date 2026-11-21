@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { HappyFaceHold } from '../components/HappyFaceHold'
+import { Link } from 'react-router-dom'
 import { InstallPrompt } from '../components/InstallPrompt'
 import { themeForDate } from '../data/themes'
 import { useApp } from '../store/AppContext'
@@ -67,7 +66,6 @@ const CARE: {
 ]
 
 export function Home() {
-  const navigate = useNavigate()
   const {
     settings,
     online,
@@ -259,7 +257,7 @@ export function Home() {
               <li>Follow Today’s path: First / Then → practice → Calm.</li>
               <li>Add photos in stories or Talk board when you’re ready.</li>
               <li>
-                Grown-ups: hold the happy face → PIN (change starter <code>1234</code>).
+                Grown-ups: open Grown-ups → PIN (change starter <code>1234</code>).
               </li>
             </ol>
           </div>
@@ -450,7 +448,9 @@ export function Home() {
       </section>
 
       <footer className="home-footer home-footer-secure">
-        <HappyFaceHold onUnlock={() => navigate('/parent')} />
+        <Link to="/parent" className="grownups-link">
+          Grown-ups
+        </Link>
       </footer>
     </div>
   )

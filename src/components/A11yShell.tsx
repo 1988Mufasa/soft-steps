@@ -25,7 +25,6 @@ const TITLE_FOR_PATH: Record<string, string> = {
   '/online': 'Online hub',
   '/parent': 'Grown-up unlock',
   '/parent/dashboard': 'Grown-up controls',
-  '/parent/billing': 'Secure billing',
   '/privacy': 'Privacy',
 }
 
