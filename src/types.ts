@@ -11,6 +11,16 @@ export type CareModuleId =
   | 'talk'
   | 'friends'
   | 'interest'
+  | 'videos'
+
+/** Parent-added learning video (YouTube) for online watch */
+export type CustomLearningVideo = {
+  id: string
+  title: string
+  emoji: string
+  /** YouTube video id (11 chars) */
+  youtubeId: string
+}
 
 export type OnlineActivityId = 'mix-quiz' | 'gentle-timer' | 'multi-match' | 'sync-demo'
 
@@ -147,6 +157,7 @@ export type ParentSettings = {
   stories: Story[]
   interestChecklist: { id: string; label: string; done: boolean }[]
   customAacCards: CustomAacCard[]
+  customVideos: CustomLearningVideo[]
   careStats: CareStats
   home: HomePrefs
 }
@@ -178,6 +189,7 @@ export const DEFAULT_CARE_MODULES: Record<CareModuleId, boolean> = {
   talk: true,
   friends: true,
   interest: true,
+  videos: true,
 }
 
 export const DEFAULT_ROUTINE_PREFS: RoutinePrefs = {
@@ -324,6 +336,7 @@ export const DEFAULT_SETTINGS: ParentSettings = {
   })),
   interestChecklist: DEFAULT_INTEREST_CHECKLIST.map((c) => ({ ...c })),
   customAacCards: [],
+  customVideos: [],
   careStats: { ...DEFAULT_CARE_STATS },
   home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
 }

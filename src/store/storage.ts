@@ -50,6 +50,7 @@ function cloneDefaults(): ParentSettings {
     })),
     interestChecklist: DEFAULT_SETTINGS.interestChecklist.map((c) => ({ ...c })),
     customAacCards: [],
+    customVideos: [],
     careStats: { ...DEFAULT_CARE_STATS },
     home: { ...DEFAULT_HOME, favorites: [...DEFAULT_HOME.favorites] },
   }
@@ -164,6 +165,7 @@ export function loadSettings(): ParentSettings {
         ? parsed.interestChecklist
         : base.interestChecklist,
       customAacCards: Array.isArray(parsed.customAacCards) ? parsed.customAacCards : [],
+      customVideos: Array.isArray(parsed.customVideos) ? parsed.customVideos : [],
       careStats: { ...DEFAULT_CARE_STATS, ...parsed.careStats },
       home: {
         ...DEFAULT_HOME,

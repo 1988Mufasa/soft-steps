@@ -23,6 +23,7 @@ import { SocialStories } from './pages/care/SocialStories'
 import { TalkAac } from './pages/care/TalkAac'
 import { SocialCues } from './pages/care/SocialCues'
 import { InterestRewards } from './pages/care/InterestRewards'
+import { LearningVideos } from './pages/care/LearningVideos'
 import { ParentGate } from './pages/ParentGate'
 import { ParentDashboard } from './pages/ParentDashboard'
 import { ParentBilling } from './pages/ParentBilling'
@@ -100,6 +101,14 @@ export default function App() {
           element={
             <GuardedCare id="stories">
               <SocialStories />
+            </GuardedCare>
+          }
+        />
+        <Route
+          path="/videos"
+          element={
+            <GuardedCare id="videos">
+              <LearningVideos />
             </GuardedCare>
           }
         />
