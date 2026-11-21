@@ -120,8 +120,16 @@ export function LearningVideos() {
             </h1>
           </div>
         </header>
+        <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
+          {online
+            ? 'Wi‑Fi connected — YouTube Kids can play.'
+            : 'Wi‑Fi required — connect to watch YouTube Kids videos.'}
+        </aside>
         {!online ? (
-          <p className="empty-note">You’re offline. YouTube Kids videos need Wi‑Fi.</p>
+          <p className="empty-note">
+            You’re offline. Topic lessons (Letters, Numbers, and more) still work without Wi‑Fi from the
+            Videos home.
+          </p>
         ) : (
           <>
             <div className="video-embed-wrap">
@@ -145,8 +153,7 @@ export function LearningVideos() {
           </>
         )}
         <p className="fine-print">
-          Plays in YouTube Kids (not regular YouTube). Only Kids-approved videos will load. Soft Steps
-          does not host the file.
+          YouTube Kids needs a Wi‑Fi (or data) connection. Soft Steps does not host the file.
         </p>
         <button
           type="button"
@@ -244,22 +251,29 @@ export function LearningVideos() {
 
         {isFamily ? (
           <>
-            <p className="prompt">Grown-up YouTube Kids picks. Needs Wi‑Fi to play.</p>
+            <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
+              {online
+                ? 'Wi‑Fi connected — tap a video to watch on YouTube Kids.'
+                : 'Wi‑Fi required for YouTube Kids. You can still add videos; play them when connected.'}
+            </aside>
+            <p className="prompt">Grown-up YouTube Kids picks. These need Wi‑Fi to play.</p>
             <div className="video-card-grid">
               {family.map((v) => (
                 <button
                   key={v.id}
                   type="button"
-                  className="video-pick-card"
-                  onClick={() =>
+                  className={`video-pick-card ${online ? '' : 'is-wifi-locked'}`}
+                  disabled={!online}
+                  onClick={() => {
+                    if (!online) return
                     setView({ kind: 'play-youtube', id: v.youtubeId, title: v.title, emoji: v.emoji })
-                  }
+                  }}
                 >
                   <span className="sign-mode-emoji" aria-hidden="true">
                     {v.emoji}
                   </span>
                   <strong>{v.title}</strong>
-                  <span className="fine-print">YouTube Kids</span>
+                  <span className="fine-print">{online ? 'YouTube Kids' : 'Needs Wi‑Fi'}</span>
                 </button>
               ))}
             </div>
@@ -321,6 +335,9 @@ export function LearningVideos() {
           </>
         ) : (
           <>
+            <aside className="video-wifi-banner is-online" role="status">
+              No Wi‑Fi needed — these watch lessons work offline.
+            </aside>
             <p className="prompt">Short offline watch lessons — tap to play.</p>
             <div className="video-card-grid">
               {list.map((v) => (
@@ -356,10 +373,17 @@ export function LearningVideos() {
           <p className="eyebrow offline-tag">Watch & learn</p>
           <h1>Learning videos</h1>
         </div>
-        <span className="age-badge">Ages {settings.ageBand}</span>
+        <span className={`net-badge ${online ? 'is-online' : 'is-offline'}`}>
+          {online ? 'Online' : 'Offline'}
+        </span>
       </header>
+      <aside className={`video-wifi-banner ${online ? 'is-online' : 'is-offline'}`} role="status">
+        {online
+          ? 'Online: topic lessons work anytime · YouTube Kids ready.'
+          : 'Offline: topic lessons work now · YouTube Kids needs Wi‑Fi.'}
+      </aside>
       <p className="prompt">
-        Offline watch lessons by topic. Family YouTube Kids videos play when you’re online.
+        Topic lessons work without Wi‑Fi. Family YouTube Kids videos require a Wi‑Fi connection.
       </p>
       <div className="sign-mode-grid">
         {VIDEO_CATEGORIES.map((c) => (
@@ -373,19 +397,19 @@ export function LearningVideos() {
               {c.emoji}
             </span>
             <strong>{c.title}</strong>
-            <span>Offline lessons</span>
+            <span>Works offline</span>
           </button>
         ))}
         <button
           type="button"
-          className="sign-mode-card"
+          className={`sign-mode-card ${online ? '' : 'is-wifi-needed'}`}
           onClick={() => setView({ kind: 'list', category: 'family' })}
         >
           <span className="sign-mode-emoji" aria-hidden="true">
             📺
           </span>
           <strong>Family videos</strong>
-          <span>{online ? 'YouTube Kids when online' : 'Add now · play with Wi‑Fi'}</span>
+          <span>{online ? 'YouTube Kids · Wi‑Fi on' : 'Requires Wi‑Fi to play'}</span>
         </button>
       </div>
     </section>
