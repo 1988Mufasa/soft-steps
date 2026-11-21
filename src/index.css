@@ -324,6 +324,53 @@ html[data-reduced-motion='true'] .feedback-good {
   border-left: 8px solid var(--sense-indigo);
   background: linear-gradient(145deg, #f4e9f0, var(--surface));
 }
+.mod-foods {
+  border-left: 8px solid var(--sense-orange);
+  background: linear-gradient(145deg, #f8eee6, var(--surface));
+}
+
+.food-target {
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.food-emoji-xl {
+  font-size: clamp(4.5rem, 18vw, 6.5rem);
+  line-height: 1;
+  display: block;
+}
+
+.food-emoji-md {
+  font-size: clamp(2.4rem, 10vw, 3.4rem);
+  line-height: 1;
+}
+
+.food-name-xl {
+  margin: 0;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 800;
+  color: var(--accent-deep);
+}
+
+.food-live-choice {
+  border: none;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 0.85rem 0.5rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  min-height: 110px;
+}
+
+.food-hub-fruit {
+  background: linear-gradient(145deg, #ffe8ec, #fff);
+}
+
+.food-hub-veg {
+  background: linear-gradient(145deg, #e8f6e8, #fff);
+}
 
 .sign-target {
   gap: 0.75rem;

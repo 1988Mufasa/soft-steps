@@ -29,6 +29,13 @@ const MODULES: {
     path: '/signs',
     accent: 'mod-signs',
   },
+  {
+    id: 'foods',
+    title: 'Foods',
+    blurb: 'Fruits & vegetables games',
+    path: '/foods',
+    accent: 'mod-foods',
+  },
 ]
 
 const CARE: {

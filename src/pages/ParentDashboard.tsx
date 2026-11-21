@@ -18,6 +18,7 @@ const MODULE_LABELS: { id: ModuleId; label: string }[] = [
   { id: 'colors', label: 'Colors' },
   { id: 'numbers', label: 'Numbers' },
   { id: 'signs', label: 'Sign language' },
+  { id: 'foods', label: 'Foods (fruits & veggies)' },
 ]
 
 const CARE_LABELS: { id: CareModuleId; label: string }[] = [
