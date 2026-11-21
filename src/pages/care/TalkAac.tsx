@@ -56,6 +56,10 @@ export function TalkAac() {
   const editTick = useRef<number | null>(null)
   const glowTimer = useRef<number | null>(null)
   const attentionTimer = useRef<number | null>(null)
+  /** Anti-stim: last successful tile activation (same-tile cooldown only). */
+  const lastTap = useRef<{ id: string; at: number } | null>(null)
+  const cooldownClearTimer = useRef<number | null>(null)
+  const [cooldownTileId, setCooldownTileId] = useState<string | null>(null)
 
   const needsSetup = !prefs.setupComplete
   const activeContextMeta =
@@ -113,6 +117,29 @@ export function TalkAac() {
 
   const activate = (btn: AacButton, speakOverride?: string) => {
     if (btn.masked) return
+
+    // Anti-stimming repeat cooldown — same tile only; other tiles stay instant.
+    const cooldownMs = prefs.repeatCooldownMs
+    const now = Date.now()
+    if (
+      cooldownMs > 0 &&
+      lastTap.current &&
+      lastTap.current.id === btn.id &&
+      now - lastTap.current.at < cooldownMs
+    ) {
+      // No TTS/custom audio, no sentence-strip duplicate, no glow/bounce.
+      return
+    }
+    lastTap.current = { id: btn.id, at: now }
+    if (cooldownMs > 0) {
+      setCooldownTileId(btn.id)
+      if (cooldownClearTimer.current != null) window.clearTimeout(cooldownClearTimer.current)
+      cooldownClearTimer.current = window.setTimeout(() => {
+        setCooldownTileId((id) => (id === btn.id ? null : id))
+        cooldownClearTimer.current = null
+      }, cooldownMs)
+    }
+
     flashGlow(btn.id)
     const spoken = (speakOverride || btn.speak || btn.label).trim()
     if (prefs.speakOnTap || prefs.audioLabels || prefs.modelMode) {
@@ -469,6 +496,7 @@ export function TalkAac() {
                   btn={btn}
                   prefs={prefs}
                   glowing={glowId === btn.id}
+                  cooldownCalm={cooldownTileId === btn.id}
                   onActivate={() => activate(btn)}
                   onLongPress={() => openForms(btn)}
                   absolute
@@ -507,6 +535,7 @@ export function TalkAac() {
                     btn={btn}
                     prefs={prefs}
                     glowing={glowId === btn.id}
+                    cooldownCalm={cooldownTileId === btn.id}
                     onActivate={() => activate(btn)}
                     onLongPress={() => openForms(btn)}
                   />
@@ -552,6 +581,7 @@ function AacWordButton({
   onLongPress,
   absolute,
   glowing,
+  cooldownCalm,
 }: {
   btn: AacButton
   prefs: AacPrefs
@@ -559,6 +589,8 @@ function AacWordButton({
   onLongPress?: () => void
   absolute?: boolean
   glowing?: boolean
+  /** Same-tile repeat cooldown — suppress bounce while cooling down. */
+  cooldownCalm?: boolean
 }) {
   const visual = resolveAacVisual(btn, prefs.displayMode)
   const forms = btn.forms?.length ? btn.forms : wordFormsFor(btn.id, btn.label)
@@ -566,7 +598,7 @@ function AacWordButton({
   const touch = useAacTouch({
     delayMs: prefs.touchDelayMs,
     trigger: prefs.touchTrigger,
-    animations: prefs.buttonAnimations,
+    animations: prefs.buttonAnimations && !cooldownCalm,
     onActivate,
     onLongPress: canForms ? onLongPress : undefined,
   })
@@ -593,7 +625,7 @@ function AacWordButton({
       type="button"
       className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''} ${
         glowing ? 'is-model-glow' : ''
-      }`}
+      } ${cooldownCalm ? 'is-cooldown-calm' : ''}`}
       role="listitem"
       style={style}
       aria-label={btn.speak || btn.label}

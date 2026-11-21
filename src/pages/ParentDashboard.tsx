@@ -1061,6 +1061,48 @@ export function ParentDashboard() {
             />
             Lock Talk AAC board now
           </label>
+          <p className="field-label" style={{ marginTop: '0.85rem' }}>
+            Repeat tap cooldown
+          </p>
+          <p className="fine-print">
+            Anti-stimming: ignore rapid repeats on the same AAC tile. Other tiles stay instant.
+          </p>
+          <div className="toggle-row wrap" role="group" aria-label="Repeat tap cooldown">
+            {(
+              [
+                { ms: 0 as const, label: 'Off' },
+                { ms: 1000 as const, label: '1s' },
+                { ms: 2000 as const, label: '2s' },
+                { ms: 3000 as const, label: '3s' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${
+                  settings.aacLibrary.prefs.repeatCooldownMs === opt.ms ? 'is-active' : ''
+                }`}
+                onClick={() => {
+                  updateSettings({
+                    aacLibrary: {
+                      ...settings.aacLibrary,
+                      prefs: {
+                        ...settings.aacLibrary.prefs,
+                        repeatCooldownMs: opt.ms,
+                      },
+                    },
+                  })
+                  setSaved(
+                    opt.ms === 0
+                      ? 'Repeat tap cooldown off.'
+                      : `Repeat tap cooldown set to ${opt.ms / 1000}s.`,
+                  )
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
             Open Talk AAC
           </Link>

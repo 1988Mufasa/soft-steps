@@ -55,6 +55,7 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Attention bell speaks “Excuse me / Look!” from Talk (even when board-locked)
 - [ ] Body check opens one-tap pain/sensory screen without folders
 - [ ] Home ↔ School board switch (parental gate); core slots unchanged
+- [ ] Repeat tap cooldown (Off/1s/2s/3s): same tile ignored; different tiles instant
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing

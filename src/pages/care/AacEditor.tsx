@@ -624,6 +624,30 @@ export function AacEditor() {
         <article className="dash-card">
           <h2>Touch &amp; sensory</h2>
           <p className="fine-print">Hold delay and speak-on-release help accidental taps.</p>
+          <p className="field-label">Repeat tap cooldown (anti-stimming)</p>
+          <p className="fine-print">
+            Blocks mashing the same tile again for a moment — different words stay instant for
+            sentence building.
+          </p>
+          <div className="toggle-row wrap" role="group" aria-label="Repeat tap cooldown">
+            {(
+              [
+                { ms: 0, label: 'Off' },
+                { ms: 1000, label: '1 second' },
+                { ms: 2000, label: '2 seconds' },
+                { ms: 3000, label: '3 seconds' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${library.prefs.repeatCooldownMs === opt.ms ? 'is-active' : ''}`}
+                onClick={() => updatePrefs({ repeatCooldownMs: opt.ms })}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <div className="toggle-row wrap">
             {([0, 200, 400, 600] as const).map((ms) => (
               <button

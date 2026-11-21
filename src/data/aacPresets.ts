@@ -108,6 +108,11 @@ export type AacPrefs = {
   colorCoding: boolean
   touchDelayMs: 0 | 200 | 400 | 600
   touchTrigger: AacTouchTrigger
+  /**
+   * Anti-stimming: ignore repeat taps on the *same* tile within this window.
+   * Different tiles stay instant. 0 = Off.
+   */
+  repeatCooldownMs: 0 | 1000 | 2000 | 3000
   buttonAnimations: boolean
   tapSounds: boolean
   speechPitch: number
@@ -262,6 +267,7 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   colorCoding: true,
   touchDelayMs: 0,
   touchTrigger: 'press',
+  repeatCooldownMs: 0,
   buttonAnimations: true,
   tapSounds: false,
   speechPitch: 1.2,
@@ -525,6 +531,9 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   merged.speechPitch = clamp(merged.speechPitch, 0.7, 1.6)
   merged.speechRate = clamp(merged.speechRate, 0.6, 1.2)
   if (![0, 200, 400, 600].includes(merged.touchDelayMs)) merged.touchDelayMs = 0
+  if (![0, 1000, 2000, 3000].includes(merged.repeatCooldownMs)) {
+    merged.repeatCooldownMs = 0
+  }
   if (merged.touchTrigger !== 'release') merged.touchTrigger = 'press'
   if (typeof merged.aboutMeText !== 'string' || !merged.aboutMeText.trim()) {
     merged.aboutMeText = DEFAULT_ABOUT_ME

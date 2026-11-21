@@ -3297,6 +3297,13 @@ html[data-dim-colors='true'] body {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.aac-comm-card.is-cooldown-calm,
+.aac-comm-card.is-cooldown-calm.aac-touchable:active {
+  transform: none;
+  box-shadow: var(--shadow);
+  outline: none;
+}
+
 .aac-comm.is-model-mode .aac-sentence-strip {
   border-color: rgba(67, 160, 71, 0.45);
 }
