@@ -170,6 +170,11 @@ export type AacPrefs = {
    * Persisted with AAC prefs in local storage.
    */
   sensoryTheme: AacSensoryTheme
+  /**
+   * After tapping a word inside a category folder, return to the core board.
+   * Helps kids build multi-word sentences (I + want + [folder word]).
+   */
+  autoReturnFromFolder: boolean
 }
 
 export const AAC_BOARD_CONTEXTS: {
@@ -391,6 +396,7 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   attentionPhrase: DEFAULT_ATTENTION_PHRASE,
   bodyCheckEnabled: true,
   sensoryTheme: 'calm-light',
+  autoReturnFromFolder: true,
 }
 
 export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label: string }[] = [
@@ -403,14 +409,14 @@ export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label:
 
 export const PRESET_CATEGORIES: AacCategory[] = [
   { id: 'core', title: 'Core', emoji: '⭐', order: 0, source: 'preset' },
-  { id: 'feelings', title: 'Feelings', emoji: '💛', order: 1, source: 'preset', minStage: 'expanded' },
-  { id: 'food', title: 'Food', emoji: '🍎', order: 2, source: 'preset', minStage: 'developing' },
-  { id: 'people', title: 'People', emoji: '👥', order: 3, source: 'preset', minStage: 'expanded' },
-  { id: 'places', title: 'Places', emoji: '🏠', order: 4, source: 'preset', minStage: 'expanded' },
-  { id: 'signs', title: 'ASL Signs', emoji: '✋', order: 5, source: 'preset', minStage: 'expanded' },
-  { id: 'needs', title: 'Needs', emoji: '🛟', order: 6, source: 'preset', minStage: 'developing' },
+  { id: 'food', title: 'Food & Drink', emoji: '🍎', order: 1, source: 'preset', minStage: 'developing' },
+  { id: 'family', title: 'Toys & Play', emoji: '🧸', order: 2, source: 'preset', minStage: 'developing' },
+  { id: 'places', title: 'Places', emoji: '🏠', order: 3, source: 'preset', minStage: 'expanded' },
+  { id: 'needs', title: 'Body & Pain', emoji: '🩹', order: 4, source: 'preset', minStage: 'developing' },
+  { id: 'feelings', title: 'Feelings', emoji: '💛', order: 5, source: 'preset', minStage: 'expanded' },
+  { id: 'people', title: 'People', emoji: '👥', order: 6, source: 'preset', minStage: 'expanded' },
   { id: 'actions', title: 'Actions', emoji: '🏃', order: 7, source: 'preset', minStage: 'expanded' },
-  { id: 'family', title: 'Family words', emoji: '📷', order: 8, source: 'preset', minStage: 'developing' },
+  { id: 'signs', title: 'ASL Signs', emoji: '✋', order: 8, source: 'preset', minStage: 'expanded' },
 ]
 
 const STAGE_RANK: Record<AacStage, number> = {
@@ -538,6 +544,9 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('snack', 'Snack', '🍎', 'food', 1, 'noun', 'developing'),
   fringe('hungry', 'Hungry', '😋', 'food', 2, 'adjective', 'expanded'),
   fringe('thirsty', 'Thirsty', '🥤', 'food', 3, 'adjective', 'expanded'),
+  fringe('juice', 'Juice', '🧃', 'food', 5, 'noun', 'developing'),
+  fringe('milk', 'Milk', '🥛', 'food', 6, 'noun', 'developing'),
+  fringe('apple', 'Apple', '🍎', 'food', 7, 'noun', 'developing'),
 
   fringe('mom', 'Mom', '👩', 'people', 0, 'pronoun', 'expanded', undefined, 'home'),
   fringe('dad', 'Dad', '👨', 'people', 1, 'pronoun', 'expanded', undefined, 'home'),
@@ -562,6 +571,9 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('sippy', 'Sippy cup', '🍼', 'family', 0, 'noun', 'developing', 'sippy cup', 'home'),
   fringe('favorite-toy', 'My toy', '🧸', 'family', 1, 'noun', 'developing', 'my toy', 'home'),
   fringe('tablet', 'Tablet', '📱', 'family', 2, 'noun', 'expanded', undefined, 'home'),
+  fringe('ball', 'Ball', '⚽', 'family', 5, 'noun', 'developing'),
+  fringe('blocks', 'Blocks', '🧱', 'family', 6, 'noun', 'developing'),
+  fringe('book-play', 'Book', '📚', 'family', 7, 'noun', 'developing', 'book'),
 
   // School supplies / routines
   fringe('backpack', 'Backpack', '🎒', 'family', 3, 'noun', 'expanded', undefined, 'school'),
@@ -579,6 +591,9 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('sick', 'Sick', '🤒', 'needs', 2, 'adjective', 'expanded'),
   fringe('space', 'Space', '🫧', 'needs', 3, 'noun', 'expanded', 'I need space'),
   fringe('hug', 'Hug', '🤗', 'needs', 4, 'verb', 'expanded'),
+  fringe('ouch', 'Ouch', '😣', 'needs', 5, 'adjective', 'developing', 'ouch it hurts'),
+  fringe('tummy', 'Tummy', '🤢', 'needs', 6, 'noun', 'developing', 'my tummy'),
+  fringe('head', 'Head', '🤕', 'needs', 7, 'noun', 'developing', 'my head'),
 
   fringe('listen', 'Listen', '👂', 'actions', 0, 'verb', 'expanded'),
   fringe('come', 'Come', '🤙', 'actions', 1, 'verb', 'expanded'),
@@ -707,6 +722,7 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   if (typeof merged.classroomVolumeBoost !== 'boolean') merged.classroomVolumeBoost = false
   if (typeof merged.strongTapHighlight !== 'boolean') merged.strongTapHighlight = true
   if (merged.sensoryTheme !== 'sensory-dark') merged.sensoryTheme = 'calm-light'
+  if (typeof merged.autoReturnFromFolder !== 'boolean') merged.autoReturnFromFolder = true
   return merged
 }
 
@@ -740,7 +756,25 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
   for (const c of saved.categories ?? []) {
     if (!c?.id) continue
     const prev = catById.get(c.id)
-    catById.set(c.id, prev ? { ...prev, ...c } : { ...c, source: c.source ?? 'custom' })
+    if (!prev) {
+      catById.set(c.id, { ...c, source: c.source ?? 'custom' })
+      continue
+    }
+    // Refresh preset folder titles/emoji; keep custom hide flags from save
+    catById.set(c.id, {
+      ...prev,
+      ...c,
+      ...(prev.source === 'preset'
+        ? {
+            title: prev.title,
+            emoji: prev.emoji,
+            order: prev.order,
+            minStage: prev.minStage,
+            source: 'preset' as const,
+          }
+        : {}),
+      hidden: c.hidden ?? prev.hidden,
+    })
   }
 
   const btnById = new Map(base.buttons.map((b) => [b.id, b]))

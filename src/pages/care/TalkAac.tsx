@@ -10,6 +10,7 @@ import { speakText as speakCalm } from '../../audio/calmAudio'
 import { AacBoardLock } from '../../components/AacBoardLock'
 import { AacBodyCheck } from '../../components/AacBodyCheck'
 import { AacFirstThenBar } from '../../components/AacFirstThenBar'
+import { AacFolderTile } from '../../components/AacFolderTile'
 import { AacLearnPanel } from '../../components/AacLearnPanel'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
 import { ParentalGateModal } from '../../components/ParentalGateModal'
@@ -132,7 +133,7 @@ export function TalkAac() {
     }
   }
 
-  const activate = (btn: AacButton, speakOverride?: string) => {
+  const activate = (btn: AacButton, speakOverride?: string, fromFolder = false) => {
     if (btn.masked) return
 
     // Anti-stimming repeat cooldown — same tile only; other tiles stay instant.
@@ -175,13 +176,34 @@ export function TalkAac() {
         )
       }
     }
-    if (prefs.modelMode) return
+    if (prefs.modelMode) {
+      if (fromFolder && prefs.autoReturnFromFolder) {
+        setFolderId(null)
+        setLearnOpen(false)
+      }
+      return
+    }
     if (prefs.messageBar) {
       const chip: AacButton = speakOverride
         ? { ...btn, label: speakOverride, speak: speakOverride, id: `${btn.id}-form-${speakOverride}` }
         : btn
       setMessage((m) => [...m, chip].slice(-16))
     }
+    // Standard AAC: return to core after a folder word so kids can keep building
+    if (fromFolder && prefs.autoReturnFromFolder) {
+      setFolderId(null)
+      setLearnOpen(false)
+    }
+  }
+
+  const backToCore = () => {
+    setFolderId(null)
+    setLearnOpen(false)
+  }
+
+  const openFolder = (id: string) => {
+    setLearnOpen(false)
+    setFolderId(id)
   }
 
   const activateQuickTalk = (word: AacQuickTalkWord) => {
@@ -566,67 +588,111 @@ export function TalkAac() {
         </div>
       ) : null}
 
-      <div className="aac-board-shell">
-        <div className="aac-core-panel">
-          <p className="aac-section-label">Core words · fixed spots</p>
+      {folderId && !learnOpen ? (
+        <div className="aac-folder-open" aria-label={`${activeFolder?.title ?? 'Folder'} open`}>
+          <div className="aac-folder-open-bar">
+            <button
+              type="button"
+              className="btn btn-primary aac-back-to-core"
+              onClick={backToCore}
+            >
+              ← Back to Core Board
+            </button>
+            <p className="aac-folder-open-title">
+              <span className="aac-folder-badge" aria-hidden="true">
+                📁
+              </span>
+              {activeFolder?.emoji} {activeFolder?.title ?? 'Folder'}
+            </p>
+          </div>
+          <p className="fine-print aac-folder-open-hint">
+            Sentence strip stays up — combine core words with these folder words.
+            {prefs.autoReturnFromFolder ? ' Tapping a word returns to core.' : ''}
+          </p>
           <div
-            className={`aac-core-grid layout-${prefs.gridLayout} ${prefs.largeButtons ? 'is-large' : ''}`}
-            style={
-              {
-                '--aac-cols': cols,
-                '--aac-rows': rows,
-              } as CSSProperties
-            }
+            className={`aac-comm-grid cols-${Math.min(cols, 4)} ${prefs.largeButtons ? 'is-large' : ''}`}
             role="list"
-            aria-label="Core communication board"
+            aria-label={`${activeFolder?.title ?? 'Folder'} words`}
           >
-            {coreButtons.map((btn) =>
-              btn.masked && prefs.showMaskedSlots ? (
-                <div
-                  key={btn.id}
-                  className="aac-comm-card is-masked-slot"
-                  style={{ gridRow: (btn.row ?? 0) + 1, gridColumn: (btn.col ?? 0) + 1 }}
-                  aria-hidden="true"
-                  title="Masked — reserved for later"
-                />
-              ) : btn.masked ? null : (
-                <AacWordButton
-                  key={btn.id}
-                  btn={btn}
-                  prefs={prefs}
-                  theme={prefs.sensoryTheme}
-                  glowing={glowId === btn.id}
-                  cooldownCalm={cooldownTileId === btn.id}
-                  onActivate={() => activate(btn)}
-                  onLongPress={() => openForms(btn)}
-                  absolute
-                />
-              ),
-            )}
+            {folderButtons.map((btn) => (
+              <AacWordButton
+                key={btn.id}
+                btn={btn}
+                prefs={prefs}
+                theme={prefs.sensoryTheme}
+                glowing={glowId === btn.id}
+                cooldownCalm={cooldownTileId === btn.id}
+                onActivate={() => activate(btn, undefined, true)}
+                onLongPress={() => openForms(btn)}
+              />
+            ))}
+            {folderButtons.length === 0 ? (
+              <p className="empty-note">No words in this folder yet.</p>
+            ) : null}
           </div>
         </div>
+      ) : (
+        <div className="aac-board-shell">
+          <div className="aac-core-panel">
+            <p className="aac-section-label">Core words · fixed spots</p>
+            <div
+              className={`aac-core-grid layout-${prefs.gridLayout} ${prefs.largeButtons ? 'is-large' : ''}`}
+              style={
+                {
+                  '--aac-cols': cols,
+                  '--aac-rows': rows,
+                } as CSSProperties
+              }
+              role="list"
+              aria-label="Core communication board"
+            >
+              {coreButtons.map((btn) =>
+                btn.masked && prefs.showMaskedSlots ? (
+                  <div
+                    key={btn.id}
+                    className="aac-comm-card is-masked-slot"
+                    style={{ gridRow: (btn.row ?? 0) + 1, gridColumn: (btn.col ?? 0) + 1 }}
+                    aria-hidden="true"
+                    title="Masked — reserved for later"
+                  />
+                ) : btn.masked ? null : (
+                  <AacWordButton
+                    key={btn.id}
+                    btn={btn}
+                    prefs={prefs}
+                    theme={prefs.sensoryTheme}
+                    glowing={glowId === btn.id}
+                    cooldownCalm={cooldownTileId === btn.id}
+                    onActivate={() => activate(btn)}
+                    onLongPress={() => openForms(btn)}
+                    absolute
+                  />
+                ),
+              )}
+            </div>
+          </div>
 
-        <aside className="aac-folder-panel" aria-label="Category folders and Learn">
-          <p className="aac-section-label">Folders · {activeContextMeta.label}</p>
-          <nav className="aac-cat-tabs aac-folder-tabs">
-            {prefs.showFolders
-              ? fringe.map((c) => (
-                  <button
+          <aside className="aac-folder-panel" aria-label="Category folders and Learn">
+            <p className="aac-section-label">Folders · {activeContextMeta.label}</p>
+            {prefs.showFolders && fringe.length > 0 ? (
+              <div className="aac-folder-tile-grid" role="list" aria-label="Category folders">
+                {fringe.map((c) => (
+                  <AacFolderTile
                     key={c.id}
-                    type="button"
-                    className={`chip ${folderId === c.id && !learnOpen ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setLearnOpen(false)
-                      setFolderId((id) => (id === c.id ? null : c.id))
-                    }}
-                  >
-                    <span aria-hidden="true">{c.emoji}</span> {c.title}
-                  </button>
-                ))
-              : null}
+                    category={c}
+                    onOpen={() => openFolder(c.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="fine-print">
+                Grown-ups can turn on folders in Parent Controls as the board grows.
+              </p>
+            )}
             <button
               type="button"
               className={`chip aac-learn-chip ${learnOpen ? 'is-active' : ''}`}
+              style={{ marginTop: '0.65rem' }}
               onClick={() => {
                 setFolderId(null)
                 setLearnOpen((v) => !v)
@@ -636,39 +702,16 @@ export function TalkAac() {
             >
               <span aria-hidden="true">🎮</span> Learn
             </button>
-          </nav>
-          {learnOpen ? <AacLearnPanel /> : null}
-          {!learnOpen && folderId && prefs.showFolders ? (
-            <div
-              className={`aac-comm-grid cols-${Math.min(cols, 3)} ${prefs.largeButtons ? 'is-large' : ''}`}
-              role="list"
-              aria-label={`${activeFolder?.title ?? 'Folder'} words`}
-            >
-              {folderButtons.map((btn) => (
-                <AacWordButton
-                  key={btn.id}
-                  btn={btn}
-                  prefs={prefs}
-                  theme={prefs.sensoryTheme}
-                  glowing={glowId === btn.id}
-                  cooldownCalm={cooldownTileId === btn.id}
-                  onActivate={() => activate(btn)}
-                  onLongPress={() => openForms(btn)}
-                />
-              ))}
-              {folderButtons.length === 0 ? (
-                <p className="empty-note">No words on this board yet.</p>
-              ) : null}
-            </div>
-          ) : null}
-          {!learnOpen && !folderId ? (
-            <p className="fine-print">
-              Tap a folder for more words, or <strong>Learn</strong> for games. Core stays put on the
-              left.
-            </p>
-          ) : null}
-        </aside>
-      </div>
+            {learnOpen ? <AacLearnPanel /> : null}
+            {!learnOpen && prefs.showFolders ? (
+              <p className="fine-print" style={{ marginTop: '0.55rem' }}>
+                Tap a <strong>folder</strong> for more words. Core stays on the left — sentence strip
+                stays when a folder opens.
+              </p>
+            ) : null}
+          </aside>
+        </div>
+      )}
 
       {!locked ? (
         <p className="fine-print aac-motor-note">
@@ -684,7 +727,7 @@ export function TalkAac() {
           forms={formsFor.forms?.length ? formsFor.forms : wordFormsFor(formsFor.id, formsFor.label)}
           onPick={(form) => {
             setFormsFor(null)
-            activate(formsFor, form)
+            activate(formsFor, form, Boolean(folderId))
           }}
           onClose={() => setFormsFor(null)}
         />

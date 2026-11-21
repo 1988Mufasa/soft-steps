@@ -1136,6 +1136,55 @@ export function ParentDashboard() {
               </button>
             ))}
           </div>
+          <label className="check-line" style={{ marginTop: '0.85rem' }}>
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.showFolders}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      showFolders: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Category folders shown on Talk board.'
+                    : 'Category folders hidden on Talk board.',
+                )
+              }}
+            />
+            Show category folders (Food & Drink, Toys & Play, Places, Body & Pain…)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.autoReturnFromFolder}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      autoReturnFromFolder: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Auto-return to core board after a folder word.'
+                    : 'Stay in folder after selecting a word.',
+                )
+              }}
+            />
+            Auto-Return to Core Board after selecting a folder word
+          </label>
+          <p className="fine-print">
+            Default on. Helps kids build sentences like I + want + apple faster.
+          </p>
           <p className="field-label" style={{ marginTop: '0.85rem' }}>
             Repeat tap cooldown
           </p>
