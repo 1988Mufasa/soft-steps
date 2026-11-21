@@ -45,7 +45,8 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Fitzgerald colors (yellow/green/blue/pink–purple) on core words
 - [ ] Hold Edit 3s → PIN → photos / signs / voice / stage change
 - [ ] About Me + Guided Access guide work
-- [ ] Lock padlock hides Home + Edit; hold padlock ~4s with progress ring to unlock
+- [ ] Adult Communication Lock: padlock hides Home/Edit/About; hold 4s → PIN or spelled numbers
+- [ ] Parent Controls: toggle board lock; Guided Access badge; How to Lock iPad Screen guide
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing

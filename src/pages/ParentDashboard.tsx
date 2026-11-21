@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { GuidedAccessGuide } from '../components/GuidedAccessGuide'
 import { VoicePicker } from '../components/VoicePicker'
+import { getGuidedAccessStatus, type GuidedAccessStatus } from '../native/guidedAccess'
 import { loadCheckInHistory, replaceCheckInHistory } from '../data/checkIn'
 import { useParentSessionGuard } from '../hooks/useParentSessionGuard'
 import { clearParentSession } from '../security/parentSession'
@@ -96,6 +98,28 @@ export function ParentDashboard() {
   const [confirmPin, setConfirmPin] = useState('')
   const [saved, setSaved] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
+  const [gaStatus, setGaStatus] = useState<GuidedAccessStatus | null>(null)
+  const [showGaGuide, setShowGaGuide] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const refresh = () => {
+      void getGuidedAccessStatus().then((s) => {
+        if (!cancelled) setGaStatus(s)
+      })
+    }
+    refresh()
+    const id = window.setInterval(refresh, 4000)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [])
   const [checkIns] = useState(() => loadCheckInHistory())
   const [editName, setEditName] = useState(activeProfile?.name ?? '')
   const [editEmoji, setEditEmoji] = useState(activeProfile?.emoji ?? '🧒')
@@ -1008,6 +1032,65 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card security-card">
+          <h2>Adult Communication Lock</h2>
+          <p className="fine-print">
+            When locked, Talk AAC hides Home, Edit, and chrome so only communication tiles and the
+            sentence strip stay interactive. Unlock requires a 4-second padlock hold, then PIN or
+            spelled numbers.
+          </p>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.boardLocked}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      boardLocked: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Talk board locked from Parent Controls.'
+                    : 'Talk board unlocked from Parent Controls.',
+                )
+              }}
+            />
+            Lock Talk AAC board now
+          </label>
+          <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
+            Open Talk AAC
+          </Link>
+        </article>
+
+        <article className="dash-card security-card">
+          <h2>iPad Guided Access</h2>
+          <p className="fine-print">
+            Device-level lock so Soft Steps stays full-screen. Complements the in-app padlock.
+          </p>
+          <p className="ga-status-row">
+            Status:{' '}
+            {gaStatus?.available ? (
+              <span className={`ga-badge ${gaStatus.enabled ? 'is-on' : 'is-off'}`}>
+                Guided Access {gaStatus.enabled ? 'On' : 'Off'}
+              </span>
+            ) : (
+              <span className="ga-badge is-unknown">
+                {gaStatus?.platform === 'ios'
+                  ? 'Unavailable in this build — rebuild iOS app for live status'
+                  : 'Check on iPad (status available in Soft Steps iOS app)'}
+              </span>
+            )}
+          </p>
+          <button type="button" className="btn btn-primary" onClick={() => setShowGaGuide(true)}>
+            How to Lock iPad Screen
+          </button>
+        </article>
+
+        <article className="dash-card security-card">
           <h2>Security & privacy</h2>
           <p>
             Soft Steps has no in-app purchases and never collects payments. Learning data stays on
@@ -1018,6 +1101,8 @@ export function ParentDashboard() {
           </Link>
         </article>
       </div>
+
+      {showGaGuide ? <GuidedAccessGuide onClose={() => setShowGaGuide(false)} /> : null}
 
       {saved ? (
         <p className="save-toast" role="status">

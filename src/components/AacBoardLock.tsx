@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { AdultUnlockGate } from './AdultUnlockGate'
 
 const HOLD_MS = 4000
 const CIRCUMFERENCE = 2 * Math.PI * 18
@@ -10,12 +11,15 @@ type Props = {
 }
 
 /**
- * Lock-to-AAC padlock — tap to lock instantly; hold 4s with progress ring to unlock
- * (parental gate kids rarely complete by accident).
+ * Adult Communication Lock padlock.
+ * - Unlocked: tap → lock immediately (hides Home / Edit).
+ * - Locked: tap alone does nothing; hold 4s (progress ring) then AdultUnlockGate
+ *   (PIN or spelled numbers) before unlocking.
  */
 export function AacBoardLock({ locked, onLock, onUnlock }: Props) {
   const [progress, setProgress] = useState(0)
   const [holding, setHolding] = useState(false)
+  const [showGate, setShowGate] = useState(false)
   const startRef = useRef(0)
   const rafRef = useRef<number | null>(null)
   const doneRef = useRef(false)
@@ -36,7 +40,8 @@ export function AacBoardLock({ locked, onLock, onUnlock }: Props) {
     if (p >= 1 && !doneRef.current) {
       doneRef.current = true
       clearHold()
-      onUnlock()
+      // Hold alone is not enough — open adult verification
+      setShowGate(true)
       return
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -49,6 +54,7 @@ export function AacBoardLock({ locked, onLock, onUnlock }: Props) {
       onLock()
       return
     }
+    // Locked: short taps do nothing — require a steady hold
     doneRef.current = false
     startRef.current = Date.now()
     setHolding(true)
@@ -68,48 +74,60 @@ export function AacBoardLock({ locked, onLock, onUnlock }: Props) {
   const dashOffset = CIRCUMFERENCE * (1 - progress)
 
   return (
-    <div className={`aac-board-lock ${locked ? 'is-locked' : 'is-unlocked'}`}>
-      <button
-        type="button"
-        className={`aac-lock-btn ${holding ? 'is-holding' : ''}`}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={onPointerUp}
-        aria-pressed={locked}
-        aria-label={
-          locked
-            ? 'Board locked. Grown-ups: hold padlock 4 seconds to unlock'
-            : 'Lock to AAC board — hides Home and Edit'
-        }
-        title={locked ? 'Hold to unlock' : 'Lock board'}
-      >
-        <svg className="aac-lock-ring" viewBox="0 0 44 44" aria-hidden="true">
-          <circle className="aac-lock-track" cx="22" cy="22" r="18" />
-          {locked ? (
-            <circle
-              className="aac-lock-progress"
-              cx="22"
-              cy="22"
-              r="18"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={dashOffset}
-            />
-          ) : null}
-        </svg>
-        <span className="aac-lock-icon" aria-hidden="true">
-          {locked ? '🔒' : '🔓'}
-        </span>
-      </button>
-      {locked && holding ? (
-        <span className="aac-lock-hint" aria-live="polite">
-          Keep holding…
-        </span>
-      ) : locked ? (
-        <span className="aac-lock-hint aac-lock-hint-idle">Hold to unlock</span>
-      ) : (
-        <span className="aac-lock-hint aac-lock-hint-idle">Lock board</span>
-      )}
-    </div>
+    <>
+      <div className={`aac-board-lock ${locked ? 'is-locked' : 'is-unlocked'}`}>
+        <button
+          type="button"
+          className={`aac-lock-btn ${holding ? 'is-holding' : ''}`}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onPointerLeave={onPointerUp}
+          aria-pressed={locked}
+          aria-label={
+            locked
+              ? 'Adult Communication Lock on. Hold padlock 4 seconds, then verify PIN to unlock'
+              : 'Adult Communication Lock — hide Home and Edit'
+          }
+          title={locked ? 'Hold 4s, then verify' : 'Lock board'}
+        >
+          <svg className="aac-lock-ring" viewBox="0 0 44 44" aria-hidden="true">
+            <circle className="aac-lock-track" cx="22" cy="22" r="18" />
+            {locked ? (
+              <circle
+                className="aac-lock-progress"
+                cx="22"
+                cy="22"
+                r="18"
+                strokeDasharray={CIRCUMFERENCE}
+                strokeDashoffset={dashOffset}
+              />
+            ) : null}
+          </svg>
+          <span className="aac-lock-icon" aria-hidden="true">
+            {locked ? '🔒' : '🔓'}
+          </span>
+        </button>
+        {locked && holding ? (
+          <span className="aac-lock-hint" aria-live="polite">
+            Keep holding…
+          </span>
+        ) : locked ? (
+          <span className="aac-lock-hint aac-lock-hint-idle">Hold to unlock</span>
+        ) : (
+          <span className="aac-lock-hint aac-lock-hint-idle">Lock board</span>
+        )}
+      </div>
+
+      {showGate ? (
+        <AdultUnlockGate
+          onVerified={() => {
+            setShowGate(false)
+            onUnlock()
+          }}
+          onCancel={() => setShowGate(false)}
+        />
+      ) : null}
+    </>
   )
 }

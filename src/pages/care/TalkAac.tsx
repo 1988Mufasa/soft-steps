@@ -210,26 +210,17 @@ export function TalkAac() {
         </div>
       ) : null}
 
-      <header className="activity-header">
-        {locked ? (
-          <span className="back-link is-disabled" aria-hidden="true">
-            {/* Home hidden while locked */}
-          </span>
-        ) : (
+      {!locked ? (
+        <header className="activity-header">
           <Link to="/" className="back-link">
             ← Home
           </Link>
-        )}
-        <div className="activity-meta">
-          <p className="eyebrow offline-tag">
-            AAC · {meta.label} · {prefs.ageRange}
-            {locked ? ' · Locked' : ''}
-          </p>
-          <h1>Talk</h1>
-        </div>
-        {locked ? (
-          <span className="aac-edit-slot" aria-hidden="true" />
-        ) : (
+          <div className="activity-meta">
+            <p className="eyebrow offline-tag">
+              AAC · {meta.label} · {prefs.ageRange}
+            </p>
+            <h1>Talk</h1>
+          </div>
           <button
             type="button"
             className="btn btn-ghost aac-edit-link"
@@ -241,17 +232,17 @@ export function TalkAac() {
           >
             {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
           </button>
-        )}
-      </header>
+        </header>
+      ) : null}
 
       {!locked && needsSetup ? (
         <p className="aac-setup-hint" role="status">
-          Grown-ups: hold <strong>Edit</strong> for 3 seconds to pick an age-recommended grid
-          (2×2 / 2×3, 3×4, or 4×6). Tap the padlock to lock the board for your child.
+          Grown-ups: hold <strong>Edit</strong> for 3 seconds to pick an age-recommended grid.
+          Tap the padlock for Adult Communication Lock.
         </p>
       ) : null}
 
-      {prefs.aboutMeEnabled ? (
+      {!locked && prefs.aboutMeEnabled ? (
         <button
           type="button"
           className="aac-about-me"
@@ -330,14 +321,10 @@ export function TalkAac() {
 
       {!locked ? (
         <p className="fine-print aac-motor-note">
-          Positions never shuffle by use. Tap the padlock to lock Home &amp; Edit away. Grow the
-          board in Edit when your child is ready — same spots, more words.
+          Positions never shuffle by use. Tap the padlock for Adult Communication Lock (hides Home
+          &amp; Edit). Grown-ups unlock with a 4-second hold, then PIN or spelled numbers.
         </p>
-      ) : (
-        <p className="fine-print aac-motor-note">
-          Board locked — communication only. Grown-ups: hold the padlock to unlock.
-        </p>
-      )}
+      ) : null}
     </section>
   )
 }

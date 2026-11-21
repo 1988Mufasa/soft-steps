@@ -25,6 +25,20 @@ export async function initMobileShell() {
   try {
     const { App } = await import('@capacitor/app')
     App.addListener('backButton', ({ canGoBack }) => {
+      // Respect Adult Communication Lock on Talk AAC
+      try {
+        const raw = localStorage.getItem('soft-steps-settings')
+        if (raw) {
+          const parsed = JSON.parse(raw) as {
+            aacLibrary?: { prefs?: { boardLocked?: boolean } }
+          }
+          if (parsed.aacLibrary?.prefs?.boardLocked && window.location.pathname.startsWith('/talk')) {
+            return
+          }
+        }
+      } catch {
+        /* ignore */
+      }
       if (canGoBack) {
         window.history.back()
       } else {

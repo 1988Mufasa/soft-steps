@@ -2794,7 +2794,97 @@ html[data-dim-colors='true'] body {
 }
 
 .aac-comm.is-board-locked .aac-sentence-strip {
-  margin-top: 0.35rem;
+  margin-top: 2.75rem;
+}
+
+.aac-comm.is-board-locked .aac-section-label {
+  /* Keep tiny labels for orientation; chrome (Home/Edit/About) is removed */
+  opacity: 0.7;
+}
+
+.adult-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(18, 28, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.adult-gate-modal {
+  width: min(420px, 100%);
+  max-height: min(90dvh, 640px);
+  overflow: auto;
+  margin: 0;
+}
+
+.adult-gate-words {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.ga-status-row {
+  margin: 0.5rem 0 0.85rem;
+  font-weight: 700;
+}
+
+.ga-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.ga-badge.is-on {
+  background: #c8e6c9;
+  color: #1b5e20;
+}
+
+.ga-badge.is-off {
+  background: #ffecb3;
+  color: #e65100;
+}
+
+.ga-badge.is-unknown {
+  background: #eceff1;
+  color: #455a64;
+}
+
+.guided-access-guide .ga-steps {
+  list-style: none;
+  margin: 0.75rem 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.guided-access-guide .ga-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.ga-step-num {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent-deep, #3661b0);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.guided-access-guide .ga-steps p {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 .aac-sentence-strip {
