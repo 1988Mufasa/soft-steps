@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { GameCelebration } from '../../components/GameCelebration'
 import { OnlineShell } from '../../components/OnlineShell'
 import { playCorrect, playGentleNudge, playTap } from '../../audio/feedback'
 import { useOnlinePack } from '../../hooks/useOnlinePack'
@@ -160,12 +161,11 @@ export function GentleTimer() {
       ) : null}
 
       {finished ? (
-        <div className="online-panel">
-          <p>{message}</p>
+        <GameCelebration stars={correctCount} subtitle={message}>
           <button type="button" className="btn btn-secondary" onClick={restart}>
             Play another calm round
           </button>
-        </div>
+        </GameCelebration>
       ) : (
         <div className={`feedback feedback-${tone}`}>{message}</div>
       )}

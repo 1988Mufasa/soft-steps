@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GameHUD } from '../components/GameHUD'
 import { ChoiceGrid } from '../components/ChoiceGrid'
+import { GameCelebration } from '../components/GameCelebration'
 import { SignHand } from '../components/SignHand'
 import { FeedbackBanner } from '../components/FeedbackBanner'
 import { playCorrect, playGentleNudge, playTap } from '../audio/feedback'
@@ -220,18 +221,17 @@ export function SignsModule() {
           </div>
           <span className="streak-pill">★ {stars}</span>
         </header>
-        <div className="sign-win">
-          <p className="sign-win-stars">{'★'.repeat(Math.max(1, Math.min(stars, 8)))}</p>
-          <p>You earned {stars} star{stars === 1 ? '' : 's'} this game.</p>
-          <div className="confirm-row">
-            <button type="button" className="btn btn-primary" onClick={() => startMode('challenge')}>
-              Play challenge again
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => setMode('menu')}>
-              More games
-            </button>
-          </div>
-        </div>
+        <GameCelebration
+          stars={stars}
+          subtitle={`You earned ${stars} star${stars === 1 ? '' : 's'} this game.`}
+        >
+          <button type="button" className="btn btn-primary" onClick={() => startMode('challenge')}>
+            Play challenge again
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={() => setMode('menu')}>
+            More games
+          </button>
+        </GameCelebration>
       </section>
     )
   }

@@ -2778,3 +2778,95 @@ html[data-dim-colors='true'] body {
   background: var(--good);
   margin-right: 0.35rem;
 }
+
+/* —— Game complete celebration (balloons + You are awesome) —— */
+.game-celebration {
+  position: relative;
+  display: grid;
+  gap: 0.85rem;
+  place-items: center;
+  text-align: center;
+  padding: 2rem 1rem 1.4rem;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(224, 184, 74, 0.22), transparent 55%),
+    var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 220px;
+}
+
+.game-celebration-sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.game-balloon {
+  position: absolute;
+  bottom: -2.5rem;
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  animation: balloonRise 3.6s ease-out infinite;
+  opacity: 0.92;
+}
+
+.game-celebration.is-calm .game-balloon {
+  animation: none;
+  bottom: 55%;
+  opacity: 0.75;
+}
+
+.game-celebration-title {
+  position: relative;
+  z-index: 1;
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 6vw, 2.4rem);
+  font-weight: 800;
+  color: var(--accent-deep);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.game-celebration-sub {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 700;
+  max-width: 28ch;
+}
+
+.game-celebration-actions {
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.game-celebration .sign-win-stars {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes balloonRise {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.85);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-240px) translateX(var(--balloon-drift, 0)) scale(1.05);
+    opacity: 0.15;
+  }
+}
+
+html[data-reduced-motion='true'] .game-balloon,
+html[data-no-sudden='true'] .game-balloon {
+  animation: none !important;
+  bottom: 55%;
+  opacity: 0.75;
+}

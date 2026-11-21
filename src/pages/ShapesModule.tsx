@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ActivityShell } from '../components/ActivityShell'
 import { ChoiceGrid } from '../components/ChoiceGrid'
+import { GameCelebration } from '../components/GameCelebration'
 import { GameHUD } from '../components/GameHUD'
 import { shapePool, type ShapeItem } from '../data/shapes'
 import { speakText } from '../audio/calmAudio'
@@ -55,24 +56,21 @@ export function ShapesModule() {
           </div>
           <span className="streak-pill">★ {game.stars}</span>
         </header>
-        <div className="sign-win">
-          <p className="sign-win-stars">{'★'.repeat(Math.min(game.stars, 8))}</p>
-          <div className="confirm-row">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                game.resetGame()
-                setBoard(makeRound())
-              }}
-            >
-              Play again
-            </button>
-            <Link to="/" className="btn btn-secondary">
-              Home
-            </Link>
-          </div>
-        </div>
+        <GameCelebration stars={game.stars} subtitle="You finished the shape hunt.">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              game.resetGame()
+              setBoard(makeRound())
+            }}
+          >
+            Play again
+          </button>
+          <Link to="/" className="btn btn-secondary">
+            Home
+          </Link>
+        </GameCelebration>
       </section>
     )
   }
