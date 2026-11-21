@@ -38,14 +38,13 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Caregiver onboarding banner dismisses once
 
 ## AAC Talk board
-- [ ] Core words stay visible when browsing fringe folders; positions do not shuffle by use
+- [ ] Setup: pick Ages 3–4 / 5–7 / 8–12 and a recommended grid (2×2–2×3 / 3×4 / 4×6)
+- [ ] Starter shows Want, Help, More, All Done, Yes, No in top-left fixed cells
+- [ ] Grow to 5–7 then 8–12 — earlier words stay in the same cells; folders appear
 - [ ] Sentence strip: tap words → icons line up → Speak / Backspace / Clear all
-- [ ] Fitzgerald colors show on buttons when enabled
-- [ ] Hold Edit 3s → PIN gate → add photo, sign image, and voice clip
-- [ ] Grid size 2×2 and 4×6; pitch/speed sliders change speech
-- [ ] Touch delay / speak-on-release work; tap sound off by default
-- [ ] About Me speaks the custom emergency message
-- [ ] Guided Access / App Pinning instructions readable in editor
+- [ ] Fitzgerald colors (yellow/green/blue/pink–purple) on core words
+- [ ] Hold Edit 3s → PIN → photos / signs / voice / stage change
+- [ ] About Me + Guided Access guide work
 
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing
