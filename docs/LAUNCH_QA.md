@@ -37,6 +37,17 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Sign language shows ASL‑inspired disclaimer
 - [ ] Caregiver onboarding banner dismisses once
 
+## AAC Talk board
+- [ ] Core words stay visible when browsing fringe folders; positions do not shuffle by use
+- [ ] Sentence strip: tap words → icons line up → Speak / Backspace / Clear all
+- [ ] Fitzgerald colors show on buttons when enabled
+- [ ] Hold Edit 3s → PIN gate → add photo, sign image, and voice clip
+- [ ] Grid size 2×2 and 4×6; pitch/speed sliders change speech
+- [ ] Touch delay / speak-on-release work; tap sound off by default
+- [ ] About Me speaks the custom emergency message
+- [ ] Guided Access / App Pinning instructions readable in editor
+
 ## Store copy
 - [ ] Privacy page `/privacy` readable; public HTTPS privacy URL ready for listing
 - [ ] Age rating / permission strings match camera + mic use
+- [ ] Listing mentions offline AAC / no child account / no cloud AAC tracking
