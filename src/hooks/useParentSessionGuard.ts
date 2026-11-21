@@ -6,13 +6,22 @@ import {
   parentSessionRemainingMs,
   touchParentSession,
 } from '../security/parentSession'
+import { useApp } from '../store/AppContext'
 
 /** Redirect to PIN gate if grown-up session missing/expired; keep idle clock fresh. */
 export function useParentSessionGuard() {
   const navigate = useNavigate()
+  const { settings } = useApp()
   const [remainingMs, setRemainingMs] = useState(() => parentSessionRemainingMs())
 
   useEffect(() => {
+    // Starter PIN must be changed before any Grown-ups tools
+    if (settings.pinIsDefault) {
+      clearParentSession()
+      navigate('/parent', { replace: true })
+      return
+    }
+
     if (!isParentSessionValid()) {
       clearParentSession()
       navigate('/parent', { replace: true })
@@ -50,7 +59,7 @@ export function useParentSessionGuard() {
       for (const ev of events) window.removeEventListener(ev, onActivity)
       window.clearInterval(tick)
     }
-  }, [navigate])
+  }, [navigate, settings.pinIsDefault])
 
   return { remainingMs }
 }

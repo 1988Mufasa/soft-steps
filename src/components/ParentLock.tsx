@@ -6,8 +6,10 @@ import {
   PIN_GUARD,
   recordPinFailure,
 } from '../security/pinGuard'
+import { Link } from 'react-router-dom'
 import { openParentSession } from '../security/parentSession'
 import { useApp } from '../store/AppContext'
+import { DEFAULT_PIN } from '../types'
 
 type Props = {
   onUnlock: () => void
@@ -59,6 +61,26 @@ export function ParentLock({ onUnlock, onCancel, title = 'Grown-up unlock' }: Pr
 
   const locked = lockMs > 0
 
+  if (settings.pinIsDefault) {
+    return (
+      <div className="parent-lock">
+        <h1>{title}</h1>
+        <p className="form-error" role="status">
+          Starter PIN <strong>{DEFAULT_PIN}</strong> is still active. Open Grown-ups once and set a
+          new PIN before using the builder.
+        </p>
+        <Link to="/parent" className="btn btn-primary">
+          Set PIN in Grown-ups
+        </Link>
+        {onCancel ? (
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+            Cancel
+          </button>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div className="parent-lock">
       <h1>{title}</h1>
@@ -91,7 +113,6 @@ export function ParentLock({ onUnlock, onCancel, title = 'Grown-up unlock' }: Pr
       </form>
       <p className="fine-print">
         After {PIN_GUARD.MAX_ATTEMPTS} wrong tries, unlock pauses (longer if repeated).
-        {settings.pinIsDefault ? ' Default PIN is still 1234 — change it in Grown-ups.' : ''}
       </p>
     </div>
   )
