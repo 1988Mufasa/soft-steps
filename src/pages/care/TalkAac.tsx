@@ -310,7 +310,18 @@ export function TalkAac() {
         onUnlock={() => setBoardLocked(false)}
       />
 
-      {prefs.firstThenBarEnabled ? <AacFirstThenBar prefs={prefs} /> : null}
+      {prefs.firstThenBarEnabled ? (
+        <AacFirstThenBar
+          prefs={prefs}
+          library={library}
+          adultSetup={!locked && isParentSessionValid()}
+          onChange={(firstThen) => {
+            updateSettings({
+              aacLibrary: { ...library, firstThen },
+            })
+          }}
+        />
+      ) : null}
 
       {prefs.attentionEnabled ? (
         <button

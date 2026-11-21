@@ -121,7 +121,10 @@ export type AacPrefs = {
   aboutMeText: string
   /** Show Classroom Quick-Talk strip when a temporary lesson strip is loaded */
   quickTalkEnabled: boolean
-  /** Compact First–Then bar on Talk (uses active routine) */
+  /**
+   * Show collapsible First–Then schedule bar on Talk.
+   * Default off so the board stays uncluttered until parents enable it.
+   */
   firstThenBarEnabled: boolean
   /** Louder classroom TTS / clips (overrides soft-audio quieting for AAC) */
   classroomVolumeBoost: boolean
@@ -196,12 +199,36 @@ export type AacQuickTalkStrip = {
   words: AacQuickTalkWord[]
 }
 
+/** One slot on the AAC First–Then schedule bar (offline, board-local). */
+export type AacFirstThenSlot = {
+  label: string
+  emoji: string
+  photoDataUrl?: string
+  /** Optional link to an AAC button id */
+  buttonId?: string
+}
+
+export type AacFirstThenBoard = {
+  first: AacFirstThenSlot | null
+  then: AacFirstThenSlot | null
+  /** Child/adult marked FIRST complete — card turns green with check */
+  firstComplete: boolean
+}
+
+export const DEFAULT_FIRST_THEN: AacFirstThenBoard = {
+  first: { label: 'Clean Up', emoji: '🧹' },
+  then: { label: 'Snack', emoji: '🍎' },
+  firstComplete: false,
+}
+
 export type AacLibrary = {
   categories: AacCategory[]
   buttons: AacButton[]
   prefs: AacPrefs
   /** Today’s lesson strip — clear anytime without touching home vocabulary */
   quickTalk: AacQuickTalkStrip | null
+  /** Dedicated First–Then slots for Talk (independent of routines) */
+  firstThen: AacFirstThenBoard
 }
 
 export const FITZGERALD_COLORS: Record<
@@ -298,7 +325,7 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   aboutMeEnabled: true,
   aboutMeText: DEFAULT_ABOUT_ME,
   quickTalkEnabled: true,
-  firstThenBarEnabled: true,
+  firstThenBarEnabled: false,
   classroomVolumeBoost: false,
   strongTapHighlight: true,
   stage: 'starter',
@@ -518,6 +545,34 @@ export function createDefaultAacLibrary(): AacLibrary {
     buttons: PRESET_BUTTONS.map((btn) => ({ ...btn })),
     prefs: { ...DEFAULT_AAC_PREFS },
     quickTalk: null,
+    firstThen: { ...DEFAULT_FIRST_THEN, first: { ...DEFAULT_FIRST_THEN.first! }, then: { ...DEFAULT_FIRST_THEN.then! } },
+  }
+}
+
+function normalizeFirstThenSlot(raw: unknown): AacFirstThenSlot | null {
+  if (!raw || typeof raw !== 'object') return null
+  const s = raw as Partial<AacFirstThenSlot>
+  if (typeof s.label !== 'string' || !s.label.trim()) return null
+  return {
+    label: s.label.trim().slice(0, 40),
+    emoji: (typeof s.emoji === 'string' && s.emoji ? s.emoji : '💬').slice(0, 8),
+    photoDataUrl: typeof s.photoDataUrl === 'string' ? s.photoDataUrl : undefined,
+    buttonId: typeof s.buttonId === 'string' ? s.buttonId : undefined,
+  }
+}
+
+function normalizeFirstThen(saved?: Partial<AacFirstThenBoard> | null): AacFirstThenBoard {
+  if (!saved) {
+    return {
+      first: DEFAULT_FIRST_THEN.first ? { ...DEFAULT_FIRST_THEN.first } : null,
+      then: DEFAULT_FIRST_THEN.then ? { ...DEFAULT_FIRST_THEN.then } : null,
+      firstComplete: false,
+    }
+  }
+  return {
+    first: normalizeFirstThenSlot(saved.first),
+    then: normalizeFirstThenSlot(saved.then),
+    firstComplete: Boolean(saved.firstComplete),
   }
 }
 
@@ -599,7 +654,7 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   if (typeof merged.attentionEnabled !== 'boolean') merged.attentionEnabled = true
   if (typeof merged.bodyCheckEnabled !== 'boolean') merged.bodyCheckEnabled = true
   if (typeof merged.quickTalkEnabled !== 'boolean') merged.quickTalkEnabled = true
-  if (typeof merged.firstThenBarEnabled !== 'boolean') merged.firstThenBarEnabled = true
+  if (typeof merged.firstThenBarEnabled !== 'boolean') merged.firstThenBarEnabled = false
   if (typeof merged.classroomVolumeBoost !== 'boolean') merged.classroomVolumeBoost = false
   if (typeof merged.strongTapHighlight !== 'boolean') merged.strongTapHighlight = true
   return merged
@@ -700,6 +755,7 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
     ),
     prefs: normalizePrefs(saved.prefs),
     quickTalk: normalizeQuickTalk(saved.quickTalk),
+    firstThen: normalizeFirstThen(saved.firstThen),
   }
 }
 

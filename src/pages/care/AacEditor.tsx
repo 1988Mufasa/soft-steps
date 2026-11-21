@@ -488,8 +488,12 @@ export function AacEditor() {
               checked={library.prefs.firstThenBarEnabled}
               onChange={(e) => updatePrefs({ firstThenBarEnabled: e.target.checked })}
             />
-            Show First–Then bar on Talk (uses active routine)
+            Show First–Then Schedule Bar on Talk
           </label>
+          <p className="fine-print">
+            Off by default to keep Talk uncluttered. When on, set FIRST / THEN on Talk while a
+            parent session is unlocked (tap a slot). Children tap to hear “First …, then …”.
+          </p>
           <label className="check-line">
             <input
               type="checkbox"

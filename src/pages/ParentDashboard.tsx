@@ -1165,12 +1165,18 @@ export function ParentDashboard() {
                   },
                 })
                 setSaved(
-                  e.target.checked ? 'First–Then bar shown on Talk.' : 'First–Then bar hidden.',
+                  e.target.checked
+                    ? 'First–Then Schedule Bar shown on Talk.'
+                    : 'First–Then Schedule Bar hidden.',
                 )
               }}
             />
-            First–Then bar on Talk
+            Show First–Then Schedule Bar
           </label>
+          <p className="fine-print">
+            Default off. Unlock a parent session, open Talk, and tap FIRST / THEN to pick AAC
+            tiles, presets, or a custom photo.
+          </p>
           <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
             Open Talk AAC
           </Link>

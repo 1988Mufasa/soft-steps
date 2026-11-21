@@ -57,7 +57,7 @@ Run on a real **iPhone** and **Android** device before TestFlight / Play Interna
 - [ ] Home ↔ School board switch (parental gate); core slots unchanged
 - [ ] Repeat tap cooldown (Off/1s/1.5s/2s/3s): same tile ignored; different tiles instant
 - [ ] Quick-Talk: load Fall/Field trip pack in editor → strip on Talk; Clear leaves home board alone
-- [ ] First–Then bar on Talk matches active routine; tap speaks First/Then
+- [ ] First–Then Schedule Bar toggle default off; when on: speak “First …, then …”, checkmark greens FIRST, adult picker behind parent session
 - [ ] Classroom volume boost + strong tap highlight / “Tapped” banner
 
 ## Store copy

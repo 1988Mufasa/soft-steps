@@ -3332,15 +3332,60 @@ html[data-dim-colors='true'] body {
   color: #e65100;
 }
 
+.aac-ft-wrap {
+  margin: 0 0 0.55rem;
+}
+
+.aac-ft-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.aac-ft-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink, #2c3a4a);
+  cursor: pointer;
+  padding: 0.2rem 0.15rem;
+  touch-action: manipulation;
+}
+
+.aac-ft-summary {
+  font-weight: 600;
+  font-style: normal;
+  opacity: 0.75;
+  font-size: 0.9rem;
+}
+
+.aac-ft-speak-all {
+  margin-left: auto;
+  min-height: 40px;
+}
+
 .aac-ft-bar {
   display: flex;
   align-items: stretch;
   gap: 0.35rem;
-  margin: 0 0 0.55rem;
-  padding: 0.35rem;
+  padding: 0.4rem;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.78);
   box-shadow: var(--shadow);
+}
+
+.aac-ft-slot-wrap {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+  min-width: 0;
 }
 
 .aac-ft-cell {
@@ -3350,19 +3395,27 @@ html[data-dim-colors='true'] body {
   grid-template-rows: auto auto;
   gap: 0.1rem 0.45rem;
   align-items: center;
-  min-height: 64px;
-  padding: 0.4rem 0.55rem;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  background: #e3f2fd;
+  min-height: 72px;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 14px;
+  border: 2px solid rgba(54, 97, 176, 0.18);
+  background: #e8f1fb;
   font: inherit;
   text-align: left;
   cursor: pointer;
   touch-action: manipulation;
+  position: relative;
 }
 
 .aac-ft-then {
-  background: #e8f5e9;
+  background: #eaf6ee;
+  border-color: rgba(67, 160, 71, 0.22);
+}
+
+.aac-ft-cell.is-done {
+  background: #c8e6c9;
+  border-color: #43a047;
 }
 
 .aac-ft-kicker {
@@ -3375,29 +3428,139 @@ html[data-dim-colors='true'] body {
 }
 
 .aac-ft-emoji {
-  font-size: 1.45rem;
+  font-size: 1.55rem;
   line-height: 1;
 }
 
 .aac-ft-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.aac-ft-label {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aac-ft-done-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.4rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: #2e7d32;
+  color: #fff;
+  font-size: 0.85rem;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.aac-ft-check {
+  flex: 0 0 48px;
+  width: 48px;
+  border-radius: 14px;
+  border: 2px solid rgba(67, 160, 71, 0.35);
+  background: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #66bb6a;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.aac-ft-check.is-on {
+  background: #43a047;
+  border-color: #2e7d32;
+  color: #fff;
+}
+
+.aac-ft-arrow {
+  align-self: center;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--accent-deep, #3661b0);
+  padding: 0 0.05rem;
+}
+
+.aac-ft-adult-hint {
+  margin: 0.25rem 0 0;
+}
+
+.aac-ft-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: end center;
+  padding: 0.75rem;
+  background: rgba(30, 40, 55, 0.45);
+}
+
+.aac-ft-picker-sheet {
+  width: min(480px, 100%);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 1rem;
+  border-radius: 18px 18px 14px 14px;
+  background: var(--surface, #fffdf8);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.aac-ft-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.aac-ft-picker-head h3 {
+  margin: 0;
+}
+
+.aac-ft-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.45rem;
+  max-height: 40vh;
+  overflow: auto;
+}
+
+.aac-ft-picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 72px;
+  padding: 0.5rem;
+  border-radius: 12px;
+  border: 2px solid rgba(54, 97, 176, 0.15);
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.aac-ft-picker-thumb {
   width: 36px;
   height: 36px;
   object-fit: cover;
   border-radius: 8px;
 }
 
-.aac-ft-label {
-  font-weight: 700;
-  font-size: 0.95rem;
-  line-height: 1.15;
-}
-
-.aac-ft-arrow {
-  align-self: center;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--accent-deep, #3661b0);
-  padding: 0 0.1rem;
+.aac-ft-custom {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .aac-quick-talk {
