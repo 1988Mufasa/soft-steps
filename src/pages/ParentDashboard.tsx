@@ -1326,6 +1326,154 @@ export function ParentDashboard() {
             Default off. Unlock a parent session, open Talk, and tap FIRST / THEN to pick AAC
             tiles, presets, or a custom photo.
           </p>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.phrasesBarEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      phrasesBarEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'Phrases bar shown on Talk.' : 'Phrases bar hidden.',
+                )
+              }}
+            />
+            Show phrases bar (saved + recent)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.scriptsFolderEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      scriptsFolderEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'Scripts folder shown on Talk.' : 'Scripts folder hidden.',
+                )
+              }}
+            />
+            Show Scripts folder
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.partnerModelEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      partnerModelEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Partner modeling path highlight on.'
+                    : 'Partner modeling path highlight off.',
+                )
+              }}
+            />
+            Partner modeling path highlight
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.scanningEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      scanningEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'Switch scanning enabled.' : 'Switch scanning off.',
+                )
+              }}
+            />
+            Switch scanning access
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.showDeviceStatus}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      showDeviceStatus: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Device status chip shown.'
+                    : 'Device status chip hidden.',
+                )
+              }}
+            />
+            Show battery + offline status chip
+          </label>
+          <p className="field-label" style={{ marginTop: '0.65rem' }}>
+            Dwell activation
+          </p>
+          <div className="toggle-row wrap" role="group" aria-label="Dwell activation">
+            {(
+              [
+                { ms: 0 as const, label: 'Off' },
+                { ms: 500 as const, label: '0.5s' },
+                { ms: 800 as const, label: '0.8s' },
+                { ms: 1200 as const, label: '1.2s' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${
+                  settings.aacLibrary.prefs.dwellMs === opt.ms ? 'is-active' : ''
+                }`}
+                onClick={() => {
+                  updateSettings({
+                    aacLibrary: {
+                      ...settings.aacLibrary,
+                      prefs: {
+                        ...settings.aacLibrary.prefs,
+                        dwellMs: opt.ms,
+                      },
+                    },
+                  })
+                  setSaved(
+                    opt.ms === 0
+                      ? 'Dwell activation off.'
+                      : `Dwell activation set to ${opt.ms}ms.`,
+                  )
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
           <Link to="/" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
             Open Talk board
           </Link>

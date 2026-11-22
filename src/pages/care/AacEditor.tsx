@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AacMulberryPicker } from '../../components/AacMulberryPicker'
 import { AacPhotoCapture } from '../../components/AacPhotoCapture'
+import { AacSessionNotes } from '../../components/AacSessionNotes'
+import { AacVoiceBankModal } from '../../components/AacVoiceBankModal'
 import { LockedGate } from '../../components/ParentLock'
 import { VoicePicker } from '../../components/VoicePicker'
+import {
+  applyBoardTemplate,
+  BOARD_TEMPLATES,
+  type AacBoardTemplateId,
+} from '../../data/aacExtras'
 import {
   AAC_BOARD_CONTEXTS,
   AAC_STAGES,
@@ -25,8 +33,10 @@ import {
   type AacStage,
 } from '../../data/aacPresets'
 import { QUICK_TALK_PACKS, packToStrip, parseQuickTalkList } from '../../data/aacQuickTalk'
+import { mulberryUrl } from '../../data/mulberrySymbols'
 import { isParentSessionValid } from '../../security/parentSession'
 import { useApp } from '../../store/AppContext'
+import { printAacBoard } from '../../utils/aacBoardPdf'
 import {
   downloadAacBoard,
   libraryFromAacBoardFile,
@@ -68,9 +78,13 @@ export function AacEditor() {
   const [draftPhoto, setDraftPhoto] = useState<string | undefined>()
   const [draftSign, setDraftSign] = useState<string | undefined>()
   const [draftAudio, setDraftAudio] = useState<string | undefined>()
+  const [draftMulberry, setDraftMulberry] = useState<string | undefined>()
   const [draftBoardContext, setDraftBoardContext] = useState<AacBoardContextId | 'both'>('both')
   const [recording, setRecording] = useState(false)
   const [photoCapture, setPhotoCapture] = useState<'photo' | 'sign' | null>(null)
+  const [mulberryOpen, setMulberryOpen] = useState(false)
+  const [voiceBankOpen, setVoiceBankOpen] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
   const [qtCustomTitle, setQtCustomTitle] = useState('Today’s lesson')
   const [qtCustomList, setQtCustomList] = useState('')
   const [msg, setMsg] = useState('')
@@ -115,6 +129,7 @@ export function AacEditor() {
     setDraftPhoto(undefined)
     setDraftSign(undefined)
     setDraftAudio(undefined)
+    setDraftMulberry(undefined)
     setDraftBoardContext(library.prefs.activeBoardContext)
     setPhotoError('')
     setShowForm(true)
@@ -130,6 +145,7 @@ export function AacEditor() {
     setDraftPhoto(btn.photoDataUrl)
     setDraftSign(btn.signPhotoDataUrl)
     setDraftAudio(btn.audioDataUrl)
+    setDraftMulberry(btn.mulberryFile)
     setDraftBoardContext(
       btn.categoryId === 'core' ? 'both' : (btn.boardContext ?? 'both'),
     )
@@ -144,7 +160,9 @@ export function AacEditor() {
     setDraftPhoto(undefined)
     setDraftSign(undefined)
     setDraftAudio(undefined)
+    setDraftMulberry(undefined)
     setPhotoCapture(null)
+    setMulberryOpen(false)
     stopRecording()
   }
 
@@ -230,6 +248,7 @@ export function AacEditor() {
               photoDataUrl: draftPhoto,
               signPhotoDataUrl: draftSign,
               audioDataUrl: draftAudio,
+              mulberryFile: draftMulberry,
               boardContext: draftCat === 'core' ? 'both' : draftBoardContext,
             }
           : b,
@@ -247,6 +266,7 @@ export function AacEditor() {
         photoDataUrl: draftPhoto,
         signPhotoDataUrl: draftSign,
         audioDataUrl: draftAudio,
+        mulberryFile: draftMulberry,
         boardContext: draftCat === 'core' ? 'both' : draftBoardContext,
         order: library.buttons.filter((b) => b.categoryId === draftCat).length,
         source: 'custom',
@@ -269,6 +289,17 @@ export function AacEditor() {
   const exportBoard = () => {
     downloadAacBoard(library)
     setMsg('AAC board file downloaded — AirDrop or share with home devices.')
+  }
+
+  const printBoard = () => {
+    const ok = printAacBoard(library)
+    setMsg(ok ? 'Print dialog opened for low-tech board backup.' : 'Allow pop-ups to print the board.')
+  }
+
+  const applyTemplate = (id: AacBoardTemplateId) => {
+    saveLibrary(applyBoardTemplate(library, id))
+    const t = BOARD_TEMPLATES.find((x) => x.id === id)
+    setMsg(t ? `Applied “${t.title}” template.` : 'Template applied.')
   }
 
   const importBoard = (file: File | null) => {
@@ -710,6 +741,133 @@ export function AacEditor() {
         </article>
 
         <article className="dash-card">
+          <h2>Board templates</h2>
+          <p className="fine-print">
+            One-tap starter layouts. Templates change stage/grid and optional masks — they do not move
+            permanent core slots.
+          </p>
+          <div className="toggle-row wrap">
+            {BOARD_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className="chip"
+                onClick={() => applyTemplate(t.id)}
+                title={t.blurb}
+              >
+                {t.emoji} {t.title}
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="dash-card">
+          <h2>Access &amp; modeling</h2>
+          <p className="fine-print">Dwell, scanning, partner path, phrases, and device status.</p>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.phrasesBarEnabled}
+              onChange={(e) => updatePrefs({ phrasesBarEnabled: e.target.checked })}
+            />
+            Phrases bar (saved + recent)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.scriptsFolderEnabled}
+              onChange={(e) => updatePrefs({ scriptsFolderEnabled: e.target.checked })}
+            />
+            Scripts folder on Talk
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.partnerModelEnabled}
+              onChange={(e) => updatePrefs({ partnerModelEnabled: e.target.checked })}
+            />
+            Partner modeling path highlight
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.scanningEnabled}
+              onChange={(e) => updatePrefs({ scanningEnabled: e.target.checked })}
+            />
+            Switch scanning (Space / Enter / Select)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={library.prefs.showDeviceStatus}
+              onChange={(e) => updatePrefs({ showDeviceStatus: e.target.checked })}
+            />
+            Battery + offline status chip
+          </label>
+          <p className="field-label">Dwell activation</p>
+          <div className="toggle-row wrap" role="group" aria-label="Dwell time">
+            {(
+              [
+                { ms: 0 as const, label: 'Off' },
+                { ms: 500 as const, label: '0.5s' },
+                { ms: 800 as const, label: '0.8s' },
+                { ms: 1200 as const, label: '1.2s' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${library.prefs.dwellMs === opt.ms ? 'is-active' : ''}`}
+                onClick={() => updatePrefs({ dwellMs: opt.ms })}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="field-label">Scan speed</p>
+          <div className="toggle-row wrap" role="group" aria-label="Scan speed">
+            {(
+              [
+                { ms: 800 as const, label: 'Fast' },
+                { ms: 1200 as const, label: 'Medium' },
+                { ms: 1800 as const, label: 'Slow' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${library.prefs.scanningSpeedMs === opt.ms ? 'is-active' : ''}`}
+                onClick={() => updatePrefs({ scanningSpeedMs: opt.ms })}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="field-label">Partner path (core ids, comma-separated)</p>
+          <input
+            className="text-input"
+            value={library.partnerModelPath.join(', ')}
+            onChange={(e) => {
+              const partnerModelPath = e.target.value
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+              saveLibrary({ ...library, partnerModelPath })
+            }}
+            placeholder="i, want, more"
+            aria-label="Partner modeling path button ids"
+          />
+          <div className="confirm-row" style={{ marginTop: '0.75rem' }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setVoiceBankOpen(true)}>
+              Voice banking
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => setNotesOpen(true)}>
+              Session notes
+            </button>
+          </div>
+        </article>
+
+        <article className="dash-card">
           <h2>Voice (on-device TTS)</h2>
           <p className="fine-print">
             Uses the device speech engine (offline). Pick a kid-friendly system voice in Grown-ups,
@@ -901,6 +1059,9 @@ export function AacEditor() {
             <button type="button" className="btn btn-primary" onClick={exportBoard}>
               Export AAC board
             </button>
+            <button type="button" className="btn btn-ghost" onClick={printBoard}>
+              Print PDF / backup
+            </button>
             <label className="btn btn-ghost upload-btn">
               Import board file
               <input
@@ -998,6 +1159,37 @@ export function AacEditor() {
             ) : null}
 
             <div className="aac-upload-row">
+              <div>
+                <p className="fine-print">Mulberry Symbols</p>
+                {draftMulberry ? (
+                  <img
+                    src={mulberryUrl(draftMulberry)}
+                    alt=""
+                    className="aac-photo-preview"
+                  />
+                ) : null}
+                <div className="confirm-row">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setMulberryOpen(true)}
+                  >
+                    Pick Mulberry
+                  </button>
+                  {draftMulberry ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => setDraftMulberry(undefined)}
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                {draftMulberry ? (
+                  <p className="fine-print">{draftMulberry.replace(/\.svg$/i, '')}</p>
+                ) : null}
+              </div>
               <div>
                 <p className="fine-print">Photo (cup, toy, pet, Grandma…)</p>
                 {draftPhoto ? <img src={draftPhoto} alt="" className="aac-photo-preview" /> : null}
@@ -1138,6 +1330,7 @@ export function AacEditor() {
                   <strong>{btn.label}</strong>
                   <span className="fine-print">
                     {btn.source === 'preset' ? 'Preset' : 'Custom'} · {btn.partOfSpeech}
+                    {btn.mulberryFile ? ' · Mulberry' : ''}
                     {btn.photoDataUrl ? ' · photo' : ''}
                     {btn.signPhotoDataUrl ? ' · sign' : ''}
                     {btn.audioDataUrl ? ' · voice' : ''}
@@ -1181,6 +1374,48 @@ export function AacEditor() {
               setPhotoError('')
               setMsg('Photo cropped and ready — Save word to keep it.')
             }}
+          />
+        ) : null}
+
+        {mulberryOpen ? (
+          <AacMulberryPicker
+            currentFile={draftMulberry}
+            onPick={(file) => {
+              setDraftMulberry(file)
+              setMulberryOpen(false)
+              setMsg('Mulberry symbol selected — Save word to keep it.')
+            }}
+            onClear={() => setDraftMulberry(undefined)}
+            onClose={() => setMulberryOpen(false)}
+          />
+        ) : null}
+
+        {voiceBankOpen ? (
+          <AacVoiceBankModal
+            buttons={library.buttons}
+            voiceBank={library.voiceBank}
+            onSave={(buttonId, dataUrl) => {
+              saveLibrary({
+                ...library,
+                voiceBank: { ...library.voiceBank, [buttonId]: dataUrl },
+              })
+              setMsg('Voice clip saved for that word.')
+            }}
+            onClear={(buttonId) => {
+              const next = { ...library.voiceBank }
+              delete next[buttonId]
+              saveLibrary({ ...library, voiceBank: next })
+              setMsg('Voice clip cleared.')
+            }}
+            onClose={() => setVoiceBankOpen(false)}
+          />
+        ) : null}
+
+        {notesOpen ? (
+          <AacSessionNotes
+            notes={library.sessionNotes}
+            onChange={(sessionNotes) => saveLibrary({ ...library, sessionNotes })}
+            onClose={() => setNotesOpen(false)}
           />
         ) : null}
       </LockedGate>

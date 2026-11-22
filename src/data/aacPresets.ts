@@ -183,6 +183,19 @@ export type AacPrefs = {
    * Helps kids build multi-word sentences (I + want + [folder word]).
    */
   autoReturnFromFolder: boolean
+  /** Show recent + saved phrases strip under the sentence bar */
+  phrasesBarEnabled: boolean
+  /** Show Scripts folder alongside category folders */
+  scriptsFolderEnabled: boolean
+  /** Highlight a partner-chosen modeling path on core tiles */
+  partnerModelEnabled: boolean
+  /** Dwell/hover activation (0 = off). Helps with tremor. */
+  dwellMs: 0 | 500 | 800 | 1200
+  /** 1-switch row/column scanning for motor access */
+  scanningEnabled: boolean
+  scanningSpeedMs: 800 | 1200 | 1800
+  /** Caregiver battery + offline status chip */
+  showDeviceStatus: boolean
 }
 
 export const AAC_BOARD_CONTEXTS: {
@@ -250,6 +263,18 @@ export type AacLibrary = {
   quickTalk: AacQuickTalkStrip | null
   /** Dedicated First–Then slots for Talk (independent of routines) */
   firstThen: AacFirstThenBoard
+  /** Grown-up saved phrases for one-tap re-speak */
+  savedPhrases: import('./aacExtras').AacSavedPhrase[]
+  /** Recent spoken sentences (local only, newest first) */
+  recentPhrases: import('./aacExtras').AacSavedPhrase[]
+  /** Custom social scripts (plus built-in presets in UI) */
+  customScripts: import('./aacExtras').AacScript[]
+  /** SLP session notes — on-device only */
+  sessionNotes: import('./aacExtras').AacSessionNote[]
+  /** Ordered core/fringe button ids for partner modeling path */
+  partnerModelPath: string[]
+  /** Voice-bank recordings keyed by button id (data URLs) */
+  voiceBank: Record<string, string>
 }
 
 export const FITZGERALD_COLORS: Record<
@@ -405,6 +430,13 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   bodyCheckEnabled: true,
   sensoryTheme: 'calm-light',
   autoReturnFromFolder: true,
+  phrasesBarEnabled: true,
+  scriptsFolderEnabled: true,
+  partnerModelEnabled: false,
+  dwellMs: 0,
+  scanningEnabled: false,
+  scanningSpeedMs: 1200,
+  showDeviceStatus: true,
 }
 
 export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label: string }[] = [
@@ -617,7 +649,17 @@ export function createDefaultAacLibrary(): AacLibrary {
     buttons: withMulberryDefaults(PRESET_BUTTONS.map((btn) => ({ ...btn }))),
     prefs: { ...DEFAULT_AAC_PREFS },
     quickTalk: null,
-    firstThen: { ...DEFAULT_FIRST_THEN, first: { ...DEFAULT_FIRST_THEN.first! }, then: { ...DEFAULT_FIRST_THEN.then! } },
+    firstThen: {
+      ...DEFAULT_FIRST_THEN,
+      first: { ...DEFAULT_FIRST_THEN.first! },
+      then: { ...DEFAULT_FIRST_THEN.then! },
+    },
+    savedPhrases: [],
+    recentPhrases: [],
+    customScripts: [],
+    sessionNotes: [],
+    partnerModelPath: ['i', 'want'],
+    voiceBank: {},
   }
 }
 
@@ -731,6 +773,13 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   if (typeof merged.strongTapHighlight !== 'boolean') merged.strongTapHighlight = true
   if (merged.sensoryTheme !== 'sensory-dark') merged.sensoryTheme = 'calm-light'
   if (typeof merged.autoReturnFromFolder !== 'boolean') merged.autoReturnFromFolder = true
+  if (typeof merged.phrasesBarEnabled !== 'boolean') merged.phrasesBarEnabled = true
+  if (typeof merged.scriptsFolderEnabled !== 'boolean') merged.scriptsFolderEnabled = true
+  if (typeof merged.partnerModelEnabled !== 'boolean') merged.partnerModelEnabled = false
+  if (![0, 500, 800, 1200].includes(merged.dwellMs)) merged.dwellMs = 0
+  if (typeof merged.scanningEnabled !== 'boolean') merged.scanningEnabled = false
+  if (![800, 1200, 1800].includes(merged.scanningSpeedMs)) merged.scanningSpeedMs = 1200
+  if (typeof merged.showDeviceStatus !== 'boolean') merged.showDeviceStatus = true
   return merged
 }
 
@@ -841,6 +890,7 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
     )
   }
 
+  const baseExtras = createDefaultAacLibrary()
   return {
     categories: [...catById.values()].sort((a, b) => a.order - b.order),
     buttons: withMulberryDefaults(
@@ -851,6 +901,15 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
     prefs: normalizePrefs(saved.prefs),
     quickTalk: normalizeQuickTalk(saved.quickTalk),
     firstThen: normalizeFirstThen(saved.firstThen),
+    savedPhrases: Array.isArray(saved.savedPhrases) ? saved.savedPhrases : baseExtras.savedPhrases,
+    recentPhrases: Array.isArray(saved.recentPhrases) ? saved.recentPhrases : baseExtras.recentPhrases,
+    customScripts: Array.isArray(saved.customScripts) ? saved.customScripts : baseExtras.customScripts,
+    sessionNotes: Array.isArray(saved.sessionNotes) ? saved.sessionNotes : baseExtras.sessionNotes,
+    partnerModelPath: Array.isArray(saved.partnerModelPath)
+      ? saved.partnerModelPath.filter((x): x is string => typeof x === 'string')
+      : baseExtras.partnerModelPath,
+    voiceBank:
+      saved.voiceBank && typeof saved.voiceBank === 'object' ? { ...saved.voiceBank } : {},
   }
 }
 

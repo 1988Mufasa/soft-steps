@@ -7,14 +7,25 @@ import {
   speakAttention,
 } from '../../audio/aacSpeech'
 import { speakText as speakCalm } from '../../audio/calmAudio'
+import { AacBigGridOverlay } from '../../components/AacBigGridOverlay'
 import { AacBoardLock } from '../../components/AacBoardLock'
 import { AacBodyCheck } from '../../components/AacBodyCheck'
+import { AacDeviceStatus } from '../../components/AacDeviceStatus'
 import { AacFirstThenBar } from '../../components/AacFirstThenBar'
 import { AacFolderTile } from '../../components/AacFolderTile'
 import { AacLearnPanel } from '../../components/AacLearnPanel'
+import { AacPhrasesBar } from '../../components/AacPhrasesBar'
+import { AacScanController } from '../../components/AacScanController'
+import { AacScriptsPanel } from '../../components/AacScriptsPanel'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
 import { AppShellBanner } from '../../components/AppShellBanner'
 import { ParentalGateModal } from '../../components/ParentalGateModal'
+import {
+  phraseFromButtons,
+  uid,
+  type AacSavedPhrase,
+  type AacScriptLine,
+} from '../../data/aacExtras'
 import {
   AAC_BOARD_CONTEXTS,
   buttonsForCategory,
@@ -53,10 +64,14 @@ export function TalkAac() {
 
   const [folderId, setFolderId] = useState<string | null>(null)
   const [learnOpen, setLearnOpen] = useState(false)
+  const [scriptsOpen, setScriptsOpen] = useState(false)
+  const [bigGridOpen, setBigGridOpen] = useState(false)
   const [showParentGate, setShowParentGate] = useState(false)
   const [message, setMessage] = useState<AacButton[]>([])
   const [editHold, setEditHold] = useState(0)
   const [glowId, setGlowId] = useState<string | null>(null)
+  const [scanHighlightId, setScanHighlightId] = useState<string | null>(null)
+  const [partnerStep, setPartnerStep] = useState(0)
   const [formsFor, setFormsFor] = useState<AacButton | null>(null)
   const [bodyOpen, setBodyOpen] = useState(false)
   const [attentionPulse, setAttentionPulse] = useState(false)
@@ -161,6 +176,15 @@ export function TalkAac() {
 
     const spoken = (speakOverride || btn.speak || btn.label).trim()
     flashGlow(btn.id, spoken)
+    if (prefs.partnerModelEnabled && library.partnerModelPath.length) {
+      const path = library.partnerModelPath
+      if (btn.id === path[partnerStep]) {
+        setPartnerStep((s) => Math.min(s + 1, path.length))
+      }
+    }
+    const banked = library.voiceBank[btn.id]
+    const voiceBtn: AacButton =
+      banked && !btn.audioDataUrl ? { ...btn, audioDataUrl: banked } : btn
     if (prefs.speakOnTap || prefs.audioLabels || prefs.modelMode) {
       if (speakOverride) {
         speakCalm(spoken, settings.sensory.soundOn, {
@@ -171,7 +195,9 @@ export function TalkAac() {
         })
       } else {
         speakAacButton(
-          speakOverride ? { ...btn, speak: speakOverride, label: speakOverride } : btn,
+          speakOverride
+            ? { ...voiceBtn, speak: speakOverride, label: speakOverride }
+            : voiceBtn,
           settings.sensory.soundOn,
           prefs,
         )
@@ -181,6 +207,7 @@ export function TalkAac() {
       if (fromFolder && prefs.autoReturnFromFolder) {
         setFolderId(null)
         setLearnOpen(false)
+        setScriptsOpen(false)
       }
       return
     }
@@ -194,16 +221,50 @@ export function TalkAac() {
     if (fromFolder && prefs.autoReturnFromFolder) {
       setFolderId(null)
       setLearnOpen(false)
+      setScriptsOpen(false)
     }
   }
 
-  const backToCore = () => {
-    setFolderId(null)
-    setLearnOpen(false)
+  const pushRecentFromMessage = (chips: AacButton[]) => {
+    const built = phraseFromButtons(chips)
+    if (!built) return
+    const entry: AacSavedPhrase = { ...built, id: uid('recent'), savedAt: Date.now() }
+    updateSettings({
+      aacLibrary: {
+        ...library,
+        recentPhrases: [entry, ...library.recentPhrases.filter((p) => p.speak !== entry.speak)].slice(
+          0,
+          12,
+        ),
+      },
+    })
+  }
+
+  const speakPhrase = (phrase: AacSavedPhrase) => {
+    speakCalm(phrase.speak, settings.sensory.soundOn, {
+      pitch: prefs.speechPitch,
+      rate: prefs.speechRate,
+      forceFullVolume: prefs.classroomVolumeBoost,
+      volume: prefs.classroomVolumeBoost ? 1 : undefined,
+    })
+  }
+
+  const saveCurrentPhrase = () => {
+    const built = phraseFromButtons(message)
+    if (!built) return
+    const entry: AacSavedPhrase = { ...built, id: uid('saved'), savedAt: Date.now() }
+    updateSettings({
+      aacLibrary: {
+        ...library,
+        savedPhrases: [entry, ...library.savedPhrases].slice(0, 24),
+      },
+    })
   }
 
   const openFolder = (id: string) => {
     setLearnOpen(false)
+    setScriptsOpen(false)
+    setBigGridOpen(false)
     setFolderId(id)
   }
 
@@ -255,6 +316,14 @@ export function TalkAac() {
   const speakMessage = () => {
     if (!message.length || prefs.modelMode) return
     speakAacSentence(message, settings.sensory.soundOn, prefs)
+    pushRecentFromMessage(message)
+  }
+
+  const backToCore = () => {
+    setFolderId(null)
+    setLearnOpen(false)
+    setScriptsOpen(false)
+    setBigGridOpen(false)
   }
 
   const meta = layoutMeta(prefs.gridLayout)
@@ -343,6 +412,19 @@ export function TalkAac() {
       />
 
       {!locked ? <AppShellBanner /> : null}
+
+      {prefs.showDeviceStatus ? <AacDeviceStatus /> : null}
+
+      {prefs.scanningEnabled ? (
+        <AacScanController
+          buttons={folderId ? folderButtons : coreButtons}
+          speedMs={prefs.scanningSpeedMs}
+          enabled={prefs.scanningEnabled}
+          onSelect={(btn) => activate(btn, undefined, Boolean(folderId))}
+          highlightId={scanHighlightId}
+          setHighlightId={setScanHighlightId}
+        />
+      ) : null}
 
       {prefs.firstThenBarEnabled ? (
         <AacFirstThenBar
@@ -451,6 +533,25 @@ export function TalkAac() {
         </div>
       ) : null}
 
+      {prefs.phrasesBarEnabled ? (
+        <AacPhrasesBar
+          recent={library.recentPhrases}
+          saved={library.savedPhrases}
+          onSpeak={speakPhrase}
+          canSave={Boolean(message.length && !prefs.modelMode)}
+          onSaveCurrent={saveCurrentPhrase}
+          adultSetup={!locked && isParentSessionValid()}
+          onDeleteSaved={(id) =>
+            updateSettings({
+              aacLibrary: {
+                ...library,
+                savedPhrases: library.savedPhrases.filter((p) => p.id !== id),
+              },
+            })
+          }
+        />
+      ) : null}
+
       {!locked ? (
         <header className="activity-header aac-home-header">
           <div className="activity-meta">
@@ -554,6 +655,20 @@ export function TalkAac() {
             <span aria-hidden="true">ℹ️</span> About me
           </button>
         ) : null}
+        <button
+          type="button"
+          className={`aac-quick-tool ${bigGridOpen ? 'is-active' : ''}`}
+          onClick={() => {
+            setScriptsOpen(false)
+            setLearnOpen(false)
+            setFolderId(null)
+            setBigGridOpen((v) => !v)
+          }}
+          aria-pressed={bigGridOpen}
+          aria-label="Temporary big grid"
+        >
+          <span aria-hidden="true">🔲</span> Big grid
+        </button>
       </div>
 
       {activeBanner ? (
@@ -591,7 +706,39 @@ export function TalkAac() {
         </div>
       ) : null}
 
-      {folderId && !learnOpen ? (
+      {bigGridOpen ? (
+        <AacBigGridOverlay
+          buttons={coreButtons}
+          onPick={(btn) => activate(btn)}
+          onClose={() => setBigGridOpen(false)}
+        />
+      ) : scriptsOpen ? (
+        <AacScriptsPanel
+          customScripts={library.customScripts}
+          onSpeakLine={(line: AacScriptLine) => {
+            speakCalm(line.speak, settings.sensory.soundOn, {
+              pitch: prefs.speechPitch,
+              rate: prefs.speechRate,
+              forceFullVolume: prefs.classroomVolumeBoost,
+              volume: prefs.classroomVolumeBoost ? 1 : undefined,
+            })
+            if (!prefs.modelMode && prefs.messageBar) {
+              const chip: AacButton = {
+                id: `script-${line.id}`,
+                label: line.label,
+                speak: line.speak,
+                emoji: line.emoji,
+                categoryId: 'core',
+                partOfSpeech: 'social',
+                order: 0,
+                source: 'custom',
+              }
+              setMessage((m) => [...m, chip].slice(-16))
+            }
+          }}
+          onClose={backToCore}
+        />
+      ) : folderId && !learnOpen ? (
         <div className="aac-folder-open" aria-label={`${activeFolder?.title ?? 'Folder'} open`}>
           <div className="aac-folder-open-bar">
             <button
@@ -624,6 +771,8 @@ export function TalkAac() {
                 prefs={prefs}
                 theme={prefs.sensoryTheme}
                 glowing={glowId === btn.id}
+                scanHighlight={scanHighlightId === btn.id}
+                partnerHighlight={false}
                 cooldownCalm={cooldownTileId === btn.id}
                 onActivate={() => activate(btn, undefined, true)}
                 onLongPress={() => openForms(btn)}
@@ -665,6 +814,13 @@ export function TalkAac() {
                     prefs={prefs}
                     theme={prefs.sensoryTheme}
                     glowing={glowId === btn.id}
+                    scanHighlight={scanHighlightId === btn.id}
+                    partnerHighlight={
+                      Boolean(
+                        prefs.partnerModelEnabled &&
+                          library.partnerModelPath[partnerStep] === btn.id,
+                      )
+                    }
                     cooldownCalm={cooldownTileId === btn.id}
                     onActivate={() => activate(btn)}
                     onLongPress={() => openForms(btn)}
@@ -692,12 +848,29 @@ export function TalkAac() {
                 Grown-ups can turn on folders in Parent Controls as the board grows.
               </p>
             )}
+            {prefs.scriptsFolderEnabled ? (
+              <button
+                type="button"
+                className={`chip aac-scripts-chip ${scriptsOpen ? 'is-active' : ''}`}
+                style={{ marginTop: '0.65rem' }}
+                onClick={() => {
+                  setFolderId(null)
+                  setLearnOpen(false)
+                  setBigGridOpen(false)
+                  setScriptsOpen(true)
+                }}
+              >
+                <span aria-hidden="true">💬</span> Scripts
+              </button>
+            ) : null}
             <button
               type="button"
               className={`chip aac-learn-chip ${learnOpen ? 'is-active' : ''}`}
               style={{ marginTop: '0.65rem' }}
               onClick={() => {
                 setFolderId(null)
+                setScriptsOpen(false)
+                setBigGridOpen(false)
                 setLearnOpen((v) => !v)
               }}
               aria-expanded={learnOpen}
@@ -759,6 +932,8 @@ function AacWordButton({
   onLongPress,
   absolute,
   glowing,
+  scanHighlight,
+  partnerHighlight,
   cooldownCalm,
 }: {
   btn: AacButton
@@ -768,6 +943,8 @@ function AacWordButton({
   onLongPress?: () => void
   absolute?: boolean
   glowing?: boolean
+  scanHighlight?: boolean
+  partnerHighlight?: boolean
   /** Same-tile repeat cooldown — suppress bounce while cooling down. */
   cooldownCalm?: boolean
 }) {
@@ -780,6 +957,7 @@ function AacWordButton({
     animations: prefs.buttonAnimations && !cooldownCalm,
     onActivate,
     onLongPress: canForms ? onLongPress : undefined,
+    dwellMs: prefs.dwellMs,
   })
   const fitz = fitzgeraldTileStyle(btn.partOfSpeech, theme)
   const isPhoto = visual.kind === 'photo'
@@ -812,6 +990,8 @@ function AacWordButton({
       } ${prefs.colorCoding ? 'is-fitzgerald' : ''} ${isPhoto ? 'has-photo' : ''} ${
         isMulberry ? 'has-mulberry' : ''
       } ${glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''} ${
+        scanHighlight ? 'is-scan-highlight' : ''
+      } ${partnerHighlight ? 'is-partner-path' : ''} ${
         cooldownCalm ? 'is-cooldown-calm' : ''
       }`}
       role="listitem"
@@ -821,6 +1001,7 @@ function AacWordButton({
       onPointerUp={touch.onPointerUp}
       onPointerCancel={touch.onPointerCancel}
       onPointerLeave={touch.onPointerLeave}
+      onPointerEnter={touch.onPointerEnter}
     >
       {/* Label on top so a finger tap does not cover the word (SLP motor-planning practice) */}
       {prefs.showLabels || prefs.audioLabels ? (
