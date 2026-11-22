@@ -277,16 +277,17 @@ export type AacLibrary = {
   voiceBank: Record<string, string>
 }
 
+/** Soft pastel Fitzgerald Key fills — dense AAC board look (Weave-inspired, not a copy). */
 export const FITZGERALD_COLORS: Record<
   AacPartOfSpeech,
   { bg: string; border: string; label: string }
 > = {
-  pronoun: { bg: '#FFF3B0', border: '#E6C200', label: 'Pronouns (yellow)' },
-  verb: { bg: '#C8E6C9', border: '#43A047', label: 'Verbs / actions (green)' },
-  noun: { bg: '#FFE0B2', border: '#FB8C00', label: 'Nouns (orange)' },
-  adjective: { bg: '#BBDEFB', border: '#1E88E5', label: 'Feelings / descriptors (blue)' },
-  social: { bg: '#E1BEE7', border: '#8E24AA', label: 'Social / quick responses (pink–purple)' },
-  misc: { bg: '#F5F5F5', border: '#9E9E9E', label: 'Other' },
+  pronoun: { bg: '#D4EDDA', border: '#8BC99A', label: 'Pronouns (soft green)' },
+  verb: { bg: '#B7E0B8', border: '#6BB66E', label: 'Verbs / actions (green)' },
+  noun: { bg: '#FFE8A3', border: '#E6C35C', label: 'Nouns / categories (yellow)' },
+  adjective: { bg: '#C5D9F0', border: '#7FA8D4', label: 'Feelings / descriptors (blue)' },
+  social: { bg: '#F5C6D0', border: '#E08A9E', label: 'Social / yes–no (pink)' },
+  misc: { bg: '#EEF1F4', border: '#B0B8C0', label: 'Other' },
 }
 
 /** Vibrant Fitzgerald borders on dark slate fills for Sensory Dark Mode */

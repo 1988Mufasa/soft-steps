@@ -454,52 +454,67 @@ export function TalkAac() {
       ) : null}
 
       {prefs.messageBar ? (
-        <div className="aac-sentence-strip" aria-label="Sentence strip">
-          <button
-            type="button"
-            className="aac-sentence-window"
-            onClick={speakMessage}
-            disabled={!message.length || prefs.modelMode}
-            aria-label={
-              message.length
-                ? `Speak message: ${message.map((b) => b.label).join(' ')}`
-                : prefs.modelMode
-                  ? 'Model mode — sentence strip paused'
-                  : 'Sentence strip empty'
-            }
-          >
-            {prefs.modelMode ? (
-              <span className="aac-sentence-placeholder">Model mode — taps glow, strip stays clear</span>
-            ) : message.length ? (
-              message.map((b, i) => {
-                const visual = resolveAacVisual(b, prefs.displayMode)
-                return (
-                  <span
-                    key={`${b.id}-${i}`}
-                    className="aac-sentence-chip"
-                    style={
-                      prefs.colorCoding
-                        ? fitzgeraldTileStyle(b.partOfSpeech, prefs.sensoryTheme)
-                        : undefined
-                    }
-                  >
-                    {visual.src ? (
-                      <img src={visual.src} alt="" />
-                    ) : (
-                      <span aria-hidden="true">{visual.emoji}</span>
-                    )}
-                    <em>{b.label}</em>
-                  </span>
-                )
-              })
-            ) : (
-              <span className="aac-sentence-placeholder">
-                {prefs.stage === 'starter'
-                  ? 'Tap Want, Help, More…'
-                  : 'I + want + water… tap words, then tap here to speak'}
-              </span>
-            )}
-          </button>
+        <div className="aac-sentence-strip aac-sentence-strip-dense" aria-label="Sentence strip">
+          <div className="aac-sentence-row">
+            <button
+              type="button"
+              className="aac-sentence-window"
+              onClick={speakMessage}
+              disabled={!message.length || prefs.modelMode}
+              aria-label={
+                message.length
+                  ? `Speak message: ${message.map((b) => b.label).join(' ')}`
+                  : prefs.modelMode
+                    ? 'Model mode — sentence strip paused'
+                    : 'Sentence strip empty'
+              }
+            >
+              {prefs.modelMode ? (
+                <span className="aac-sentence-placeholder">
+                  Model mode — taps glow, strip stays clear
+                </span>
+              ) : message.length ? (
+                message.map((b, i) => {
+                  const visual = resolveAacVisual(b, prefs.displayMode)
+                  return (
+                    <span
+                      key={`${b.id}-${i}`}
+                      className="aac-sentence-chip"
+                      style={
+                        prefs.colorCoding
+                          ? fitzgeraldTileStyle(b.partOfSpeech, prefs.sensoryTheme)
+                          : undefined
+                      }
+                    >
+                      {visual.src ? (
+                        <img src={visual.src} alt="" />
+                      ) : (
+                        <span aria-hidden="true">{visual.emoji}</span>
+                      )}
+                      <em>{b.label}</em>
+                    </span>
+                  )
+                })
+              ) : (
+                <span className="aac-sentence-placeholder">
+                  {prefs.stage === 'starter'
+                    ? 'Tap Want, Help, More…'
+                    : 'I + want + water… tap words, then tap here to speak'}
+                </span>
+              )}
+            </button>
+            {!prefs.modelMode ? (
+              <button
+                type="button"
+                className="aac-sentence-clear"
+                disabled={!message.length}
+                onClick={() => setMessage([])}
+                aria-label="Clear all words"
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
           {!prefs.modelMode ? (
             <div className="aac-sentence-actions">
               <button
@@ -510,15 +525,6 @@ export function TalkAac() {
                 aria-label="Backspace — remove last word"
               >
                 Backspace
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                disabled={!message.length}
-                onClick={() => setMessage([])}
-                aria-label="Clear all words"
-              >
-                Clear all
               </button>
               <button
                 type="button"
@@ -784,11 +790,25 @@ export function TalkAac() {
           </div>
         </div>
       ) : (
-        <div className="aac-board-shell">
-          <div className="aac-core-panel">
-            <p className="aac-section-label">Core words · fixed spots</p>
+        <div className="aac-board-shell aac-board-dense">
+          {prefs.showFolders && fringe.length > 0 ? (
+            <div className="aac-cat-rail" role="list" aria-label={`Categories · ${activeContextMeta.label}`}>
+              {fringe.map((c) => (
+                <AacFolderTile
+                  key={c.id}
+                  category={c}
+                  variant="rail"
+                  onOpen={() => openFolder(c.id)}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="aac-core-panel aac-core-panel-dense">
             <div
-              className={`aac-core-grid layout-${prefs.gridLayout} ${prefs.largeButtons ? 'is-large' : ''}`}
+              className={`aac-core-grid aac-core-grid-dense layout-${prefs.gridLayout} ${
+                prefs.largeButtons ? 'is-large' : ''
+              }`}
               style={
                 {
                   '--aac-cols': cols,
@@ -831,28 +851,11 @@ export function TalkAac() {
             </div>
           </div>
 
-          <aside className="aac-folder-panel" aria-label="Category folders and Learn">
-            <p className="aac-section-label">Folders · {activeContextMeta.label}</p>
-            {prefs.showFolders && fringe.length > 0 ? (
-              <div className="aac-folder-tile-grid" role="list" aria-label="Category folders">
-                {fringe.map((c) => (
-                  <AacFolderTile
-                    key={c.id}
-                    category={c}
-                    onOpen={() => openFolder(c.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="fine-print">
-                Grown-ups can turn on folders in Parent Controls as the board grows.
-              </p>
-            )}
+          <nav className="aac-board-dock" aria-label="Board tools">
             {prefs.scriptsFolderEnabled ? (
               <button
                 type="button"
-                className={`chip aac-scripts-chip ${scriptsOpen ? 'is-active' : ''}`}
-                style={{ marginTop: '0.65rem' }}
+                className={`aac-dock-btn ${scriptsOpen ? 'is-active' : ''}`}
                 onClick={() => {
                   setFolderId(null)
                   setLearnOpen(false)
@@ -860,13 +863,13 @@ export function TalkAac() {
                   setScriptsOpen(true)
                 }}
               >
-                <span aria-hidden="true">💬</span> Scripts
+                <span aria-hidden="true">💬</span>
+                Phrase
               </button>
             ) : null}
             <button
               type="button"
-              className={`chip aac-learn-chip ${learnOpen ? 'is-active' : ''}`}
-              style={{ marginTop: '0.65rem' }}
+              className={`aac-dock-btn ${learnOpen ? 'is-active' : ''}`}
               onClick={() => {
                 setFolderId(null)
                 setScriptsOpen(false)
@@ -874,25 +877,47 @@ export function TalkAac() {
                 setLearnOpen((v) => !v)
               }}
               aria-expanded={learnOpen}
-              aria-controls="aac-learn-destinations"
             >
-              <span aria-hidden="true">🎮</span> Learn
+              <span aria-hidden="true">🎮</span>
+              Learn
             </button>
-            {learnOpen ? <AacLearnPanel /> : null}
-            {!learnOpen && prefs.showFolders ? (
-              <p className="fine-print" style={{ marginTop: '0.55rem' }}>
-                Tap a <strong>folder</strong> for more words. Core stays on the left — sentence strip
-                stays when a folder opens.
-              </p>
+            <button
+              type="button"
+              className={`aac-dock-btn ${bigGridOpen ? 'is-active' : ''}`}
+              onClick={() => {
+                setFolderId(null)
+                setScriptsOpen(false)
+                setLearnOpen(false)
+                setBigGridOpen((v) => !v)
+              }}
+              aria-pressed={bigGridOpen}
+            >
+              <span aria-hidden="true">🔲</span>
+              Big
+            </button>
+            {!locked ? (
+              <button
+                type="button"
+                className="aac-dock-btn"
+                onPointerDown={startEditHold}
+                onPointerUp={clearEditHold}
+                onPointerLeave={clearEditHold}
+                onPointerCancel={clearEditHold}
+                aria-label="Hold 3 seconds to open AAC editor"
+              >
+                <span aria-hidden="true">✏️</span>
+                {editHold > 0 ? `${editHold}/3` : 'Edit'}
+              </button>
             ) : null}
-          </aside>
+          </nav>
+          {learnOpen ? <AacLearnPanel /> : null}
         </div>
       )}
 
       {!locked ? (
         <p className="fine-print aac-motor-note">
-          Hold a word for grammar forms. Model mode glows without filling the strip. Mask in Edit
-          keeps permanent slots empty until you unmask.
+          Hold a word for grammar forms. Yellow row opens folders. Core spots stay fixed for motor
+          planning.
         </p>
       ) : null}
 

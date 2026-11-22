@@ -4,12 +4,32 @@ type Props = {
   category: AacCategory
   active?: boolean
   onOpen: () => void
+  /** Dense yellow category cell (Weave-style rail) vs tabbed folder card */
+  variant?: 'folder' | 'rail'
 }
 
 /**
- * Tabbed folder tile — visually distinct from single-word AAC buttons.
+ * Category folder control — tabbed folder card, or compact rail cell for dense boards.
  */
-export function AacFolderTile({ category, active, onOpen }: Props) {
+export function AacFolderTile({ category, active, onOpen, variant = 'folder' }: Props) {
+  if (variant === 'rail') {
+    return (
+      <button
+        type="button"
+        className={`aac-cat-rail-tile ${active ? 'is-open' : ''}`}
+        onClick={onOpen}
+        aria-label={`Open folder ${category.title}`}
+        aria-pressed={active}
+        role="listitem"
+      >
+        <span className="aac-cat-rail-emoji" aria-hidden="true">
+          {category.emoji}
+        </span>
+        <span className="aac-cat-rail-label">{category.title}</span>
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
