@@ -4,6 +4,12 @@
  * Soft Steps never rearranges by tap frequency.
  */
 
+import {
+  mulberryUrl,
+  resolveMulberryFileSync,
+} from './mulberrySymbols'
+import mulberryLookup from './mulberry-lookup.json'
+
 /** Fitzgerald Key–style part of speech for color coding */
 export type AacPartOfSpeech =
   | 'pronoun' // yellow
@@ -24,7 +30,7 @@ export type AacCategoryId =
   | 'signs'
   | 'family'
 
-export type AacDisplayMode = 'photo' | 'sign' | 'emoji' | 'auto'
+export type AacDisplayMode = 'photo' | 'sign' | 'emoji' | 'mulberry' | 'auto'
 
 /** Grid density options offered at setup */
 export type AacGridLayout = '2x2' | '2x3' | '3x3' | '3x4' | '4x4' | '4x6'
@@ -57,6 +63,8 @@ export type AacButton = {
   photoDataUrl?: string
   signPhotoDataUrl?: string
   audioDataUrl?: string
+  /** Mulberry Symbols SVG filename under /symbols/mulberry/ */
+  mulberryFile?: string
   /**
    * Fully removed from lists (rare). Prefer `masked` so slots stay put.
    */
@@ -96,6 +104,9 @@ export type AacCategory = {
   /** Folders appear at this stage (core is always main) */
   minStage?: AacStage
 }
+
+/** Board lighting for light sensitivity — Calm Light (default) or Sensory Dark */
+export type AacSensoryTheme = 'calm-light' | 'sensory-dark'
 
 export type AacPrefs = {
   gridLayout: AacGridLayout
@@ -162,6 +173,29 @@ export type AacPrefs = {
   attentionPhrase: string
   /** One-tap Pain & Body Check overlay on Talk */
   bodyCheckEnabled: boolean
+  /**
+   * Sensory theme for the Talk board, sentence strip, and First–Then bar.
+   * Persisted with AAC prefs in local storage.
+   */
+  sensoryTheme: AacSensoryTheme
+  /**
+   * After tapping a word inside a category folder, return to the core board.
+   * Helps kids build multi-word sentences (I + want + [folder word]).
+   */
+  autoReturnFromFolder: boolean
+  /** Show recent + saved phrases strip under the sentence bar */
+  phrasesBarEnabled: boolean
+  /** Show Scripts folder alongside category folders */
+  scriptsFolderEnabled: boolean
+  /** Highlight a partner-chosen modeling path on core tiles */
+  partnerModelEnabled: boolean
+  /** Dwell/hover activation (0 = off). Helps with tremor. */
+  dwellMs: 0 | 500 | 800 | 1200
+  /** 1-switch row/column scanning for motor access */
+  scanningEnabled: boolean
+  scanningSpeedMs: 800 | 1200 | 1800
+  /** Caregiver battery + offline status chip */
+  showDeviceStatus: boolean
 }
 
 export const AAC_BOARD_CONTEXTS: {
@@ -229,19 +263,72 @@ export type AacLibrary = {
   quickTalk: AacQuickTalkStrip | null
   /** Dedicated First–Then slots for Talk (independent of routines) */
   firstThen: AacFirstThenBoard
+  /** Grown-up saved phrases for one-tap re-speak */
+  savedPhrases: import('./aacExtras').AacSavedPhrase[]
+  /** Recent spoken sentences (local only, newest first) */
+  recentPhrases: import('./aacExtras').AacSavedPhrase[]
+  /** Custom social scripts (plus built-in presets in UI) */
+  customScripts: import('./aacExtras').AacScript[]
+  /** SLP session notes — on-device only */
+  sessionNotes: import('./aacExtras').AacSessionNote[]
+  /** Ordered core/fringe button ids for partner modeling path */
+  partnerModelPath: string[]
+  /** Voice-bank recordings keyed by button id (data URLs) */
+  voiceBank: Record<string, string>
 }
 
+/** Soft pastel Fitzgerald Key fills — dense AAC board look (Weave-inspired, not a copy). */
 export const FITZGERALD_COLORS: Record<
   AacPartOfSpeech,
   { bg: string; border: string; label: string }
 > = {
-  pronoun: { bg: '#FFF3B0', border: '#E6C200', label: 'Pronouns (yellow)' },
-  verb: { bg: '#C8E6C9', border: '#43A047', label: 'Verbs / actions (green)' },
-  noun: { bg: '#FFE0B2', border: '#FB8C00', label: 'Nouns (orange)' },
-  adjective: { bg: '#BBDEFB', border: '#1E88E5', label: 'Feelings / descriptors (blue)' },
-  social: { bg: '#E1BEE7', border: '#8E24AA', label: 'Social / quick responses (pink–purple)' },
-  misc: { bg: '#F5F5F5', border: '#9E9E9E', label: 'Other' },
+  pronoun: { bg: '#D4EDDA', border: '#8BC99A', label: 'Pronouns (soft green)' },
+  verb: { bg: '#B7E0B8', border: '#6BB66E', label: 'Verbs / actions (green)' },
+  noun: { bg: '#FFE8A3', border: '#E6C35C', label: 'Nouns / categories (yellow)' },
+  adjective: { bg: '#C5D9F0', border: '#7FA8D4', label: 'Feelings / descriptors (blue)' },
+  social: { bg: '#F5C6D0', border: '#E08A9E', label: 'Social / yes–no (pink)' },
+  misc: { bg: '#EEF1F4', border: '#B0B8C0', label: 'Other' },
 }
+
+/** Vibrant Fitzgerald borders on dark slate fills for Sensory Dark Mode */
+export const FITZGERALD_DARK: Record<AacPartOfSpeech, { bg: string; border: string }> = {
+  pronoun: { bg: '#242730', border: '#FFD54F' },
+  verb: { bg: '#242730', border: '#66BB6A' },
+  noun: { bg: '#242730', border: '#FFA726' },
+  adjective: { bg: '#242730', border: '#42A5F5' },
+  social: { bg: '#242730', border: '#CE93D8' },
+  misc: { bg: '#242730', border: '#90A4AE' },
+}
+
+/** Inline Fitzgerald styles for tiles / sentence chips by sensory theme */
+export function fitzgeraldTileStyle(
+  partOfSpeech: AacPartOfSpeech,
+  theme: AacSensoryTheme = 'calm-light',
+): { background: string; borderColor: string; color?: string } {
+  if (theme === 'sensory-dark') {
+    const d = FITZGERALD_DARK[partOfSpeech]
+    return { background: d.bg, borderColor: d.border, color: '#FFFFFF' }
+  }
+  const c = FITZGERALD_COLORS[partOfSpeech]
+  return { background: c.bg, borderColor: c.border }
+}
+
+export const AAC_SENSORY_THEMES: {
+  id: AacSensoryTheme
+  label: string
+  blurb: string
+}[] = [
+  {
+    id: 'calm-light',
+    label: 'Calm Light Mode',
+    blurb: 'Soft warm off-white board with crisp Fitzgerald Key tiles.',
+  },
+  {
+    id: 'sensory-dark',
+    label: 'Sensory Dark Mode',
+    blurb: 'Deep charcoal board, slate tiles, bright text — easier on light-sensitive eyes.',
+  },
+]
 
 export const GRID_LAYOUTS: {
   id: AacGridLayout
@@ -342,6 +429,15 @@ export const DEFAULT_AAC_PREFS: AacPrefs = {
   attentionEnabled: true,
   attentionPhrase: DEFAULT_ATTENTION_PHRASE,
   bodyCheckEnabled: true,
+  sensoryTheme: 'calm-light',
+  autoReturnFromFolder: true,
+  phrasesBarEnabled: true,
+  scriptsFolderEnabled: true,
+  partnerModelEnabled: false,
+  dwellMs: 0,
+  scanningEnabled: false,
+  scanningSpeedMs: 1200,
+  showDeviceStatus: true,
 }
 
 export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label: string }[] = [
@@ -354,14 +450,14 @@ export const REPEAT_COOLDOWN_OPTIONS: { ms: AacPrefs['repeatCooldownMs']; label:
 
 export const PRESET_CATEGORIES: AacCategory[] = [
   { id: 'core', title: 'Core', emoji: '⭐', order: 0, source: 'preset' },
-  { id: 'feelings', title: 'Feelings', emoji: '💛', order: 1, source: 'preset', minStage: 'expanded' },
-  { id: 'food', title: 'Food', emoji: '🍎', order: 2, source: 'preset', minStage: 'developing' },
-  { id: 'people', title: 'People', emoji: '👥', order: 3, source: 'preset', minStage: 'expanded' },
-  { id: 'places', title: 'Places', emoji: '🏠', order: 4, source: 'preset', minStage: 'expanded' },
-  { id: 'signs', title: 'ASL Signs', emoji: '✋', order: 5, source: 'preset', minStage: 'expanded' },
-  { id: 'needs', title: 'Needs', emoji: '🛟', order: 6, source: 'preset', minStage: 'developing' },
+  { id: 'food', title: 'Food & Drink', emoji: '🍎', order: 1, source: 'preset', minStage: 'developing' },
+  { id: 'family', title: 'Toys & Play', emoji: '🧸', order: 2, source: 'preset', minStage: 'developing' },
+  { id: 'places', title: 'Places', emoji: '🏠', order: 3, source: 'preset', minStage: 'expanded' },
+  { id: 'needs', title: 'Body & Pain', emoji: '🩹', order: 4, source: 'preset', minStage: 'developing' },
+  { id: 'feelings', title: 'Feelings', emoji: '💛', order: 5, source: 'preset', minStage: 'expanded' },
+  { id: 'people', title: 'People', emoji: '👥', order: 6, source: 'preset', minStage: 'expanded' },
   { id: 'actions', title: 'Actions', emoji: '🏃', order: 7, source: 'preset', minStage: 'expanded' },
-  { id: 'family', title: 'Family words', emoji: '📷', order: 8, source: 'preset', minStage: 'developing' },
+  { id: 'signs', title: 'ASL Signs', emoji: '✋', order: 8, source: 'preset', minStage: 'expanded' },
 ]
 
 const STAGE_RANK: Record<AacStage, number> = {
@@ -489,6 +585,9 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('snack', 'Snack', '🍎', 'food', 1, 'noun', 'developing'),
   fringe('hungry', 'Hungry', '😋', 'food', 2, 'adjective', 'expanded'),
   fringe('thirsty', 'Thirsty', '🥤', 'food', 3, 'adjective', 'expanded'),
+  fringe('juice', 'Juice', '🧃', 'food', 5, 'noun', 'developing'),
+  fringe('milk', 'Milk', '🥛', 'food', 6, 'noun', 'developing'),
+  fringe('apple', 'Apple', '🍎', 'food', 7, 'noun', 'developing'),
 
   fringe('mom', 'Mom', '👩', 'people', 0, 'pronoun', 'expanded', undefined, 'home'),
   fringe('dad', 'Dad', '👨', 'people', 1, 'pronoun', 'expanded', undefined, 'home'),
@@ -513,6 +612,9 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('sippy', 'Sippy cup', '🍼', 'family', 0, 'noun', 'developing', 'sippy cup', 'home'),
   fringe('favorite-toy', 'My toy', '🧸', 'family', 1, 'noun', 'developing', 'my toy', 'home'),
   fringe('tablet', 'Tablet', '📱', 'family', 2, 'noun', 'expanded', undefined, 'home'),
+  fringe('ball', 'Ball', '⚽', 'family', 5, 'noun', 'developing'),
+  fringe('blocks', 'Blocks', '🧱', 'family', 6, 'noun', 'developing'),
+  fringe('book-play', 'Book', '📚', 'family', 7, 'noun', 'developing', 'book'),
 
   // School supplies / routines
   fringe('backpack', 'Backpack', '🎒', 'family', 3, 'noun', 'expanded', undefined, 'school'),
@@ -530,6 +632,9 @@ export const PRESET_BUTTONS: AacButton[] = [
   fringe('sick', 'Sick', '🤒', 'needs', 2, 'adjective', 'expanded'),
   fringe('space', 'Space', '🫧', 'needs', 3, 'noun', 'expanded', 'I need space'),
   fringe('hug', 'Hug', '🤗', 'needs', 4, 'verb', 'expanded'),
+  fringe('ouch', 'Ouch', '😣', 'needs', 5, 'adjective', 'developing', 'ouch it hurts'),
+  fringe('tummy', 'Tummy', '🤢', 'needs', 6, 'noun', 'developing', 'my tummy'),
+  fringe('head', 'Head', '🤕', 'needs', 7, 'noun', 'developing', 'my head'),
 
   fringe('listen', 'Listen', '👂', 'actions', 0, 'verb', 'expanded'),
   fringe('come', 'Come', '🤙', 'actions', 1, 'verb', 'expanded'),
@@ -542,10 +647,20 @@ export const PRESET_BUTTONS: AacButton[] = [
 export function createDefaultAacLibrary(): AacLibrary {
   return {
     categories: PRESET_CATEGORIES.map((c) => ({ ...c })),
-    buttons: PRESET_BUTTONS.map((btn) => ({ ...btn })),
+    buttons: withMulberryDefaults(PRESET_BUTTONS.map((btn) => ({ ...btn }))),
     prefs: { ...DEFAULT_AAC_PREFS },
     quickTalk: null,
-    firstThen: { ...DEFAULT_FIRST_THEN, first: { ...DEFAULT_FIRST_THEN.first! }, then: { ...DEFAULT_FIRST_THEN.then! } },
+    firstThen: {
+      ...DEFAULT_FIRST_THEN,
+      first: { ...DEFAULT_FIRST_THEN.first! },
+      then: { ...DEFAULT_FIRST_THEN.then! },
+    },
+    savedPhrases: [],
+    recentPhrases: [],
+    customScripts: [],
+    sessionNotes: [],
+    partnerModelPath: ['i', 'want'],
+    voiceBank: {},
   }
 }
 
@@ -657,6 +772,15 @@ function normalizePrefs(saved?: Partial<AacPrefs> | null): AacPrefs {
   if (typeof merged.firstThenBarEnabled !== 'boolean') merged.firstThenBarEnabled = false
   if (typeof merged.classroomVolumeBoost !== 'boolean') merged.classroomVolumeBoost = false
   if (typeof merged.strongTapHighlight !== 'boolean') merged.strongTapHighlight = true
+  if (merged.sensoryTheme !== 'sensory-dark') merged.sensoryTheme = 'calm-light'
+  if (typeof merged.autoReturnFromFolder !== 'boolean') merged.autoReturnFromFolder = true
+  if (typeof merged.phrasesBarEnabled !== 'boolean') merged.phrasesBarEnabled = true
+  if (typeof merged.scriptsFolderEnabled !== 'boolean') merged.scriptsFolderEnabled = true
+  if (typeof merged.partnerModelEnabled !== 'boolean') merged.partnerModelEnabled = false
+  if (![0, 500, 800, 1200].includes(merged.dwellMs)) merged.dwellMs = 0
+  if (typeof merged.scanningEnabled !== 'boolean') merged.scanningEnabled = false
+  if (![800, 1200, 1800].includes(merged.scanningSpeedMs)) merged.scanningSpeedMs = 1200
+  if (typeof merged.showDeviceStatus !== 'boolean') merged.showDeviceStatus = true
   return merged
 }
 
@@ -690,7 +814,25 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
   for (const c of saved.categories ?? []) {
     if (!c?.id) continue
     const prev = catById.get(c.id)
-    catById.set(c.id, prev ? { ...prev, ...c } : { ...c, source: c.source ?? 'custom' })
+    if (!prev) {
+      catById.set(c.id, { ...c, source: c.source ?? 'custom' })
+      continue
+    }
+    // Refresh preset folder titles/emoji; keep custom hide flags from save
+    catById.set(c.id, {
+      ...prev,
+      ...c,
+      ...(prev.source === 'preset'
+        ? {
+            title: prev.title,
+            emoji: prev.emoji,
+            order: prev.order,
+            minStage: prev.minStage,
+            source: 'preset' as const,
+          }
+        : {}),
+      hidden: c.hidden ?? prev.hidden,
+    })
   }
 
   const btnById = new Map(base.buttons.map((b) => [b.id, b]))
@@ -734,6 +876,7 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
             photoDataUrl: btn.photoDataUrl ?? prev.photoDataUrl,
             signPhotoDataUrl: btn.signPhotoDataUrl ?? prev.signPhotoDataUrl,
             audioDataUrl: btn.audioDataUrl ?? prev.audioDataUrl,
+            mulberryFile: btn.mulberryFile ?? prev.mulberryFile,
           }
         : {
             ...btn,
@@ -748,14 +891,26 @@ export function mergeAacLibrary(saved?: Partial<AacLibrary> | null): AacLibrary 
     )
   }
 
+  const baseExtras = createDefaultAacLibrary()
   return {
     categories: [...catById.values()].sort((a, b) => a.order - b.order),
-    buttons: [...btnById.values()].sort(
-      (a, b) => a.categoryId.localeCompare(b.categoryId) || a.order - b.order,
+    buttons: withMulberryDefaults(
+      [...btnById.values()].sort(
+        (a, b) => a.categoryId.localeCompare(b.categoryId) || a.order - b.order,
+      ),
     ),
     prefs: normalizePrefs(saved.prefs),
     quickTalk: normalizeQuickTalk(saved.quickTalk),
     firstThen: normalizeFirstThen(saved.firstThen),
+    savedPhrases: Array.isArray(saved.savedPhrases) ? saved.savedPhrases : baseExtras.savedPhrases,
+    recentPhrases: Array.isArray(saved.recentPhrases) ? saved.recentPhrases : baseExtras.recentPhrases,
+    customScripts: Array.isArray(saved.customScripts) ? saved.customScripts : baseExtras.customScripts,
+    sessionNotes: Array.isArray(saved.sessionNotes) ? saved.sessionNotes : baseExtras.sessionNotes,
+    partnerModelPath: Array.isArray(saved.partnerModelPath)
+      ? saved.partnerModelPath.filter((x): x is string => typeof x === 'string')
+      : baseExtras.partnerModelPath,
+    voiceBank:
+      saved.voiceBank && typeof saved.voiceBank === 'object' ? { ...saved.voiceBank } : {},
   }
 }
 
@@ -849,15 +1004,42 @@ export function buttonsForCategoryEditor(library: AacLibrary, categoryId: string
     .sort((a, b) => a.order - b.order)
 }
 
+function mulberrySrcFor(button: AacButton): string | undefined {
+  const file =
+    button.mulberryFile ||
+    resolveMulberryFileSync(button.label, mulberryLookup.byKey) ||
+    resolveMulberryFileSync(button.speak || '', mulberryLookup.byKey)
+  return file ? mulberryUrl(file) : undefined
+}
+
 export function resolveAacVisual(
   button: AacButton,
   mode: AacDisplayMode,
-): { kind: 'photo' | 'sign' | 'emoji'; src?: string; emoji: string } {
+): { kind: 'photo' | 'sign' | 'emoji' | 'mulberry'; src?: string; emoji: string } {
   if (mode === 'photo' && button.photoDataUrl) return { kind: 'photo', src: button.photoDataUrl, emoji: button.emoji }
   if (mode === 'sign' && button.signPhotoDataUrl)
     return { kind: 'sign', src: button.signPhotoDataUrl, emoji: button.emoji }
+  if (mode === 'mulberry') {
+    const src = mulberrySrcFor(button)
+    if (src) return { kind: 'mulberry', src, emoji: button.emoji }
+    return { kind: 'emoji', emoji: button.emoji }
+  }
   if (mode === 'emoji') return { kind: 'emoji', emoji: button.emoji }
+  // auto: parent photo → Mulberry → sign → emoji
   if (button.photoDataUrl) return { kind: 'photo', src: button.photoDataUrl, emoji: button.emoji }
+  const mulberry = mulberrySrcFor(button)
+  if (mulberry) return { kind: 'mulberry', src: mulberry, emoji: button.emoji }
   if (button.signPhotoDataUrl) return { kind: 'sign', src: button.signPhotoDataUrl, emoji: button.emoji }
   return { kind: 'emoji', emoji: button.emoji }
+}
+
+/** Attach Mulberry filenames onto buttons that still lack an explicit assignment. */
+export function withMulberryDefaults(buttons: AacButton[]): AacButton[] {
+  return buttons.map((b) => {
+    if (b.mulberryFile) return b
+    const file =
+      resolveMulberryFileSync(b.label, mulberryLookup.byKey) ||
+      resolveMulberryFileSync(b.speak || '', mulberryLookup.byKey)
+    return file ? { ...b, mulberryFile: file } : b
+  })
 }

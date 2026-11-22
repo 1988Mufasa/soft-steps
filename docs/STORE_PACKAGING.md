@@ -35,3 +35,29 @@
 - Web PWA: `npm run build`  
 - Native shell: Capacitor project already present (`ios/`, `android/`)  
 - No payment server / Stripe / in-app purchases  
+
+## TestFlight prep (needs Mac + Apple Developer)
+1. On a Mac with Xcode: `npm run build && npx cap sync ios`
+2. Open `ios/App/App.xcworkspace` in Xcode
+3. Set Team / signing, bump version + build number
+4. Product → Archive → Distribute App → App Store Connect
+5. In App Store Connect → TestFlight: add internal testers, wait for processing
+6. Smoke-test on device: Talk board, Mulberry offline, camera/mic for voice banking, board lock
+
+## Play Internal testing prep
+1. `npm run build && npx cap sync android`
+2. Open `android/` in Android Studio; set `applicationId` / signing config
+3. Build → Generate Signed Bundle / APK (AAB preferred)
+4. Play Console → Internal testing track → upload AAB
+5. Add testers by email/list; install via Play Store internal link
+6. Smoke-test: Talk AAC offline, scan/dwell prefs, print backup, parental gate
+
+## AAC feature checklist for store QA
+- [ ] Phrases bar save/speak + Scripts folder
+- [ ] Mulberry picker in Edit; symbols render offline
+- [ ] Partner path highlight + Model mode
+- [ ] Dwell + switch scanning Select
+- [ ] Big grid overlay (temporary)
+- [ ] Printable board backup
+- [ ] Voice banking + session notes (on-device only)
+- [ ] Device status chip (battery when supported)

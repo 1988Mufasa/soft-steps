@@ -16,7 +16,7 @@ export function OnlineDisabledFallback() {
   return (
     <section className="online-hub">
       <Link to="/" className="back-link">
-        ← Home
+        ← Talk
       </Link>
       <h1>Extra games off</h1>
       <p>A grown-up can turn these on in Parent tools. Everything else on Home still works offline.</p>

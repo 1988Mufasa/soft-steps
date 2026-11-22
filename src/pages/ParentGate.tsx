@@ -106,7 +106,7 @@ export function ParentGate() {
     return (
       <section className="parent-gate">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <h1>Set your PIN</h1>
         <p>
@@ -160,7 +160,7 @@ export function ParentGate() {
   return (
     <section className="parent-gate">
       <Link to="/" className="back-link">
-        ← Home
+        ← Talk
       </Link>
       <h1>Grown-up area</h1>
       <p>Enter the PIN to change settings, view progress, or unlock a new session.</p>

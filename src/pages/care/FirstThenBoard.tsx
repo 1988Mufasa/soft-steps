@@ -27,7 +27,7 @@ export function FirstThenBoard() {
     >
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow offline-tag">Offline</p>

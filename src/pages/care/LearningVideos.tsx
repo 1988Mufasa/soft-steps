@@ -204,7 +204,7 @@ export function LearningVideos() {
     <section className="care-page video-page">
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow offline-tag">Watch & learn</p>

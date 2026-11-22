@@ -17,7 +17,7 @@ type Step = 'body' | 'feeling' | 'need' | 'done'
 const SUGGEST_PATH: Record<string, { path: string; title: string }> = {
   meltdown: { path: '/meltdown', title: 'Quiet calm' },
   calm: { path: '/calm', title: 'Calm toolkit' },
-  talk: { path: '/talk', title: 'Talk AAC' },
+  talk: { path: '/', title: 'Talk board' },
   schedule: { path: '/schedule', title: 'First / Then' },
 }
 
@@ -88,7 +88,7 @@ export function AacEmotionCheckIn() {
     <section className="care-page checkin-page">
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow offline-tag">Offline AAC</p>
@@ -253,7 +253,7 @@ export function AacEmotionCheckIn() {
           ) : null}
 
           <div className="confirm-row">
-            <Link to="/talk" className="btn btn-secondary">
+            <Link to="/" className="btn btn-secondary">
               Open talk board
             </Link>
             <button type="button" className="btn btn-primary" onClick={reset}>

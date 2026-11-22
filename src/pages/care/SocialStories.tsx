@@ -214,7 +214,7 @@ export function SocialStories() {
     return (
       <section className="care-page">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <h1>Social stories</h1>
         <p>No stories yet.</p>
@@ -229,7 +229,7 @@ export function SocialStories() {
     <section className="care-page">
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow offline-tag">Offline</p>

@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "icons": "node scripts/generate-mobile-icons.mjs",
+    "symbols:mulberry": "node scripts/fetch-mulberry.mjs",
     "mobile:sync": "npm run icons && npm run build && npx cap sync",
     "mobile:android": "npm run mobile:sync && npx cap open android",
     "mobile:ios": "npm run mobile:sync && npx cap open ios",

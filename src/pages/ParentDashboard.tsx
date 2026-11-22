@@ -166,7 +166,7 @@ export function ParentDashboard() {
       <section className="parent-dash">
         <header className="activity-header">
           <Link to="/" className="back-link" onClick={() => clearParentSession()}>
-            ← Home
+            ← Talk
           </Link>
           <div className="activity-meta">
             <p className="eyebrow">Security first</p>
@@ -347,7 +347,7 @@ export function ParentDashboard() {
     <section className="parent-dash">
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow">Parent / Teacher</p>
@@ -508,7 +508,7 @@ export function ParentDashboard() {
               })}
             </p>
           ) : (
-            <p className="fine-print">No routines finished yet — kids use Home → First / Then.</p>
+            <p className="fine-print">No routines finished yet — kids use Talk → Learn → First / Then.</p>
           )}
           <div className="confirm-row">
             <button type="button" className="btn btn-secondary" onClick={exportInsights}>
@@ -520,7 +520,7 @@ export function ParentDashboard() {
           </div>
           <h3>Recent AAC check-ins</h3>
           {checkIns.length === 0 ? (
-            <p>No check-ins yet. Kids can use Home → AAC &amp; check-in.</p>
+            <p>No check-ins yet. Kids can use Talk → Learn → Feelings board.</p>
           ) : (
             <ul className="checkin-history">
               {checkIns.slice(0, 5).map((c) => (
@@ -1055,9 +1055,34 @@ export function ParentDashboard() {
         </article>
 
         <article className="dash-card security-card">
+          <h2>Install Soft Steps as an app</h2>
+          <p className="fine-print">
+            Soft Steps is built as an app — not a website to leave open in a browser tab. Kids get a
+            full-screen, offline Talk board from the Home Screen icon or a native install.
+          </p>
+          <ol className="onboard-steps">
+            <li>
+              <strong>Phone (fastest):</strong> Safari → Share → Add to Home Screen (iPhone), or
+              Chrome → Install app (Android).
+            </li>
+            <li>
+              <strong>Mac → iPhone:</strong> run <code>npm run mobile:ios</code>, then Run in Xcode.
+            </li>
+            <li>
+              <strong>Mac → Android:</strong> run <code>npm run mobile:android</code>, then Run in
+              Android Studio.
+            </li>
+          </ol>
+          <p className="fine-print">
+            App id <code>com.softsteps.learn</code>. Native projects live in <code>ios/</code> and{' '}
+            <code>android/</code>.
+          </p>
+        </article>
+
+        <article className="dash-card security-card">
           <h2>Adult Communication Lock</h2>
           <p className="fine-print">
-            When locked, Talk AAC hides Home, Edit, and chrome so only communication tiles and the
+            When locked, Talk hides Edit and grown-up chrome so only communication tiles, Learn, and the
             sentence strip stay interactive. Unlock requires a 4-second padlock hold, then PIN or
             spelled numbers.
           </p>
@@ -1084,6 +1109,107 @@ export function ParentDashboard() {
             />
             Lock Talk AAC board now
           </label>
+          <p className="field-label" style={{ marginTop: '0.85rem' }}>
+            Sensory Theme
+          </p>
+          <p className="fine-print">
+            Board lighting for the Talk board, sentence strip, and First–Then bar. Saved on this
+            device.
+          </p>
+          <div className="toggle-row wrap" role="radiogroup" aria-label="Sensory Theme">
+            {(
+              [
+                {
+                  id: 'calm-light' as const,
+                  label: 'Calm Light Mode',
+                  hint: 'Soft off-white (#F5F6F8)',
+                },
+                {
+                  id: 'sensory-dark' as const,
+                  label: 'Sensory Dark Mode',
+                  hint: 'Charcoal board · less glare',
+                },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="radio"
+                aria-checked={settings.aacLibrary.prefs.sensoryTheme === opt.id}
+                className={`chip ${
+                  settings.aacLibrary.prefs.sensoryTheme === opt.id ? 'is-active' : ''
+                }`}
+                onClick={() => {
+                  updateSettings({
+                    aacLibrary: {
+                      ...settings.aacLibrary,
+                      prefs: {
+                        ...settings.aacLibrary.prefs,
+                        sensoryTheme: opt.id,
+                      },
+                    },
+                  })
+                  setSaved(
+                    opt.id === 'sensory-dark'
+                      ? 'Sensory Dark Mode on for Talk board.'
+                      : 'Calm Light Mode on for Talk board.',
+                  )
+                }}
+              >
+                {opt.label}
+                <span className="chip-hint">{opt.hint}</span>
+              </button>
+            ))}
+          </div>
+          <label className="check-line" style={{ marginTop: '0.85rem' }}>
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.showFolders}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      showFolders: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Category folders shown on Talk board.'
+                    : 'Category folders hidden on Talk board.',
+                )
+              }}
+            />
+            Show category folders (Food & Drink, Toys & Play, Places, Body & Pain…)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.autoReturnFromFolder}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      autoReturnFromFolder: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Auto-return to core board after a folder word.'
+                    : 'Stay in folder after selecting a word.',
+                )
+              }}
+            />
+            Auto-Return to Core Board after selecting a folder word
+          </label>
+          <p className="fine-print">
+            Default on. Helps kids build sentences like I + want + apple faster.
+          </p>
           <p className="field-label" style={{ marginTop: '0.85rem' }}>
             Repeat tap cooldown
           </p>
@@ -1200,8 +1326,156 @@ export function ParentDashboard() {
             Default off. Unlock a parent session, open Talk, and tap FIRST / THEN to pick AAC
             tiles, presets, or a custom photo.
           </p>
-          <Link to="/talk" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
-            Open Talk AAC
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.phrasesBarEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      phrasesBarEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'Phrases bar shown on Talk.' : 'Phrases bar hidden.',
+                )
+              }}
+            />
+            Show phrases bar (saved + recent)
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.scriptsFolderEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      scriptsFolderEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'Scripts folder shown on Talk.' : 'Scripts folder hidden.',
+                )
+              }}
+            />
+            Show Scripts folder
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.partnerModelEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      partnerModelEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Partner modeling path highlight on.'
+                    : 'Partner modeling path highlight off.',
+                )
+              }}
+            />
+            Partner modeling path highlight
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.scanningEnabled}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      scanningEnabled: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked ? 'Switch scanning enabled.' : 'Switch scanning off.',
+                )
+              }}
+            />
+            Switch scanning access
+          </label>
+          <label className="check-line">
+            <input
+              type="checkbox"
+              checked={settings.aacLibrary.prefs.showDeviceStatus}
+              onChange={(e) => {
+                updateSettings({
+                  aacLibrary: {
+                    ...settings.aacLibrary,
+                    prefs: {
+                      ...settings.aacLibrary.prefs,
+                      showDeviceStatus: e.target.checked,
+                    },
+                  },
+                })
+                setSaved(
+                  e.target.checked
+                    ? 'Device status chip shown.'
+                    : 'Device status chip hidden.',
+                )
+              }}
+            />
+            Show battery + offline status chip
+          </label>
+          <p className="field-label" style={{ marginTop: '0.65rem' }}>
+            Dwell activation
+          </p>
+          <div className="toggle-row wrap" role="group" aria-label="Dwell activation">
+            {(
+              [
+                { ms: 0 as const, label: 'Off' },
+                { ms: 500 as const, label: '0.5s' },
+                { ms: 800 as const, label: '0.8s' },
+                { ms: 1200 as const, label: '1.2s' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.ms}
+                type="button"
+                className={`chip ${
+                  settings.aacLibrary.prefs.dwellMs === opt.ms ? 'is-active' : ''
+                }`}
+                onClick={() => {
+                  updateSettings({
+                    aacLibrary: {
+                      ...settings.aacLibrary,
+                      prefs: {
+                        ...settings.aacLibrary.prefs,
+                        dwellMs: opt.ms,
+                      },
+                    },
+                  })
+                  setSaved(
+                    opt.ms === 0
+                      ? 'Dwell activation off.'
+                      : `Dwell activation set to ${opt.ms}ms.`,
+                  )
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <Link to="/" className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
+            Open Talk board
           </Link>
         </article>
 

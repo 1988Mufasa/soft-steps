@@ -49,7 +49,10 @@ export default function App() {
     <div className="app-shell">
       <A11yShell>
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* AAC board is the app home — kids land on Talk first */}
+        <Route path="/" element={<TalkAac />} />
+        <Route path="/talk" element={<Navigate to="/" replace />} />
+        <Route path="/hub" element={<Home />} />
         <Route path="/meltdown" element={<MeltdownMode />} />
         <Route
           path="/calm"
@@ -115,22 +118,7 @@ export default function App() {
             </GuardedCare>
           }
         />
-        <Route
-          path="/talk"
-          element={
-            <GuardedCare id="talk">
-              <TalkAac />
-            </GuardedCare>
-          }
-        />
-        <Route
-          path="/talk/edit"
-          element={
-            <GuardedCare id="talk">
-              <AacEditor />
-            </GuardedCare>
-          }
-        />
+        <Route path="/talk/edit" element={<AacEditor />} />
         <Route
           path="/friends"
           element={

@@ -74,6 +74,7 @@ export type {
   AacLibrary,
   AacPartOfSpeech,
   AacPrefs,
+  AacSensoryTheme,
   AacStage,
 } from './data/aacPresets'
 

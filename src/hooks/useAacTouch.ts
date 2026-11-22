@@ -9,11 +9,13 @@ type Options = {
   /** Optional long-press (e.g. word forms). Cancels the normal activate. */
   onLongPress?: () => void
   longPressMs?: number
+  /** Dwell activation while pointer stays on the tile (0 = off). */
+  dwellMs?: number
 }
 
 /**
  * Touch accommodations for AAC: optional hold-delay, speak-on-release,
- * and long-press for grammar popups.
+ * dwell/hover, and long-press for grammar popups.
  */
 export function useAacTouch({
   delayMs,
@@ -22,9 +24,11 @@ export function useAacTouch({
   onActivate,
   onLongPress,
   longPressMs = 650,
+  dwellMs = 0,
 }: Options) {
   const timer = useRef<number | null>(null)
   const longTimer = useRef<number | null>(null)
+  const dwellTimer = useRef<number | null>(null)
   const armed = useRef(false)
   const longDone = useRef(false)
   const lastAt = useRef(0)
@@ -37,6 +41,10 @@ export function useAacTouch({
     if (longTimer.current != null) {
       window.clearTimeout(longTimer.current)
       longTimer.current = null
+    }
+    if (dwellTimer.current != null) {
+      window.clearTimeout(dwellTimer.current)
+      dwellTimer.current = null
     }
   }, [])
 
@@ -116,7 +124,31 @@ export function useAacTouch({
     armed.current = false
   }, [clearTimers])
 
+  const onPointerEnter = useCallback(() => {
+    if (!dwellMs || dwellMs <= 0) return
+    clearTimers()
+    dwellTimer.current = window.setTimeout(() => {
+      fire()
+    }, dwellMs)
+  }, [clearTimers, dwellMs, fire])
+
+  const onPointerLeave = useCallback(() => {
+    if (dwellMs && dwellMs > 0) {
+      clearTimers()
+      armed.current = false
+      return
+    }
+    onPointerCancel()
+  }, [clearTimers, dwellMs, onPointerCancel])
+
   const className = animations ? 'aac-touchable' : 'aac-touchable no-anim'
 
-  return { onPointerDown, onPointerUp, onPointerCancel, onPointerLeave: onPointerCancel, className }
+  return {
+    onPointerDown,
+    onPointerUp,
+    onPointerCancel,
+    onPointerLeave,
+    onPointerEnter,
+    className,
+  }
 }

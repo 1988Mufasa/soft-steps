@@ -10,7 +10,7 @@ export function Privacy() {
     <section className="care-page privacy-page">
       <header className="activity-header">
         <Link to="/" className="back-link">
-          ← Home
+          ← Talk
         </Link>
         <div className="activity-meta">
           <p className="eyebrow">Soft Steps</p>
@@ -49,6 +49,18 @@ export function Privacy() {
           Microphone is used for on-device custom AAC voice clips and speech — Soft Steps does not
           upload audio recordings to Soft Steps servers. Permissions are requested by the OS when
           you tap those features.
+        </p>
+      </article>
+
+      <article className="privacy-block">
+        <h2>Mulberry Symbols</h2>
+        <p>
+          AAC Talk includes Mulberry Symbols (© Steve Lee), licensed under Creative Commons
+          Attribution-ShareAlike 4.0 — see{' '}
+          <a href="https://mulberrysymbols.org" rel="noreferrer">
+            mulberrysymbols.org
+          </a>{' '}
+          and the in-app license at <code>/symbols/MULBERRY-LICENSE.txt</code>.
         </p>
       </article>
 

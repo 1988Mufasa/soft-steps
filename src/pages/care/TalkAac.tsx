@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   speakAacButton,
   speakAacSentence,
@@ -7,15 +7,30 @@ import {
   speakAttention,
 } from '../../audio/aacSpeech'
 import { speakText as speakCalm } from '../../audio/calmAudio'
+import { AacBigGridOverlay } from '../../components/AacBigGridOverlay'
 import { AacBoardLock } from '../../components/AacBoardLock'
 import { AacBodyCheck } from '../../components/AacBodyCheck'
+import { AacDeviceStatus } from '../../components/AacDeviceStatus'
 import { AacFirstThenBar } from '../../components/AacFirstThenBar'
+import { AacFolderTile } from '../../components/AacFolderTile'
+import { AacLearnPanel } from '../../components/AacLearnPanel'
+import { AacPhrasesBar } from '../../components/AacPhrasesBar'
+import { AacScanController } from '../../components/AacScanController'
+import { AacScriptsPanel } from '../../components/AacScriptsPanel'
 import { AacWordFormsPopover } from '../../components/AacWordFormsPopover'
+import { AppShellBanner } from '../../components/AppShellBanner'
+import { ParentalGateModal } from '../../components/ParentalGateModal'
+import {
+  phraseFromButtons,
+  uid,
+  type AacSavedPhrase,
+  type AacScriptLine,
+} from '../../data/aacExtras'
 import {
   AAC_BOARD_CONTEXTS,
-  FITZGERALD_COLORS,
   buttonsForCategory,
   coreButtonsInViewport,
+  fitzgeraldTileStyle,
   fringeCategories,
   gridColumns,
   gridRows,
@@ -25,6 +40,7 @@ import {
   type AacButton,
   type AacPrefs,
   type AacQuickTalkWord,
+  type AacSensoryTheme,
 } from '../../data/aacPresets'
 import type { BodyCheckItem } from '../../data/aacBodyCheck'
 import { wordFormsFor } from '../../data/aacWordForms'
@@ -34,12 +50,12 @@ import { isParentSessionValid } from '../../security/parentSession'
 import { AacSetup } from './AacSetup'
 
 /**
- * Age-adaptive AAC communicator — fixed slots, mask/unmask, model mode,
- * word-forms hold, attention bell, body check, Home/School contexts.
+ * Primary Soft Steps interface — age-adaptive AAC board.
+ * Learning games open from the Learn panel on this board.
  */
 export function TalkAac() {
   const navigate = useNavigate()
-  const { settings, updateSettings } = useApp()
+  const { settings, updateSettings, activeProfile } = useApp()
   const library = settings.aacLibrary
   const prefs = library.prefs
   const locked = prefs.boardLocked
@@ -47,9 +63,15 @@ export function TalkAac() {
   const coreButtons = useMemo(() => coreButtonsInViewport(library), [library])
 
   const [folderId, setFolderId] = useState<string | null>(null)
+  const [learnOpen, setLearnOpen] = useState(false)
+  const [scriptsOpen, setScriptsOpen] = useState(false)
+  const [bigGridOpen, setBigGridOpen] = useState(false)
+  const [showParentGate, setShowParentGate] = useState(false)
   const [message, setMessage] = useState<AacButton[]>([])
   const [editHold, setEditHold] = useState(0)
   const [glowId, setGlowId] = useState<string | null>(null)
+  const [scanHighlightId, setScanHighlightId] = useState<string | null>(null)
+  const [partnerStep, setPartnerStep] = useState(0)
   const [formsFor, setFormsFor] = useState<AacButton | null>(null)
   const [bodyOpen, setBodyOpen] = useState(false)
   const [attentionPulse, setAttentionPulse] = useState(false)
@@ -127,7 +149,7 @@ export function TalkAac() {
     }
   }
 
-  const activate = (btn: AacButton, speakOverride?: string) => {
+  const activate = (btn: AacButton, speakOverride?: string, fromFolder = false) => {
     if (btn.masked) return
 
     // Anti-stimming repeat cooldown — same tile only; other tiles stay instant.
@@ -154,6 +176,15 @@ export function TalkAac() {
 
     const spoken = (speakOverride || btn.speak || btn.label).trim()
     flashGlow(btn.id, spoken)
+    if (prefs.partnerModelEnabled && library.partnerModelPath.length) {
+      const path = library.partnerModelPath
+      if (btn.id === path[partnerStep]) {
+        setPartnerStep((s) => Math.min(s + 1, path.length))
+      }
+    }
+    const banked = library.voiceBank[btn.id]
+    const voiceBtn: AacButton =
+      banked && !btn.audioDataUrl ? { ...btn, audioDataUrl: banked } : btn
     if (prefs.speakOnTap || prefs.audioLabels || prefs.modelMode) {
       if (speakOverride) {
         speakCalm(spoken, settings.sensory.soundOn, {
@@ -164,19 +195,77 @@ export function TalkAac() {
         })
       } else {
         speakAacButton(
-          speakOverride ? { ...btn, speak: speakOverride, label: speakOverride } : btn,
+          speakOverride
+            ? { ...voiceBtn, speak: speakOverride, label: speakOverride }
+            : voiceBtn,
           settings.sensory.soundOn,
           prefs,
         )
       }
     }
-    if (prefs.modelMode) return
+    if (prefs.modelMode) {
+      if (fromFolder && prefs.autoReturnFromFolder) {
+        setFolderId(null)
+        setLearnOpen(false)
+        setScriptsOpen(false)
+      }
+      return
+    }
     if (prefs.messageBar) {
       const chip: AacButton = speakOverride
         ? { ...btn, label: speakOverride, speak: speakOverride, id: `${btn.id}-form-${speakOverride}` }
         : btn
       setMessage((m) => [...m, chip].slice(-16))
     }
+    // Standard AAC: return to core after a folder word so kids can keep building
+    if (fromFolder && prefs.autoReturnFromFolder) {
+      setFolderId(null)
+      setLearnOpen(false)
+      setScriptsOpen(false)
+    }
+  }
+
+  const pushRecentFromMessage = (chips: AacButton[]) => {
+    const built = phraseFromButtons(chips)
+    if (!built) return
+    const entry: AacSavedPhrase = { ...built, id: uid('recent'), savedAt: Date.now() }
+    updateSettings({
+      aacLibrary: {
+        ...library,
+        recentPhrases: [entry, ...library.recentPhrases.filter((p) => p.speak !== entry.speak)].slice(
+          0,
+          12,
+        ),
+      },
+    })
+  }
+
+  const speakPhrase = (phrase: AacSavedPhrase) => {
+    speakCalm(phrase.speak, settings.sensory.soundOn, {
+      pitch: prefs.speechPitch,
+      rate: prefs.speechRate,
+      forceFullVolume: prefs.classroomVolumeBoost,
+      volume: prefs.classroomVolumeBoost ? 1 : undefined,
+    })
+  }
+
+  const saveCurrentPhrase = () => {
+    const built = phraseFromButtons(message)
+    if (!built) return
+    const entry: AacSavedPhrase = { ...built, id: uid('saved'), savedAt: Date.now() }
+    updateSettings({
+      aacLibrary: {
+        ...library,
+        savedPhrases: [entry, ...library.savedPhrases].slice(0, 24),
+      },
+    })
+  }
+
+  const openFolder = (id: string) => {
+    setLearnOpen(false)
+    setScriptsOpen(false)
+    setBigGridOpen(false)
+    setFolderId(id)
   }
 
   const activateQuickTalk = (word: AacQuickTalkWord) => {
@@ -227,6 +316,14 @@ export function TalkAac() {
   const speakMessage = () => {
     if (!message.length || prefs.modelMode) return
     speakAacSentence(message, settings.sensory.soundOn, prefs)
+    pushRecentFromMessage(message)
+  }
+
+  const backToCore = () => {
+    setFolderId(null)
+    setLearnOpen(false)
+    setScriptsOpen(false)
+    setBigGridOpen(false)
   }
 
   const meta = layoutMeta(prefs.gridLayout)
@@ -273,14 +370,14 @@ export function TalkAac() {
 
   if (needsSetup && isParentSessionValid() && !locked) {
     return (
-      <section className="care-page aac-comm">
+      <section
+        className={`care-page aac-comm theme-${prefs.sensoryTheme}`}
+        data-aac-theme={prefs.sensoryTheme}
+      >
         <header className="activity-header">
-          <Link to="/" className="back-link">
-            ← Home
-          </Link>
           <div className="activity-meta">
             <p className="eyebrow offline-tag">AAC setup</p>
-            <h1>Talk</h1>
+            <h1>Soft Steps</h1>
           </div>
         </header>
         <AacSetup />
@@ -290,7 +387,10 @@ export function TalkAac() {
 
   if (bodyOpen) {
     return (
-      <section className="care-page aac-comm aac-body-open">
+      <section
+        className={`care-page aac-comm aac-body-open theme-${prefs.sensoryTheme}`}
+        data-aac-theme={prefs.sensoryTheme}
+      >
         <AacBodyCheck onPick={pickBodyItem} onClose={() => setBodyOpen(false)} />
       </section>
     )
@@ -298,17 +398,33 @@ export function TalkAac() {
 
   return (
     <section
-      className={`care-page aac-comm stage-${prefs.stage} ${prefs.highContrast ? 'is-contrast' : ''} ${
-        locked ? 'is-board-locked' : ''
-      } ${prefs.modelMode ? 'is-model-mode' : ''} ${
+      className={`care-page aac-comm stage-${prefs.stage} theme-${prefs.sensoryTheme} ${
+        prefs.highContrast ? 'is-contrast' : ''
+      } ${locked ? 'is-board-locked' : ''} ${prefs.modelMode ? 'is-model-mode' : ''} ${
         prefs.strongTapHighlight ? 'is-strong-highlight' : ''
       } ${prefs.classroomVolumeBoost ? 'is-volume-boost' : ''} context-${prefs.activeBoardContext}`}
+      data-aac-theme={prefs.sensoryTheme}
     >
       <AacBoardLock
         locked={locked}
         onLock={() => setBoardLocked(true)}
         onUnlock={() => setBoardLocked(false)}
       />
+
+      {!locked ? <AppShellBanner /> : null}
+
+      {prefs.showDeviceStatus ? <AacDeviceStatus /> : null}
+
+      {prefs.scanningEnabled ? (
+        <AacScanController
+          buttons={folderId ? folderButtons : coreButtons}
+          speedMs={prefs.scanningSpeedMs}
+          enabled={prefs.scanningEnabled}
+          onSelect={(btn) => activate(btn, undefined, Boolean(folderId))}
+          highlightId={scanHighlightId}
+          setHighlightId={setScanHighlightId}
+        />
+      ) : null}
 
       {prefs.firstThenBarEnabled ? (
         <AacFirstThenBar
@@ -338,55 +454,67 @@ export function TalkAac() {
       ) : null}
 
       {prefs.messageBar ? (
-        <div className="aac-sentence-strip" aria-label="Sentence strip">
-          <button
-            type="button"
-            className="aac-sentence-window"
-            onClick={speakMessage}
-            disabled={!message.length || prefs.modelMode}
-            aria-label={
-              message.length
-                ? `Speak message: ${message.map((b) => b.label).join(' ')}`
-                : prefs.modelMode
-                  ? 'Model mode — sentence strip paused'
-                  : 'Sentence strip empty'
-            }
-          >
-            {prefs.modelMode ? (
-              <span className="aac-sentence-placeholder">Model mode — taps glow, strip stays clear</span>
-            ) : message.length ? (
-              message.map((b, i) => {
-                const visual = resolveAacVisual(b, prefs.displayMode)
-                return (
-                  <span
-                    key={`${b.id}-${i}`}
-                    className="aac-sentence-chip"
-                    style={
-                      prefs.colorCoding
-                        ? {
-                            background: FITZGERALD_COLORS[b.partOfSpeech].bg,
-                            borderColor: FITZGERALD_COLORS[b.partOfSpeech].border,
-                          }
-                        : undefined
-                    }
-                  >
-                    {visual.src ? (
-                      <img src={visual.src} alt="" />
-                    ) : (
-                      <span aria-hidden="true">{visual.emoji}</span>
-                    )}
-                    <em>{b.label}</em>
-                  </span>
-                )
-              })
-            ) : (
-              <span className="aac-sentence-placeholder">
-                {prefs.stage === 'starter'
-                  ? 'Tap Want, Help, More…'
-                  : 'I + want + water… tap words, then tap here to speak'}
-              </span>
-            )}
-          </button>
+        <div className="aac-sentence-strip aac-sentence-strip-dense" aria-label="Sentence strip">
+          <div className="aac-sentence-row">
+            <button
+              type="button"
+              className="aac-sentence-window"
+              onClick={speakMessage}
+              disabled={!message.length || prefs.modelMode}
+              aria-label={
+                message.length
+                  ? `Speak message: ${message.map((b) => b.label).join(' ')}`
+                  : prefs.modelMode
+                    ? 'Model mode — sentence strip paused'
+                    : 'Sentence strip empty'
+              }
+            >
+              {prefs.modelMode ? (
+                <span className="aac-sentence-placeholder">
+                  Model mode — taps glow, strip stays clear
+                </span>
+              ) : message.length ? (
+                message.map((b, i) => {
+                  const visual = resolveAacVisual(b, prefs.displayMode)
+                  return (
+                    <span
+                      key={`${b.id}-${i}`}
+                      className="aac-sentence-chip"
+                      style={
+                        prefs.colorCoding
+                          ? fitzgeraldTileStyle(b.partOfSpeech, prefs.sensoryTheme)
+                          : undefined
+                      }
+                    >
+                      {visual.src ? (
+                        <img src={visual.src} alt="" />
+                      ) : (
+                        <span aria-hidden="true">{visual.emoji}</span>
+                      )}
+                      <em>{b.label}</em>
+                    </span>
+                  )
+                })
+              ) : (
+                <span className="aac-sentence-placeholder">
+                  {prefs.stage === 'starter'
+                    ? 'Tap Want, Help, More…'
+                    : 'I + want + water… tap words, then tap here to speak'}
+                </span>
+              )}
+            </button>
+            {!prefs.modelMode ? (
+              <button
+                type="button"
+                className="aac-sentence-clear"
+                disabled={!message.length}
+                onClick={() => setMessage([])}
+                aria-label="Clear all words"
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
           {!prefs.modelMode ? (
             <div className="aac-sentence-actions">
               <button
@@ -397,15 +525,6 @@ export function TalkAac() {
                 aria-label="Backspace — remove last word"
               >
                 Backspace
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                disabled={!message.length}
-                onClick={() => setMessage([])}
-                aria-label="Clear all words"
-              >
-                Clear all
               </button>
               <button
                 type="button"
@@ -420,17 +539,35 @@ export function TalkAac() {
         </div>
       ) : null}
 
+      {prefs.phrasesBarEnabled ? (
+        <AacPhrasesBar
+          recent={library.recentPhrases}
+          saved={library.savedPhrases}
+          onSpeak={speakPhrase}
+          canSave={Boolean(message.length && !prefs.modelMode)}
+          onSaveCurrent={saveCurrentPhrase}
+          adultSetup={!locked && isParentSessionValid()}
+          onDeleteSaved={(id) =>
+            updateSettings({
+              aacLibrary: {
+                ...library,
+                savedPhrases: library.savedPhrases.filter((p) => p.id !== id),
+              },
+            })
+          }
+        />
+      ) : null}
+
       {!locked ? (
-        <header className="activity-header">
-          <Link to="/" className="back-link">
-            ← Home
-          </Link>
+        <header className="activity-header aac-home-header">
           <div className="activity-meta">
+            <p className="brand aac-home-brand">Soft Steps</p>
+            <h1>Talk</h1>
             <p className="eyebrow offline-tag">
               AAC · {meta.label} · {prefs.ageRange} · {activeContextMeta.label}
               {prefs.modelMode ? ' · Model' : ''}
+              {activeProfile ? ` · ${activeProfile.emoji} ${activeProfile.name}` : ''}
             </p>
-            <h1>Talk</h1>
           </div>
           <div className="aac-header-actions">
             <button
@@ -462,9 +599,23 @@ export function TalkAac() {
             >
               {editHold > 0 ? `Hold… ${editHold}/3` : 'Edit'}
             </button>
+            <button
+              type="button"
+              className="btn btn-ghost grownups-link"
+              onClick={() => setShowParentGate(true)}
+            >
+              Grown-ups
+            </button>
           </div>
         </header>
-      ) : null}
+      ) : (
+        <header className="activity-header aac-home-header aac-home-header-locked">
+          <div className="activity-meta">
+            <p className="brand aac-home-brand">Soft Steps</p>
+            <h1 className="sr-only">Talk board</h1>
+          </div>
+        </header>
+      )}
 
       {contextGate && !locked ? (
         <div className="aac-context-switcher" role="group" aria-label="Board context">
@@ -510,6 +661,20 @@ export function TalkAac() {
             <span aria-hidden="true">ℹ️</span> About me
           </button>
         ) : null}
+        <button
+          type="button"
+          className={`aac-quick-tool ${bigGridOpen ? 'is-active' : ''}`}
+          onClick={() => {
+            setScriptsOpen(false)
+            setLearnOpen(false)
+            setFolderId(null)
+            setBigGridOpen((v) => !v)
+          }}
+          aria-pressed={bigGridOpen}
+          aria-label="Temporary big grid"
+        >
+          <span aria-hidden="true">🔲</span> Big grid
+        </button>
       </div>
 
       {activeBanner ? (
@@ -547,94 +712,212 @@ export function TalkAac() {
         </div>
       ) : null}
 
-      <div className="aac-board-shell">
-        <div className="aac-core-panel">
-          <p className="aac-section-label">Core words · fixed spots</p>
-          <div
-            className={`aac-core-grid layout-${prefs.gridLayout} ${prefs.largeButtons ? 'is-large' : ''}`}
-            style={
-              {
-                '--aac-cols': cols,
-                '--aac-rows': rows,
-              } as CSSProperties
+      {bigGridOpen ? (
+        <AacBigGridOverlay
+          buttons={coreButtons}
+          onPick={(btn) => activate(btn)}
+          onClose={() => setBigGridOpen(false)}
+        />
+      ) : scriptsOpen ? (
+        <AacScriptsPanel
+          customScripts={library.customScripts}
+          onSpeakLine={(line: AacScriptLine) => {
+            speakCalm(line.speak, settings.sensory.soundOn, {
+              pitch: prefs.speechPitch,
+              rate: prefs.speechRate,
+              forceFullVolume: prefs.classroomVolumeBoost,
+              volume: prefs.classroomVolumeBoost ? 1 : undefined,
+            })
+            if (!prefs.modelMode && prefs.messageBar) {
+              const chip: AacButton = {
+                id: `script-${line.id}`,
+                label: line.label,
+                speak: line.speak,
+                emoji: line.emoji,
+                categoryId: 'core',
+                partOfSpeech: 'social',
+                order: 0,
+                source: 'custom',
+              }
+              setMessage((m) => [...m, chip].slice(-16))
             }
+          }}
+          onClose={backToCore}
+        />
+      ) : folderId && !learnOpen ? (
+        <div className="aac-folder-open" aria-label={`${activeFolder?.title ?? 'Folder'} open`}>
+          <div className="aac-folder-open-bar">
+            <button
+              type="button"
+              className="btn btn-primary aac-back-to-core"
+              onClick={backToCore}
+            >
+              ← Back to Core Board
+            </button>
+            <p className="aac-folder-open-title">
+              <span className="aac-folder-badge" aria-hidden="true">
+                📁
+              </span>
+              {activeFolder?.emoji} {activeFolder?.title ?? 'Folder'}
+            </p>
+          </div>
+          <p className="fine-print aac-folder-open-hint">
+            Sentence strip stays up — combine core words with these folder words.
+            {prefs.autoReturnFromFolder ? ' Tapping a word returns to core.' : ''}
+          </p>
+          <div
+            className={`aac-comm-grid cols-${Math.min(cols, 4)} ${prefs.largeButtons ? 'is-large' : ''}`}
             role="list"
-            aria-label="Core communication board"
+            aria-label={`${activeFolder?.title ?? 'Folder'} words`}
           >
-            {coreButtons.map((btn) =>
-              btn.masked && prefs.showMaskedSlots ? (
-                <div
-                  key={btn.id}
-                  className="aac-comm-card is-masked-slot"
-                  style={{ gridRow: (btn.row ?? 0) + 1, gridColumn: (btn.col ?? 0) + 1 }}
-                  aria-hidden="true"
-                  title="Masked — reserved for later"
-                />
-              ) : btn.masked ? null : (
-                <AacWordButton
-                  key={btn.id}
-                  btn={btn}
-                  prefs={prefs}
-                  glowing={glowId === btn.id}
-                  cooldownCalm={cooldownTileId === btn.id}
-                  onActivate={() => activate(btn)}
-                  onLongPress={() => openForms(btn)}
-                  absolute
-                />
-              ),
-            )}
+            {folderButtons.map((btn) => (
+              <AacWordButton
+                key={btn.id}
+                btn={btn}
+                prefs={prefs}
+                theme={prefs.sensoryTheme}
+                glowing={glowId === btn.id}
+                scanHighlight={scanHighlightId === btn.id}
+                partnerHighlight={false}
+                cooldownCalm={cooldownTileId === btn.id}
+                onActivate={() => activate(btn, undefined, true)}
+                onLongPress={() => openForms(btn)}
+              />
+            ))}
+            {folderButtons.length === 0 ? (
+              <p className="empty-note">No words in this folder yet.</p>
+            ) : null}
           </div>
         </div>
-
-        {prefs.showFolders && fringe.length > 0 ? (
-          <aside className="aac-folder-panel" aria-label="Category folders">
-            <p className="aac-section-label">
-              Folders · {activeContextMeta.label}
-            </p>
-            <nav className="aac-cat-tabs aac-folder-tabs">
+      ) : (
+        <div className="aac-board-shell aac-board-dense">
+          {prefs.showFolders && fringe.length > 0 ? (
+            <div className="aac-cat-rail" role="list" aria-label={`Categories · ${activeContextMeta.label}`}>
               {fringe.map((c) => (
-                <button
+                <AacFolderTile
                   key={c.id}
-                  type="button"
-                  className={`chip ${folderId === c.id ? 'is-active' : ''}`}
-                  onClick={() => setFolderId((id) => (id === c.id ? null : c.id))}
-                >
-                  <span aria-hidden="true">{c.emoji}</span> {c.title}
-                </button>
+                  category={c}
+                  variant="rail"
+                  onOpen={() => openFolder(c.id)}
+                />
               ))}
-            </nav>
-            {folderId ? (
-              <div
-                className={`aac-comm-grid cols-${Math.min(cols, 3)} ${prefs.largeButtons ? 'is-large' : ''}`}
-                role="list"
-                aria-label={`${activeFolder?.title ?? 'Folder'} words`}
-              >
-                {folderButtons.map((btn) => (
+            </div>
+          ) : null}
+
+          <div className="aac-core-panel aac-core-panel-dense">
+            <div
+              className={`aac-core-grid aac-core-grid-dense layout-${prefs.gridLayout} ${
+                prefs.largeButtons ? 'is-large' : ''
+              }`}
+              style={
+                {
+                  '--aac-cols': cols,
+                  '--aac-rows': rows,
+                } as CSSProperties
+              }
+              role="list"
+              aria-label="Core communication board"
+            >
+              {coreButtons.map((btn) =>
+                btn.masked && prefs.showMaskedSlots ? (
+                  <div
+                    key={btn.id}
+                    className="aac-comm-card is-masked-slot"
+                    style={{ gridRow: (btn.row ?? 0) + 1, gridColumn: (btn.col ?? 0) + 1 }}
+                    aria-hidden="true"
+                    title="Masked — reserved for later"
+                  />
+                ) : btn.masked ? null : (
                   <AacWordButton
                     key={btn.id}
                     btn={btn}
                     prefs={prefs}
+                    theme={prefs.sensoryTheme}
                     glowing={glowId === btn.id}
+                    scanHighlight={scanHighlightId === btn.id}
+                    partnerHighlight={
+                      Boolean(
+                        prefs.partnerModelEnabled &&
+                          library.partnerModelPath[partnerStep] === btn.id,
+                      )
+                    }
                     cooldownCalm={cooldownTileId === btn.id}
                     onActivate={() => activate(btn)}
                     onLongPress={() => openForms(btn)}
+                    absolute
                   />
-                ))}
-                {folderButtons.length === 0 ? (
-                  <p className="empty-note">No words on this board yet.</p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="fine-print">Open a folder for more words. Core stays put on the left.</p>
-            )}
-          </aside>
-        ) : null}
-      </div>
+                ),
+              )}
+            </div>
+          </div>
+
+          <nav className="aac-board-dock" aria-label="Board tools">
+            {prefs.scriptsFolderEnabled ? (
+              <button
+                type="button"
+                className={`aac-dock-btn ${scriptsOpen ? 'is-active' : ''}`}
+                onClick={() => {
+                  setFolderId(null)
+                  setLearnOpen(false)
+                  setBigGridOpen(false)
+                  setScriptsOpen(true)
+                }}
+              >
+                <span aria-hidden="true">💬</span>
+                Phrase
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={`aac-dock-btn ${learnOpen ? 'is-active' : ''}`}
+              onClick={() => {
+                setFolderId(null)
+                setScriptsOpen(false)
+                setBigGridOpen(false)
+                setLearnOpen((v) => !v)
+              }}
+              aria-expanded={learnOpen}
+            >
+              <span aria-hidden="true">🎮</span>
+              Learn
+            </button>
+            <button
+              type="button"
+              className={`aac-dock-btn ${bigGridOpen ? 'is-active' : ''}`}
+              onClick={() => {
+                setFolderId(null)
+                setScriptsOpen(false)
+                setLearnOpen(false)
+                setBigGridOpen((v) => !v)
+              }}
+              aria-pressed={bigGridOpen}
+            >
+              <span aria-hidden="true">🔲</span>
+              Big
+            </button>
+            {!locked ? (
+              <button
+                type="button"
+                className="aac-dock-btn"
+                onPointerDown={startEditHold}
+                onPointerUp={clearEditHold}
+                onPointerLeave={clearEditHold}
+                onPointerCancel={clearEditHold}
+                aria-label="Hold 3 seconds to open AAC editor"
+              >
+                <span aria-hidden="true">✏️</span>
+                {editHold > 0 ? `${editHold}/3` : 'Edit'}
+              </button>
+            ) : null}
+          </nav>
+          {learnOpen ? <AacLearnPanel /> : null}
+        </div>
+      )}
 
       {!locked ? (
         <p className="fine-print aac-motor-note">
-          Hold a word for grammar forms. Model mode glows without filling the strip. Mask in Edit
-          keeps permanent slots empty until you unmask.
+          Hold a word for grammar forms. Yellow row opens folders. Core spots stay fixed for motor
+          planning.
         </p>
       ) : null}
 
@@ -645,9 +928,21 @@ export function TalkAac() {
           forms={formsFor.forms?.length ? formsFor.forms : wordFormsFor(formsFor.id, formsFor.label)}
           onPick={(form) => {
             setFormsFor(null)
-            activate(formsFor, form)
+            activate(formsFor, form, Boolean(folderId))
           }}
           onClose={() => setFormsFor(null)}
+        />
+      ) : null}
+
+      {showParentGate ? (
+        <ParentalGateModal
+          title="Parent Controls"
+          blurb="Grown-ups confirm before opening Parent Controls."
+          onCancel={() => setShowParentGate(false)}
+          onVerified={() => {
+            setShowParentGate(false)
+            navigate('/parent')
+          }}
         />
       ) : null}
     </section>
@@ -657,18 +952,24 @@ export function TalkAac() {
 function AacWordButton({
   btn,
   prefs,
+  theme,
   onActivate,
   onLongPress,
   absolute,
   glowing,
+  scanHighlight,
+  partnerHighlight,
   cooldownCalm,
 }: {
   btn: AacButton
   prefs: AacPrefs
+  theme: AacSensoryTheme
   onActivate: () => void
   onLongPress?: () => void
   absolute?: boolean
   glowing?: boolean
+  scanHighlight?: boolean
+  partnerHighlight?: boolean
   /** Same-tile repeat cooldown — suppress bounce while cooling down. */
   cooldownCalm?: boolean
 }) {
@@ -681,15 +982,21 @@ function AacWordButton({
     animations: prefs.buttonAnimations && !cooldownCalm,
     onActivate,
     onLongPress: canForms ? onLongPress : undefined,
+    dwellMs: prefs.dwellMs,
   })
-  const colors = FITZGERALD_COLORS[btn.partOfSpeech]
+  const fitz = fitzgeraldTileStyle(btn.partOfSpeech, theme)
+  const isPhoto = visual.kind === 'photo'
+  const isMulberry = visual.kind === 'mulberry'
   const style: CSSProperties = {
     ...(prefs.colorCoding
       ? {
-          background: colors.bg,
-          borderColor: colors.border,
-          borderWidth: 3,
+          background: fitz.background,
+          borderColor: fitz.borderColor,
+          color: fitz.color,
+          borderWidth: 4,
           borderStyle: 'solid',
+          ['--aac-fitz-border' as string]: fitz.borderColor,
+          ['--aac-fitz-bg' as string]: fitz.background,
         }
       : {}),
     ...(absolute && typeof btn.row === 'number' && typeof btn.col === 'number'
@@ -703,9 +1010,15 @@ function AacWordButton({
   return (
     <button
       type="button"
-      className={`aac-comm-card ${touch.className} ${prefs.highContrast ? 'is-contrast' : ''} ${
-        glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''
-      } ${cooldownCalm ? 'is-cooldown-calm' : ''}`}
+      className={`aac-comm-card aac-tile-slp ${touch.className} ${
+        prefs.highContrast ? 'is-contrast' : ''
+      } ${prefs.colorCoding ? 'is-fitzgerald' : ''} ${isPhoto ? 'has-photo' : ''} ${
+        isMulberry ? 'has-mulberry' : ''
+      } ${glowing ? `is-model-glow ${prefs.strongTapHighlight ? 'is-strong-glow' : ''}` : ''} ${
+        scanHighlight ? 'is-scan-highlight' : ''
+      } ${partnerHighlight ? 'is-partner-path' : ''} ${
+        cooldownCalm ? 'is-cooldown-calm' : ''
+      }`}
       role="listitem"
       style={style}
       aria-label={btn.speak || btn.label}
@@ -713,22 +1026,32 @@ function AacWordButton({
       onPointerUp={touch.onPointerUp}
       onPointerCancel={touch.onPointerCancel}
       onPointerLeave={touch.onPointerLeave}
+      onPointerEnter={touch.onPointerEnter}
     >
-      {visual.src ? (
-        <img
-          src={visual.src}
-          alt=""
-          className={`aac-comm-img ${visual.kind === 'sign' ? 'is-sign' : ''}`}
-          draggable={false}
-        />
-      ) : (
-        <span className="aac-comm-emoji" aria-hidden="true">
-          {visual.emoji}
-        </span>
-      )}
+      {/* Label on top so a finger tap does not cover the word (SLP motor-planning practice) */}
       {prefs.showLabels || prefs.audioLabels ? (
         <span className="aac-comm-label">{btn.label}</span>
       ) : null}
+      <span
+        className={`aac-comm-visual ${isPhoto ? 'is-photo-frame' : ''} ${
+          visual.kind === 'sign' ? 'is-sign-frame' : ''
+        }`}
+      >
+        {visual.src ? (
+          <img
+            src={visual.src}
+            alt=""
+            className={`aac-comm-img ${visual.kind === 'sign' ? 'is-sign' : ''} ${
+              visual.kind === 'mulberry' ? 'is-mulberry' : ''
+            } ${isPhoto ? 'is-photo' : ''}`}
+            draggable={false}
+          />
+        ) : (
+          <span className="aac-comm-emoji" aria-hidden="true">
+            {visual.emoji}
+          </span>
+        )}
+      </span>
       {visual.kind === 'sign' ? (
         <span className="aac-sign-badge" aria-hidden="true">
           ✋
